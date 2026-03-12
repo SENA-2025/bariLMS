@@ -47,7 +47,7 @@
                                             {% endfor %}
                                         {% endif %}
                                     {% endwith %}
-                                    <form class="user" method="post" action="{{ url_for('login') }}">
+                                    <form class="user" method="post" action="{{ url_for('auth.login') }}">
                                         <div class="form-group">
                                             <input type="email" class="form-control form-control-user" name="email"
                                                 placeholder="Correo institucional" required>

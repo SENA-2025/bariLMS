@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>BARÍ LMS | 404 - Página no encontrada</title>
+    <link href="{{ url_for('static', filename='vendor/fontawesome-free/css/all.min.css') }}" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Nunito:400,600,700,800" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/sb-admin-2.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/sena-learn.css') }}" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container d-flex align-items-center justify-content-center" style="min-height:100vh;">
+        <div class="text-center">
+            <div class="error mx-auto mb-4" data-text="404" style="font-size:7rem;font-weight:800;color:#003f2d;opacity:.15;">404</div>
+            <h1 class="h3 font-weight-bold text-gray-900 mb-2">Página no encontrada</h1>
+            <p class="text-gray-500 mb-4">La página que buscas no existe o fue movida.</p>
+            <a href="{{ url_for('auth.home') }}" class="btn btn-sena">
+                <i class="fas fa-arrow-left mr-2"></i>Volver al inicio
+            </a>
+        </div>
+    </div>
+</body>
+</html>

@@ -14,7 +14,7 @@
 <body id="page-top">
     <div id="wrapper">
         <ul class="navbar-nav bg-gradient-sena sidebar sidebar-dark accordion" id="accordionSidebar">
-            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ url_for('dashboard', role_slug=user.dashboard_slug) }}">
+            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ url_for('dashboard.dashboard_view', role_slug=user.dashboard_slug) }}">
                 <div class="sidebar-brand-icon">
                     <img
                         src="{{ url_for('static', filename='img/logo-sena-blanco.png') }}"
@@ -26,7 +26,7 @@
             </a>
             <hr class="sidebar-divider my-0">
             <li class="nav-item active">
-                <a class="nav-link" href="{{ url_for('dashboard', role_slug=user.dashboard_slug) }}">
+                <a class="nav-link" href="{{ url_for('dashboard.dashboard_view', role_slug=user.dashboard_slug) }}">
                     <i class="fas fa-fw fa-tachometer-alt"></i>
                     <span>Panel principal</span>
                 </a>
@@ -42,7 +42,7 @@
                 </li>
             {% endfor %}
             <li class="nav-item">
-                <form method="post" action="{{ url_for('logout') }}">
+                <form method="post" action="{{ url_for('auth.logout') }}">
                     <button type="submit" class="nav-link btn btn-link text-left w-100 logout-link">
                         <i class="fas fa-fw fa-sign-out-alt"></i>
                         <span>Cerrar sesion</span>
