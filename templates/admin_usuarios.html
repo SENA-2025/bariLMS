@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="Dashboard de BARÍ LMS">
+    <title>BARÍ LMS | {{ dashboard.role }} - Usuarios</title>
+    <link href="{{ url_for('static', filename='vendor/fontawesome-free/css/all.min.css') }}" rel="stylesheet" type="text/css">
+    <link href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/sb-admin-2.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/sena-learn.css') }}" rel="stylesheet">
+    <style>
+        .custom-switch .custom-control-label::before {
+            border-radius: 2rem;
+        }
+        .custom-switch .custom-control-label::after {
+            border-radius: 2rem;
+        }
+    </style>
+</head>
+<body id="page-top">
+    <div id="wrapper">
+        <ul class="navbar-nav bg-gradient-sena sidebar sidebar-dark accordion" id="accordionSidebar">
+            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ url_for('dashboard.dashboard_view', role_slug=user.dashboard_slug) }}">
+                <div class="sidebar-brand-icon">
+                    <img
+                        src="{{ url_for('static', filename='img/logo-sena-blanco.png') }}"
+                        alt="Logo SENA"
+                        class="sena-brand-logo"
+                    >
+                </div>
+                <div class="sidebar-brand-text mx-3">BARÍ LMS</div>
+            </a>
+            <hr class="sidebar-divider my-0">
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('dashboard.dashboard_view', role_slug=user.dashboard_slug) }}">
+                    <i class="fas fa-fw fa-tachometer-alt"></i>
+                    <span>Panel principal</span>
+                </a>
+            </li>
+            <hr class="sidebar-divider">
+            <div class="sidebar-heading">{{ dashboard.menu_heading }}</div>
+            {% for item in dashboard.menu %}
+                <li class="nav-item {% if item.label == 'Usuarios y roles' %}active{% endif %}">
+                    <a class="nav-link" href="{{ url_for(item.url) if item.url else '#' }}">
+                        <i class="fas fa-fw {{ item.icon }}"></i>
+                        <span>{{ item.label }}</span>
+                    </a>
+                </li>
+            {% endfor %}
+            <li class="nav-item">
+                <form method="post" action="{{ url_for('auth.logout') }}">
+                    <button type="submit" class="nav-link btn btn-link text-left w-100 logout-link">
+                        <i class="fas fa-fw fa-sign-out-alt"></i>
+                        <span>Cerrar sesion</span>
+                    </button>
+                </form>
+            </li>
+        </ul>
+        <div id="content-wrapper" class="d-flex flex-column">
+            <div id="content">
+                <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
+                    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
+                        <i class="fa fa-bars"></i>
+                    </button>
+                    <div class="mr-auto">
+                        <span class="sena-role-pill">{{ user.role }}</span>
+                    </div>
+                    <ul class="navbar-nav ml-auto">
+                        <li class="nav-item no-arrow">
+                            <span class="nav-link text-gray-700">
+                                <span class="mr-2 d-none d-lg-inline">{{ user.name }}</span>
+                                <i class="fas fa-user-circle fa-lg"></i>
+                            </span>
+                        </li>
+                    </ul>
+                </nav>
+                <div class="container-fluid">
+                    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                        <div>
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">MODULO ADMINISTRATIVO</div>
+                            <h1 class="h3 mb-0 text-gray-800">Usuarios y roles</h1>
+                        </div>
+                        <a href="{{ url_for('dashboard.dashboard_view', role_slug=user.dashboard_slug) }}" class="d-none d-sm-inline-block btn btn-sm btn-outline-success shadow-sm">
+                           <i class="fas fa-arrow-left fa-sm text-success-50"></i> Volver al dashboard
+                        </a>
+                    </div>
+
+                    <div class="row">
+                        <!-- Formulario Nuevo Usuario -->
+                        <div class="col-lg-4 mb-4">
+                            <div class="card shadow mb-4">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-success">Nuevo usuario</h6>
+                                </div>
+                                <div class="card-body">
+                                    <form>
+                                        <div class="form-group">
+                                            <label>Nombre completo</label>
+                                            <input type="text" class="form-control" placeholder="">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Correo institucional</label>
+                                            <input type="email" class="form-control" placeholder="">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Rol</label>
+                                            <select class="form-control">
+                                                <option>Selecciona un rol</option>
+                                                <option value="Administrador">Administrador</option>
+                                                <option value="Instructor">Instructor</option>
+                                                <option value="Aprendiz">Aprendiz</option>
+                                                <option value="Administrativo">Administrativo</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Contrasena</label>
+                                            <input type="password" class="form-control" placeholder="">
+                                        </div>
+                                        <div class="form-group custom-control custom-switch">
+                                            <input type="checkbox" class="custom-control-input" id="customSwitch1" checked>
+                                            <label class="custom-control-label" for="customSwitch1">Usuario activo</label>
+                                        </div>
+                                        <button type="button" class="btn btn-success btn-block">Crear usuario</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tabla Usuarios registrados -->
+                        <div class="col-lg-8 mb-4">
+                            <div class="card shadow mb-4">
+                                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                    <h6 class="m-0 font-weight-bold text-success">Usuarios registrados</h6>
+                                    <span class="badge badge-success badge-pill">4</span>
+                                </div>
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div>
+                                            Mostrar 
+                                            <select class="custom-select custom-select-sm form-control form-control-sm" style="width: auto; display: inline-block;">
+                                                <option value="10">10</option>
+                                            </select>
+                                            registros
+                                        </div>
+                                        <div class="d-flex align-items-center">
+                                            <label class="mb-0 mr-2">Buscar:</label>
+                                            <input type="search" class="form-control form-control-sm">
+                                        </div>
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered w-100">
+                                            <thead>
+                                                <tr>
+                                                    <th>NOMBRE</th>
+                                                    <th>CORREO</th>
+                                                    <th>ROL</th>
+                                                    <th>ESTADO</th>
+                                                    <th>CREADO</th>
+                                                    <th>ACCIONES</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>Miguel Torres</td>
+                                                    <td>aprendiz@senalearn.edu.co</td>
+                                                    <td>Aprendiz</td>
+                                                    <td><span class="badge badge-success">Activo</span></td>
+                                                    <td>2026-03-13 04:28:04</td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-outline-success"><i class="fas fa-pen"></i></button>
+                                                        <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Diana Beltran</td>
+                                                    <td>instructor@senalearn.edu.co</td>
+                                                    <td>Instructor</td>
+                                                    <td><span class="badge badge-success">Activo</span></td>
+                                                    <td>2026-03-13 04:28:03</td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-outline-success"><i class="fas fa-pen"></i></button>
+                                                        <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Carlos Ruiz</td>
+                                                    <td>administrativo@senalearn.edu.co</td>
+                                                    <td>Administrativo</td>
+                                                    <td><span class="badge badge-success">Activo</span></td>
+                                                    <td>2026-03-13 04:28:03</td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-outline-success"><i class="fas fa-pen"></i></button>
+                                                        <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Laura Moreno</td>
+                                                    <td>admin@senalearn.edu.co</td>
+                                                    <td>Administrador</td>
+                                                    <td><span class="badge badge-success">Activo</span></td>
+                                                    <td>2026-03-13 04:28:03</td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-outline-success"><i class="fas fa-pen"></i></button>
+                                                        <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <div>Mostrando 1 a 4 de 4 usuarios</div>
+                                        <nav>
+                                            <ul class="pagination pagination-sm mb-0">
+                                                <li class="page-item disabled"><a class="page-link" href="#">Anterior</a></li>
+                                                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                                                <li class="page-item disabled"><a class="page-link" href="#">Siguiente</a></li>
+                                            </ul>
+                                        </nav>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <footer class="sticky-footer bg-white">
+                <div class="container my-auto">
+                    <div class="copyright text-center my-auto">
+                        <span>{{ dashboard.footer }}</span>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='vendor/jquery/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/jquery-easing/jquery.easing.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/sb-admin-2.min.js') }}"></script>
+</body>
+</html>

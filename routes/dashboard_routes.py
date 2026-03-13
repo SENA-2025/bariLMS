@@ -19,7 +19,7 @@ DASHBOARDS = {
         "footer": "BARÍ LMS SENA - Administrador",
         "menu_heading": "Administracion",
         "menu": [
-            {"icon": "fa-users-cog", "label": "Usuarios y roles"},
+            {"icon": "fa-users-cog", "label": "Usuarios y roles", "url": "dashboard.usuarios_view"},
             {"icon": "fa-chart-pie", "label": "Indicadores"},
         ],
         "metrics": [
@@ -169,3 +169,14 @@ def dashboard_view(role_slug):
         return redirect(url_for("dashboard.dashboard_view", role_slug=user["dashboard_slug"]))
 
     return render_template("dashboard.html", dashboard=dash_config, user=user)
+
+@dashboard_routes.route("/dashboard/administrador/usuarios")
+@login_required
+def usuarios_view():
+    user = get_current_user()
+    if user["role"] != "Administrador":
+        logger.warning("Intento de acceso a usuarios por rol no autorizado: %s", user["role"])
+        return redirect(url_for("dashboard.dashboard_view", role_slug=user["dashboard_slug"]))
+        
+    dash_config = DASHBOARDS.get("administrador")
+    return render_template("admin_usuarios.html", dashboard=dash_config, user=user)

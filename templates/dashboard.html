@@ -35,7 +35,7 @@
             <div class="sidebar-heading">{{ dashboard.menu_heading }}</div>
             {% for item in dashboard.menu %}
                 <li class="nav-item">
-                    <a class="nav-link" href="#">
+                    <a class="nav-link" href="{{ url_for(item.url) if item.url else '#' }}">
                         <i class="fas fa-fw {{ item.icon }}"></i>
                         <span>{{ item.label }}</span>
                     </a>
