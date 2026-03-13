@@ -35,10 +35,11 @@
             <div class="sidebar-heading">{{ dashboard.menu_heading }}</div>
             {% for item in dashboard.menu %}
                 <li class="nav-item">
-                    <a
-                        class="nav-link"
-                        href="{{ url_for(item.endpoint, **item.get('endpoint_kwargs', {})) }}"
-                    >
+                    {% if item.endpoint_kwargs is defined %}
+                    <a class="nav-link" href="{{ url_for(item.endpoint, role_slug=item.endpoint_kwargs.role_slug) }}">
+                    {% else %}
+                    <a class="nav-link" href="{{ url_for(item.endpoint) }}">
+                    {% endif %}
                         <i class="fas fa-fw {{ item.icon }}"></i>
                         <span>{{ item.label }}</span>
                     </a>

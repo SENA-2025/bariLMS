@@ -61,18 +61,24 @@ DASHBOARDS = {
         "menu_heading": "Administracion",
         "menu": [
             {"icon": "fa-users-cog", "label": "Usuarios y roles", "endpoint": "admin_users"},
-            {"icon": "fa-chart-pie", "label": "Indicadores", "endpoint": "dashboard", "endpoint_kwargs": {"role_slug": "administrador"}},
+            {"icon": "fa-sitemap", "label": "Estructura institucional", "endpoint": "admin_structure"},
+            {
+                "icon": "fa-chart-pie",
+                "label": "Indicadores",
+                "endpoint": "dashboard",
+                "endpoint_kwargs": {"role_slug": "administrador"},
+            },
         ],
         "metrics": [
             {"label": "Usuarios activos", "value": "0", "icon": "fa-users"},
-            {"label": "Centros vinculados", "value": "14", "icon": "fa-building"},
+            {"label": "Regionales", "value": "0", "icon": "fa-map-marked-alt"},
             {"label": "Roles configurados", "value": "0", "icon": "fa-user-shield"},
-            {"label": "Sesiones hoy", "value": "326", "icon": "fa-sign-in-alt"},
+            {"label": "Centros", "value": "0", "icon": "fa-building"},
         ],
         "tasks_title": "Frentes prioritarios",
         "tasks": [
             {"title": "Gestion de usuarios", "text": "Aprobar nuevas cuentas y validar asignacion de perfiles."},
-            {"title": "Configuracion LMS", "text": "Definir parametros base, regionales y politicas institucionales."},
+            {"title": "Estructura institucional", "text": "Administrar regionales, centros, coordinaciones, sedes y ambientes."},
             {"title": "Seguimiento", "text": "Consultar indicadores de uso, permanencia y actividad por centro."},
         ],
         "table_title": "Resumen operativo",
@@ -92,8 +98,18 @@ DASHBOARDS = {
         "footer": "BARÍ LMS SENA - Administrativo",
         "menu_heading": "Operacion",
         "menu": [
-            {"icon": "fa-folder-open", "label": "Fichas y programas", "endpoint": "dashboard", "endpoint_kwargs": {"role_slug": "administrativo"}},
-            {"icon": "fa-school", "label": "Ambientes y sedes", "endpoint": "dashboard", "endpoint_kwargs": {"role_slug": "administrativo"}},
+            {
+                "icon": "fa-folder-open",
+                "label": "Fichas y programas",
+                "endpoint": "dashboard",
+                "endpoint_kwargs": {"role_slug": "administrativo"},
+            },
+            {
+                "icon": "fa-school",
+                "label": "Ambientes y sedes",
+                "endpoint": "dashboard",
+                "endpoint_kwargs": {"role_slug": "administrativo"},
+            },
         ],
         "metrics": [
             {"label": "Fichas activas", "value": "86", "icon": "fa-id-badge"},
@@ -124,8 +140,18 @@ DASHBOARDS = {
         "footer": "BARÍ LMS SENA - Instructor",
         "menu_heading": "Formacion",
         "menu": [
-            {"icon": "fa-book-reader", "label": "Planeacion", "endpoint": "dashboard", "endpoint_kwargs": {"role_slug": "instructor"}},
-            {"icon": "fa-clipboard-check", "label": "Evaluacion", "endpoint": "dashboard", "endpoint_kwargs": {"role_slug": "instructor"}},
+            {
+                "icon": "fa-book-reader",
+                "label": "Planeacion",
+                "endpoint": "dashboard",
+                "endpoint_kwargs": {"role_slug": "instructor"},
+            },
+            {
+                "icon": "fa-clipboard-check",
+                "label": "Evaluacion",
+                "endpoint": "dashboard",
+                "endpoint_kwargs": {"role_slug": "instructor"},
+            },
         ],
         "metrics": [
             {"label": "Fichas a cargo", "value": "6", "icon": "fa-layer-group"},
@@ -156,8 +182,18 @@ DASHBOARDS = {
         "footer": "BARÍ LMS SENA - Aprendiz",
         "menu_heading": "Aprendizaje",
         "menu": [
-            {"icon": "fa-project-diagram", "label": "Mi proyecto", "endpoint": "dashboard", "endpoint_kwargs": {"role_slug": "aprendiz"}},
-            {"icon": "fa-file-alt", "label": "Evidencias", "endpoint": "dashboard", "endpoint_kwargs": {"role_slug": "aprendiz"}},
+            {
+                "icon": "fa-project-diagram",
+                "label": "Mi proyecto",
+                "endpoint": "dashboard",
+                "endpoint_kwargs": {"role_slug": "aprendiz"},
+            },
+            {
+                "icon": "fa-file-alt",
+                "label": "Evidencias",
+                "endpoint": "dashboard",
+                "endpoint_kwargs": {"role_slug": "aprendiz"},
+            },
         ],
         "metrics": [
             {"label": "Avance general", "value": "72%", "icon": "fa-chart-line"},
@@ -181,11 +217,132 @@ DASHBOARDS = {
     },
 }
 
+ENTITY_CONFIG = {
+    "regional": {
+        "table": "regional",
+        "label": "Regional",
+        "parent_key": None,
+        "fields": ["nombre"],
+        "required": ["nombre"],
+        "context_key": "regional_id",
+        "select_aliases": {},
+        "form_to_db": {},
+    },
+    "centro": {
+        "table": "centro",
+        "label": "Centro de formacion",
+        "parent_key": "regional_id",
+        "fields": ["id_regional", "nombre"],
+        "required": ["id_regional", "nombre"],
+        "context_key": "centro_id",
+        "select_aliases": {"id_regional": "regional_id"},
+        "form_to_db": {"regional_id": "id_regional"},
+    },
+    "coordinacion": {
+        "table": "coordinacion",
+        "label": "Coordinacion",
+        "parent_key": "centro_id",
+        "fields": ["id_centro", "nombre"],
+        "required": ["id_centro", "nombre"],
+        "context_key": "coordinacion_id",
+        "select_aliases": {"id_centro": "centro_id"},
+        "form_to_db": {"centro_id": "id_centro"},
+    },
+    "sede": {
+        "table": "sede",
+        "label": "Sede",
+        "parent_key": "centro_id",
+        "fields": ["id_centro", "nombre"],
+        "required": ["id_centro", "nombre"],
+        "context_key": "sede_id",
+        "select_aliases": {"id_centro": "centro_id"},
+        "form_to_db": {"centro_id": "id_centro"},
+    },
+    "instructor": {
+        "table": "instructor",
+        "label": "Instructor",
+        "parent_key": "coordinacion_id",
+        "fields": ["id_coordinacion", "documento", "nombres", "apellidos", "correo"],
+        "required": ["id_coordinacion", "documento", "nombres", "apellidos"],
+        "context_key": "coordinacion_id",
+        "select_aliases": {
+            "id_coordinacion": "coordinacion_id",
+            "correo": "email",
+            "id_usuario": "user_id",
+        },
+        "form_to_db": {"coordinacion_id": "id_coordinacion", "email": "correo"},
+    },
+    "aprendiz": {
+        "table": "aprendiz",
+        "label": "Aprendiz",
+        "parent_key": "coordinacion_id",
+        "fields": ["id_coordinacion", "documento", "nombres", "apellidos", "ficha"],
+        "required": ["id_coordinacion", "documento", "nombres", "apellidos"],
+        "context_key": "coordinacion_id",
+        "select_aliases": {"id_coordinacion": "coordinacion_id"},
+        "form_to_db": {"coordinacion_id": "id_coordinacion"},
+    },
+    "ambiente": {
+        "table": "ambiente",
+        "label": "Ambiente",
+        "parent_key": "sede_id",
+        "fields": ["id_sede", "nombre", "capacidad"],
+        "required": ["id_sede", "nombre"],
+        "context_key": "sede_id",
+        "select_aliases": {"id_sede": "sede_id"},
+        "form_to_db": {"sede_id": "id_sede"},
+    },
+}
+
+TABLE_NAMES = {
+    "usuario": "usuario",
+    "regional": "regional",
+    "centro": "centro",
+    "coordinacion": "coordinacion",
+    "sede": "sede",
+    "instructor": "instructor",
+    "aprendiz": "aprendiz",
+    "ambiente": "ambiente",
+}
+
+LEGACY_TABLE_NAMES = {
+    "users": "usuario",
+    "regionales": "regional",
+    "centros": "centro",
+    "coordinaciones": "coordinacion",
+    "sedes": "sede",
+    "instructores": "instructor",
+    "aprendices": "aprendiz",
+    "ambientes": "ambiente",
+}
+
+COLUMN_RENAMES = {
+    "usuario": {
+        "email": "correo",
+        "password_hash": "contrasena_hash",
+        "role": "rol",
+        "name": "nombre",
+        "active": "activo",
+        "created_at": "creado_en",
+    },
+    "centro": {"regional_id": "id_regional"},
+    "coordinacion": {"centro_id": "id_centro"},
+    "sede": {"centro_id": "id_centro"},
+    "instructor": {
+        "coordinacion_id": "id_coordinacion",
+        "email": "correo",
+        "user_id": "id_usuario",
+    },
+    "aprendiz": {"coordinacion_id": "id_coordinacion"},
+    "ambiente": {"sede_id": "id_sede"},
+}
+
 
 def get_db():
     if "db" not in g:
         g.db = sqlite3.connect(app.config["DATABASE"])
         g.db.row_factory = sqlite3.Row
+        g.db.execute("PRAGMA foreign_keys = ON")
     return g.db
 
 
@@ -198,27 +355,132 @@ def close_db(_error):
 
 def initialize_database():
     db = get_db()
+    existing_tables = {
+        row["name"]
+        for row in db.execute("SELECT name FROM sqlite_master WHERE type = 'table'").fetchall()
+    }
+    for old_name, new_name in LEGACY_TABLE_NAMES.items():
+        if old_name in existing_tables and new_name not in existing_tables:
+            db.execute(f"ALTER TABLE {old_name} RENAME TO {new_name}")
+            existing_tables.remove(old_name)
+            existing_tables.add(new_name)
+
+    for table_name, rename_map in COLUMN_RENAMES.items():
+        if table_name not in existing_tables:
+            continue
+        table_columns = {
+            row["name"] for row in db.execute(f"PRAGMA table_info({table_name})").fetchall()
+        }
+        for old_column, new_column in rename_map.items():
+            if old_column in table_columns and new_column not in table_columns:
+                db.execute(f"ALTER TABLE {table_name} RENAME COLUMN {old_column} TO {new_column}")
+                table_columns.remove(old_column)
+                table_columns.add(new_column)
+
     db.execute(
         """
-        CREATE TABLE IF NOT EXISTS users (
+        CREATE TABLE IF NOT EXISTS usuario (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            email TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL,
-            role TEXT NOT NULL,
-            name TEXT NOT NULL,
-            active INTEGER NOT NULL DEFAULT 1,
-            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            correo TEXT UNIQUE NOT NULL,
+            contrasena_hash TEXT NOT NULL,
+            rol TEXT NOT NULL,
+            nombre TEXT NOT NULL,
+            activo INTEGER NOT NULL DEFAULT 1,
+            creado_en TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS regional (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT NOT NULL UNIQUE
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS centro (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_regional INTEGER NOT NULL,
+            nombre TEXT NOT NULL,
+            FOREIGN KEY (id_regional) REFERENCES regional(id) ON DELETE CASCADE
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS coordinacion (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_centro INTEGER NOT NULL,
+            nombre TEXT NOT NULL,
+            FOREIGN KEY (id_centro) REFERENCES centro(id) ON DELETE CASCADE
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS sede (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_centro INTEGER NOT NULL,
+            nombre TEXT NOT NULL,
+            FOREIGN KEY (id_centro) REFERENCES centro(id) ON DELETE CASCADE
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS instructor (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_coordinacion INTEGER NOT NULL,
+            documento TEXT NOT NULL,
+            nombres TEXT NOT NULL,
+            apellidos TEXT NOT NULL,
+            correo TEXT,
+            id_usuario INTEGER,
+            FOREIGN KEY (id_coordinacion) REFERENCES coordinacion(id) ON DELETE CASCADE
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS aprendiz (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_coordinacion INTEGER NOT NULL,
+            documento TEXT NOT NULL,
+            nombres TEXT NOT NULL,
+            apellidos TEXT NOT NULL,
+            ficha TEXT,
+            FOREIGN KEY (id_coordinacion) REFERENCES coordinacion(id) ON DELETE CASCADE
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS ambiente (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_sede INTEGER NOT NULL,
+            nombre TEXT NOT NULL,
+            capacidad INTEGER,
+            FOREIGN KEY (id_sede) REFERENCES sede(id) ON DELETE CASCADE
         )
         """
     )
     db.commit()
 
-    user_count = db.execute("SELECT COUNT(*) AS total FROM users").fetchone()["total"]
+    instructor_columns = {
+        row["name"] for row in db.execute("PRAGMA table_info(instructor)").fetchall()
+    }
+    if "id_usuario" not in instructor_columns:
+        db.execute("ALTER TABLE instructor ADD COLUMN id_usuario INTEGER")
+        db.commit()
+
+    user_count = db.execute("SELECT COUNT(*) AS total FROM usuario").fetchone()["total"]
     if user_count == 0:
         for user in DEFAULT_USERS:
             db.execute(
                 """
-                INSERT INTO users (email, password_hash, role, name, active)
+                INSERT INTO usuario (correo, contrasena_hash, rol, nombre, activo)
                 VALUES (?, ?, ?, ?, ?)
                 """,
                 (
@@ -236,62 +498,11 @@ with app.app_context():
     initialize_database()
 
 
-def get_user_by_email(email):
-    if not email:
+def parse_int(value):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
         return None
-    return get_db().execute(
-        """
-        SELECT id, email, role, name, active, created_at, password_hash
-        FROM users
-        WHERE lower(email) = lower(?)
-        """,
-        (email,),
-    ).fetchone()
-
-
-def get_user_by_id(user_id):
-    return get_db().execute(
-        """
-        SELECT id, email, role, name, active, created_at
-        FROM users
-        WHERE id = ?
-        """,
-        (user_id,),
-    ).fetchone()
-
-
-def get_all_users():
-    return get_db().execute(
-        """
-        SELECT id, email, role, name, active, created_at
-        FROM users
-        ORDER BY created_at DESC, id DESC
-        """
-    ).fetchall()
-
-
-def get_admin_dashboard_data():
-    db = get_db()
-    total_active = db.execute("SELECT COUNT(*) AS total FROM users WHERE active = 1").fetchone()["total"]
-    total_roles = db.execute("SELECT COUNT(DISTINCT role) AS total FROM users").fetchone()["total"]
-    latest_users = db.execute(
-        """
-        SELECT name, role, email
-        FROM users
-        ORDER BY created_at DESC, id DESC
-        LIMIT 3
-        """
-    ).fetchall()
-
-    config = copy.deepcopy(DASHBOARDS["administrador"])
-    config["metrics"][0]["value"] = str(total_active)
-    config["metrics"][2]["value"] = str(total_roles)
-    config["table_title"] = "Ultimos usuarios registrados"
-    config["table_headers"] = ["Nombre", "Rol", "Correo"]
-    config["table_rows"] = [[row["name"], row["role"], row["email"]] for row in latest_users] or [
-        ["Sin registros", "-", "-"]
-    ]
-    return config
 
 
 def current_user():
@@ -347,6 +558,344 @@ def inject_session_user():
         "session_user": current_user(),
         "session_user_email": session.get("user_email", ""),
     }
+
+
+def get_user_by_email(email):
+    if not email:
+        return None
+    return get_db().execute(
+        """
+        SELECT id, correo AS email, rol AS role, nombre AS name, activo AS active,
+               creado_en AS created_at, contrasena_hash AS password_hash
+        FROM usuario
+        WHERE lower(correo) = lower(?)
+        """,
+        (email,),
+    ).fetchone()
+
+
+def get_user_by_id(user_id):
+    return get_db().execute(
+        """
+        SELECT id, correo AS email, rol AS role, nombre AS name, activo AS active, creado_en AS created_at
+        FROM usuario
+        WHERE id = ?
+        """,
+        (user_id,),
+    ).fetchone()
+
+
+def generate_instructor_email(documento, email):
+    clean_email = (email or "").strip().lower()
+    if clean_email:
+        return clean_email
+    return f"instructor.{documento}@barilms.local"
+
+
+def create_linked_instructor_user(instructor_id, data):
+    login_email = generate_instructor_email(data["documento"], data.get("correo"))
+    if get_user_by_email(login_email) is not None:
+        raise ValueError("Ya existe un usuario con el correo que se intenta asignar al instructor.")
+
+    db = get_db()
+    cursor = db.execute(
+        """
+        INSERT INTO usuario (correo, contrasena_hash, rol, nombre, activo)
+        VALUES (?, ?, 'Instructor', ?, 1)
+        """,
+        (
+            login_email,
+            generate_password_hash(data["documento"]),
+            f"{data['nombres']} {data['apellidos']}".strip(),
+        ),
+    )
+    user_id = cursor.lastrowid
+    db.execute(
+        """
+        UPDATE instructor
+        SET correo = ?, id_usuario = ?
+        WHERE id = ?
+        """,
+        (login_email, user_id, instructor_id),
+    )
+    db.commit()
+    return user_id
+
+
+def sync_instructor_user(instructor_id, data):
+    instructor = get_entity("instructor", instructor_id)
+    if instructor is None:
+        return
+
+    login_email = generate_instructor_email(data["documento"], data.get("correo"))
+    db = get_db()
+
+    if instructor["user_id"]:
+        existing_user = get_user_by_email(login_email)
+        if existing_user is not None and existing_user["id"] != instructor["user_id"]:
+            raise ValueError("Ya existe un usuario con el correo que se intenta asignar al instructor.")
+
+        db.execute(
+            """
+            UPDATE usuario
+            SET correo = ?, contrasena_hash = ?, rol = 'Instructor', nombre = ?, activo = 1
+            WHERE id = ?
+            """,
+            (
+                login_email,
+                generate_password_hash(data["documento"]),
+                f"{data['nombres']} {data['apellidos']}".strip(),
+                instructor["user_id"],
+            ),
+        )
+        db.execute(
+            """
+            UPDATE instructor
+            SET correo = ?
+            WHERE id = ?
+            """,
+            (login_email, instructor_id),
+        )
+        db.commit()
+        return
+
+    create_linked_instructor_user(instructor_id, data)
+
+
+def delete_linked_instructor_user(instructor_id):
+    instructor = get_entity("instructor", instructor_id)
+    if instructor is None or not instructor["user_id"]:
+        return
+
+    db = get_db()
+    db.execute("DELETE FROM usuario WHERE id = ?", (instructor["user_id"],))
+    db.commit()
+
+
+def get_all_users():
+    return get_db().execute(
+        """
+        SELECT id, correo AS email, rol AS role, nombre AS name, activo AS active, creado_en AS created_at
+        FROM usuario
+        ORDER BY creado_en DESC, id DESC
+        """
+    ).fetchall()
+
+
+def get_entity(entity, item_id):
+    if entity not in ENTITY_CONFIG or item_id is None:
+        return None
+    table = ENTITY_CONFIG[entity]["table"]
+    return get_db().execute(
+        f"SELECT {entity_select_clause(entity)} FROM {table} WHERE id = ?",
+        (item_id,),
+    ).fetchone()
+
+
+def get_entities(entity, where=None, params=(), order_by="id DESC"):
+    table = ENTITY_CONFIG[entity]["table"]
+    sql = f"SELECT {entity_select_clause(entity)} FROM {table}"
+    if where:
+        sql += f" WHERE {where}"
+    sql += f" ORDER BY {order_by}"
+    return get_db().execute(sql, params).fetchall()
+
+
+def get_admin_dashboard_data():
+    db = get_db()
+    total_active = db.execute("SELECT COUNT(*) AS total FROM usuario WHERE activo = 1").fetchone()["total"]
+    total_roles = db.execute("SELECT COUNT(DISTINCT rol) AS total FROM usuario").fetchone()["total"]
+    total_regionales = db.execute("SELECT COUNT(*) AS total FROM regional").fetchone()["total"]
+    total_centros = db.execute("SELECT COUNT(*) AS total FROM centro").fetchone()["total"]
+    latest_users = db.execute(
+        """
+        SELECT nombre AS name, rol AS role, correo AS email
+        FROM usuario
+        ORDER BY creado_en DESC, id DESC
+        LIMIT 3
+        """
+    ).fetchall()
+
+    config = copy.deepcopy(DASHBOARDS["administrador"])
+    config["metrics"][0]["value"] = str(total_active)
+    config["metrics"][1]["value"] = str(total_regionales)
+    config["metrics"][2]["value"] = str(total_roles)
+    config["metrics"][3]["value"] = str(total_centros)
+    config["table_title"] = "Ultimos usuarios registrados"
+    config["table_headers"] = ["Nombre", "Rol", "Correo"]
+    config["table_rows"] = [[row["name"], row["role"], row["email"]] for row in latest_users] or [
+        ["Sin registros", "-", "-"]
+    ]
+    return config
+
+
+def normalize_structure_context(args):
+    regional_id = parse_int(args.get("regional_id"))
+    centro_id = parse_int(args.get("centro_id"))
+    coordinacion_id = parse_int(args.get("coordinacion_id"))
+    sede_id = parse_int(args.get("sede_id"))
+    edit_entity = args.get("edit_entity")
+    edit_id = parse_int(args.get("edit_id"))
+
+    regional = get_entity("regional", regional_id)
+    if regional is None:
+        regional_id = None
+        centro_id = None
+        coordinacion_id = None
+        sede_id = None
+
+    centro = get_entity("centro", centro_id)
+    if centro is None or (regional_id and centro["regional_id"] != regional_id):
+        centro = None
+        centro_id = None
+        coordinacion_id = None
+        sede_id = None
+
+    coordinacion = get_entity("coordinacion", coordinacion_id)
+    if coordinacion is None or (centro_id and coordinacion["centro_id"] != centro_id):
+        coordinacion = None
+        coordinacion_id = None
+
+    sede = get_entity("sede", sede_id)
+    if sede is None or (centro_id and sede["centro_id"] != centro_id):
+        sede = None
+        sede_id = None
+
+    if edit_entity not in ENTITY_CONFIG:
+        edit_entity = None
+        edit_id = None
+
+    editing_item = get_entity(edit_entity, edit_id) if edit_entity and edit_id else None
+
+    if edit_entity == "regional" and editing_item is None:
+        edit_entity = None
+        edit_id = None
+    if edit_entity == "centro" and (editing_item is None or editing_item["regional_id"] != regional_id):
+        edit_entity = None
+        edit_id = None
+    if edit_entity in {"coordinacion", "sede"} and (editing_item is None or editing_item["centro_id"] != centro_id):
+        edit_entity = None
+        edit_id = None
+    if edit_entity in {"instructor", "aprendiz"} and (
+        editing_item is None or editing_item["coordinacion_id"] != coordinacion_id
+    ):
+        edit_entity = None
+        edit_id = None
+    if edit_entity == "ambiente" and (editing_item is None or editing_item["sede_id"] != sede_id):
+        edit_entity = None
+        edit_id = None
+
+    return {
+        "selected_regional": regional,
+        "selected_centro": centro,
+        "selected_coordinacion": coordinacion,
+        "selected_sede": sede,
+        "regionales": get_entities("regional", order_by="nombre ASC"),
+        "centros": get_entities("centro", "id_regional = ?", (regional_id,), "nombre ASC") if regional_id else [],
+        "coordinaciones": get_entities("coordinacion", "id_centro = ?", (centro_id,), "nombre ASC") if centro_id else [],
+        "sedes": get_entities("sede", "id_centro = ?", (centro_id,), "nombre ASC") if centro_id else [],
+        "instructores": (
+            get_entities("instructor", "id_coordinacion = ?", (coordinacion_id,), "nombres ASC, apellidos ASC")
+            if coordinacion_id
+            else []
+        ),
+        "aprendices": (
+            get_entities("aprendiz", "id_coordinacion = ?", (coordinacion_id,), "nombres ASC, apellidos ASC")
+            if coordinacion_id
+            else []
+        ),
+        "ambientes": get_entities("ambiente", "id_sede = ?", (sede_id,), "nombre ASC") if sede_id else [],
+        "edit_entity": edit_entity,
+        "edit_id": edit_id,
+        "editing_item": editing_item,
+        "regional_id": regional_id,
+        "centro_id": centro_id,
+        "coordinacion_id": coordinacion_id,
+        "sede_id": sede_id,
+    }
+
+
+def structure_redirect_args(form_data, overrides=None):
+    args = {
+        "regional_id": parse_int(form_data.get("regional_id")),
+        "centro_id": parse_int(form_data.get("centro_id")),
+        "coordinacion_id": parse_int(form_data.get("coordinacion_id")),
+        "sede_id": parse_int(form_data.get("sede_id")),
+    }
+    overrides = overrides or {}
+    args.update(overrides)
+    return {key: value for key, value in args.items() if value}
+
+
+def entity_form_data(entity, form):
+    data = {}
+    form_to_db = ENTITY_CONFIG[entity].get("form_to_db", {})
+    for field in ENTITY_CONFIG[entity]["fields"]:
+        form_field = next((name for name, db_name in form_to_db.items() if db_name == field), field)
+        raw = form.get(form_field, "").strip() if field not in {"capacidad"} else form.get(form_field, "").strip()
+        if field.endswith("_id") or field.startswith("id_"):
+            data[field] = parse_int(raw)
+        elif field == "capacidad":
+            data[field] = parse_int(raw) if raw else None
+        else:
+            data[field] = raw
+    return data
+
+
+def validate_entity_payload(entity, data):
+    config = ENTITY_CONFIG[entity]
+    for field in config["required"]:
+        if data.get(field) in (None, ""):
+            return f"El campo {field.replace('_', ' ')} es obligatorio."
+
+    if entity == "ambiente" and data["capacidad"] is not None and data["capacidad"] < 0:
+        return "La capacidad no puede ser negativa."
+
+    return None
+
+
+def insert_entity(entity, data):
+    config = ENTITY_CONFIG[entity]
+    columns = ", ".join(config["fields"])
+    placeholders = ", ".join(["?"] * len(config["fields"]))
+    values = tuple(data[field] for field in config["fields"])
+    db = get_db()
+    cursor = db.execute(
+        f"INSERT INTO {config['table']} ({columns}) VALUES ({placeholders})",
+        values,
+    )
+    db.commit()
+    return cursor.lastrowid
+
+
+def update_entity(entity, item_id, data):
+    config = ENTITY_CONFIG[entity]
+    assignments = ", ".join([f"{field} = ?" for field in config["fields"]])
+    values = tuple(data[field] for field in config["fields"]) + (item_id,)
+    db = get_db()
+    db.execute(
+        f"UPDATE {config['table']} SET {assignments} WHERE id = ?",
+        values,
+    )
+    db.commit()
+
+
+def delete_entity(entity, item_id):
+    db = get_db()
+    db.execute(f"DELETE FROM {ENTITY_CONFIG[entity]['table']} WHERE id = ?", (item_id,))
+    db.commit()
+
+
+def entity_select_clause(entity):
+    config = ENTITY_CONFIG[entity]
+    alias_map = config.get("select_aliases", {})
+    fields = ["id"]
+    for field in config["fields"]:
+        alias = alias_map.get(field)
+        fields.append(f"{field} AS {alias}" if alias else field)
+    if entity == "instructor" and "id_usuario AS user_id" not in fields and "user_id" not in alias_map.values():
+        fields.append("id_usuario AS user_id")
+    return ", ".join(fields)
 
 
 @app.route("/")
@@ -447,9 +996,7 @@ def admin_users_create():
         flash("El rol seleccionado no es valido.", "danger")
         return redirect(url_for("admin_users"))
 
-    db = get_db()
-    existing = get_user_by_email(email)
-    if existing is not None:
+    if get_user_by_email(email) is not None:
         flash("Ya existe un usuario registrado con ese correo.", "danger")
         return render_template(
             "admin_users.html",
@@ -460,9 +1007,10 @@ def admin_users_create():
             editing_user=None,
         )
 
+    db = get_db()
     db.execute(
         """
-        INSERT INTO users (email, password_hash, role, name, active)
+        INSERT INTO usuario (correo, contrasena_hash, rol, nombre, activo)
         VALUES (?, ?, ?, ?, ?)
         """,
         (email, generate_password_hash(password), role, name, active),
@@ -530,8 +1078,8 @@ def admin_users_update(user_id):
     if password:
         db.execute(
             """
-            UPDATE users
-            SET name = ?, email = ?, role = ?, active = ?, password_hash = ?
+            UPDATE usuario
+            SET nombre = ?, correo = ?, rol = ?, activo = ?, contrasena_hash = ?
             WHERE id = ?
             """,
             (name, email, role, active, generate_password_hash(password), user_id),
@@ -539,8 +1087,8 @@ def admin_users_update(user_id):
     else:
         db.execute(
             """
-            UPDATE users
-            SET name = ?, email = ?, role = ?, active = ?
+            UPDATE usuario
+            SET nombre = ?, correo = ?, rol = ?, activo = ?
             WHERE id = ?
             """,
             (name, email, role, active, user_id),
@@ -567,10 +1115,165 @@ def admin_users_delete(user_id):
         return redirect(url_for("admin_users"))
 
     db = get_db()
-    db.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    db.execute("DELETE FROM usuario WHERE id = ?", (user_id,))
     db.commit()
     flash("Usuario eliminado correctamente.", "success")
     return redirect(url_for("admin_users"))
+
+
+@app.route("/admin/structure")
+@role_required("Administrador")
+def admin_structure():
+    context = normalize_structure_context(request.args)
+    return render_template("admin_structure.html", user=current_user(), **context)
+
+
+@app.post("/admin/structure/<entity>/create")
+@role_required("Administrador")
+def admin_structure_create(entity):
+    if entity not in ENTITY_CONFIG:
+        return redirect(url_for("admin_structure"))
+
+    data = entity_form_data(entity, request.form)
+    validation_error = validate_entity_payload(entity, data)
+    if validation_error:
+        flash(validation_error, "danger")
+        return redirect(url_for("admin_structure", **structure_redirect_args(request.form)))
+
+    created_id = None
+    try:
+        created_id = insert_entity(entity, data)
+        if entity == "instructor":
+            create_linked_instructor_user(created_id, data)
+    except sqlite3.IntegrityError:
+        flash(f"No fue posible crear {ENTITY_CONFIG[entity]['label'].lower()}. Verifica que no exista un dato duplicado.", "danger")
+        return redirect(url_for("admin_structure", **structure_redirect_args(request.form)))
+    except ValueError as error:
+        if entity == "instructor" and created_id is not None:
+            delete_entity("instructor", created_id)
+        flash(str(error), "danger")
+        return redirect(url_for("admin_structure", **structure_redirect_args(request.form)))
+    redirect_args = structure_redirect_args(
+        request.form,
+        {ENTITY_CONFIG[entity]["context_key"]: created_id, "edit_entity": None, "edit_id": None},
+    )
+    flash(f"{ENTITY_CONFIG[entity]['label']} creada correctamente.", "success")
+    return redirect(url_for("admin_structure", **redirect_args))
+
+
+@app.get("/admin/structure/<entity>/<int:item_id>/edit")
+@role_required("Administrador")
+def admin_structure_edit(entity, item_id):
+    if entity not in ENTITY_CONFIG:
+        return redirect(url_for("admin_structure"))
+
+    item = get_entity(entity, item_id)
+    if item is None:
+        flash("El elemento solicitado no existe.", "danger")
+        return redirect(url_for("admin_structure"))
+
+    overrides = {"edit_entity": entity, "edit_id": item_id}
+    if entity == "regional":
+        overrides["regional_id"] = item_id
+    elif entity == "centro":
+        overrides["regional_id"] = item["regional_id"]
+        overrides["centro_id"] = item_id
+    elif entity in {"coordinacion", "sede"}:
+        centro = get_entity("centro", item["centro_id"])
+        overrides["regional_id"] = centro["regional_id"]
+        overrides["centro_id"] = item["centro_id"]
+        overrides[ENTITY_CONFIG[entity]["context_key"]] = item_id
+    elif entity in {"instructor", "aprendiz"}:
+        coordinacion = get_entity("coordinacion", item["coordinacion_id"])
+        centro = get_entity("centro", coordinacion["centro_id"])
+        overrides["regional_id"] = centro["regional_id"]
+        overrides["centro_id"] = centro["id"]
+        overrides["coordinacion_id"] = coordinacion["id"]
+    elif entity == "ambiente":
+        sede = get_entity("sede", item["sede_id"])
+        centro = get_entity("centro", sede["centro_id"])
+        overrides["regional_id"] = centro["regional_id"]
+        overrides["centro_id"] = centro["id"]
+        overrides["sede_id"] = sede["id"]
+
+    return redirect(url_for("admin_structure", **overrides))
+
+
+@app.post("/admin/structure/<entity>/<int:item_id>/update")
+@role_required("Administrador")
+def admin_structure_update(entity, item_id):
+    if entity not in ENTITY_CONFIG:
+        return redirect(url_for("admin_structure"))
+
+    existing = get_entity(entity, item_id)
+    if existing is None:
+        flash("El elemento solicitado no existe.", "danger")
+        return redirect(url_for("admin_structure"))
+
+    data = entity_form_data(entity, request.form)
+    validation_error = validate_entity_payload(entity, data)
+    if validation_error:
+        flash(validation_error, "danger")
+        redirect_args = structure_redirect_args(
+            request.form,
+            {"edit_entity": entity, "edit_id": item_id},
+        )
+        return redirect(url_for("admin_structure", **redirect_args))
+
+    try:
+        update_entity(entity, item_id, data)
+        if entity == "instructor":
+            sync_instructor_user(item_id, data)
+    except sqlite3.IntegrityError:
+        flash(f"No fue posible actualizar {ENTITY_CONFIG[entity]['label'].lower()}. Verifica los datos ingresados.", "danger")
+        redirect_args = structure_redirect_args(
+            request.form,
+            {"edit_entity": entity, "edit_id": item_id},
+        )
+        return redirect(url_for("admin_structure", **redirect_args))
+    except ValueError as error:
+        flash(str(error), "danger")
+        redirect_args = structure_redirect_args(
+            request.form,
+            {"edit_entity": entity, "edit_id": item_id},
+        )
+        return redirect(url_for("admin_structure", **redirect_args))
+    flash(f"{ENTITY_CONFIG[entity]['label']} actualizada correctamente.", "success")
+    redirect_args = structure_redirect_args(request.form, {"edit_entity": None, "edit_id": None})
+    return redirect(url_for("admin_structure", **redirect_args))
+
+
+@app.post("/admin/structure/<entity>/<int:item_id>/delete")
+@role_required("Administrador")
+def admin_structure_delete(entity, item_id):
+    if entity not in ENTITY_CONFIG:
+        return redirect(url_for("admin_structure"))
+
+    item = get_entity(entity, item_id)
+    if item is None:
+        flash("El elemento solicitado no existe.", "danger")
+        return redirect(url_for("admin_structure"))
+
+    redirect_args = structure_redirect_args(request.form)
+    if entity == "regional" and redirect_args.get("regional_id") == item_id:
+        redirect_args.pop("regional_id", None)
+        redirect_args.pop("centro_id", None)
+        redirect_args.pop("coordinacion_id", None)
+        redirect_args.pop("sede_id", None)
+    elif entity == "centro" and redirect_args.get("centro_id") == item_id:
+        redirect_args.pop("centro_id", None)
+        redirect_args.pop("coordinacion_id", None)
+        redirect_args.pop("sede_id", None)
+    elif entity == "coordinacion" and redirect_args.get("coordinacion_id") == item_id:
+        redirect_args.pop("coordinacion_id", None)
+    elif entity == "sede" and redirect_args.get("sede_id") == item_id:
+        redirect_args.pop("sede_id", None)
+
+    if entity == "instructor":
+        delete_linked_instructor_user(item_id)
+    delete_entity(entity, item_id)
+    flash(f"{ENTITY_CONFIG[entity]['label']} eliminada correctamente.", "success")
+    return redirect(url_for("admin_structure", **redirect_args))
 
 
 if __name__ == "__main__":
