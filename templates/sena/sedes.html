@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}Sedes{% endblock %}
+{% block nav_estructura_open %}show{% endblock %}
+{% block nav_sedes %}active{% endblock %}
+
+{% block content %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <div>
+        <div class="text-xs font-weight-bold text-sena text-uppercase mb-1">Estructura SENA</div>
+        <h1 class="h3 mb-0 text-gray-800">Sedes</h1>
+    </div>
+    <button class="btn btn-sm btn-sena shadow-sm" data-toggle="modal" data-target="#modalCrear">
+        <i class="fas fa-plus fa-sm mr-1"></i> Nueva Sede
+    </button>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-sena">Listado de Sedes</h6>
+        <span class="badge badge-sena badge-pill">{{ sedes|length }}</span>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered sena-table" id="dataTable" width="100%">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Nombre</th>
+                        <th>Centro</th>
+                        <th>Dirección</th>
+                        <th>Ambientes</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in sedes %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ s.nombre }}</td>
+                        <td>{{ s.centro.nombre }}</td>
+                        <td>{{ s.direccion }}</td>
+                        <td>{{ s.ambientes|length }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-sena"
+                                    data-toggle="modal" data-target="#modalEditar"
+                                    data-id="{{ s.sede_id }}"
+                                    data-nombre="{{ s.nombre }}"
+                                    data-centro="{{ s.centro_id }}"
+                                    data-barrio="{{ s.barrio or '' }}"
+                                    data-direccion="{{ s.direccion }}"
+                                    data-postal="{{ s.codigo_postal or '' }}">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                            <form method="post" action="{{ url_for('sena.eliminar_sede', sede_id=s.sede_id) }}"
+                                  class="d-inline" onsubmit="return confirm('¿Eliminar esta sede?')">
+                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" class="text-center text-muted">Sin registros</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Crear -->
+<div class="modal fade" id="modalCrear" tabindex="-1">
+    <div class="modal-dialog">
+        <form method="post" action="{{ url_for('sena.crear_sede') }}">
+            <div class="modal-content">
+                <div class="modal-header border-bottom-sena">
+                    <h5 class="modal-title font-weight-bold text-sena">Nueva Sede</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Centro <span class="text-danger">*</span></label>
+                        <select name="centro_id" class="form-control" required>
+                            <option value="">Seleccionar...</option>
+                            {% for c in centros %}
+                            <option value="{{ c.centro_id }}">{{ c.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre <span class="text-danger">*</span></label>
+                        <input type="text" name="nombre" class="form-control" required maxlength="255">
+                    </div>
+                    <div class="form-group">
+                        <label>Dirección <span class="text-danger">*</span></label>
+                        <input type="text" name="direccion" class="form-control" required maxlength="255">
+                    </div>
+                    <div class="form-group">
+                        <label>Barrio</label>
+                        <input type="text" name="barrio" class="form-control" maxlength="255">
+                    </div>
+                    <div class="form-group">
+                        <label>Código Postal</label>
+                        <input type="text" name="codigo_postal" class="form-control" maxlength="20">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sena">Guardar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Editar -->
+<div class="modal fade" id="modalEditar" tabindex="-1">
+    <div class="modal-dialog">
+        <form method="post" action="" id="formEditar">
+            <div class="modal-content">
+                <div class="modal-header border-bottom-sena">
+                    <h5 class="modal-title font-weight-bold text-sena">Editar Sede</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Centro <span class="text-danger">*</span></label>
+                        <select name="centro_id" id="editCentro" class="form-control" required>
+                            {% for c in centros %}
+                            <option value="{{ c.centro_id }}">{{ c.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre <span class="text-danger">*</span></label>
+                        <input type="text" name="nombre" id="editNombre" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Dirección <span class="text-danger">*</span></label>
+                        <input type="text" name="direccion" id="editDireccion" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Barrio</label>
+                        <input type="text" name="barrio" id="editBarrio" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Código Postal</label>
+                        <input type="text" name="codigo_postal" id="editPostal" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sena">Actualizar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$('#modalEditar').on('show.bs.modal', function(e) {
+    var btn = $(e.relatedTarget);
+    $('#editNombre').val(btn.data('nombre'));
+    $('#editCentro').val(btn.data('centro'));
+    $('#editDireccion').val(btn.data('direccion'));
+    $('#editBarrio').val(btn.data('barrio'));
+    $('#editPostal').val(btn.data('postal'));
+    $('#formEditar').attr('action', '/sena/sedes/' + btn.data('id') + '/editar');
+});
+</script>
+{% endblock %}

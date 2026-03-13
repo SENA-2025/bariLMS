@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Niveles{% endblock %}
+{% block nav_formacion_open %}show{% endblock %}
+{% block nav_niveles %}active{% endblock %}
+
+{% block content %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <div>
+        <div class="text-xs font-weight-bold text-sena text-uppercase mb-1">Formación</div>
+        <h1 class="h3 mb-0 text-gray-800">Niveles de Formación</h1>
+    </div>
+    <button class="btn btn-sm btn-sena shadow-sm" data-toggle="modal" data-target="#modalCrear">
+        <i class="fas fa-plus fa-sm mr-1"></i> Nuevo Nivel
+    </button>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-4">
+        <div class="card border-left-sena shadow py-2">
+            <div class="card-body py-1">
+                <div class="text-xs font-weight-bold text-sena text-uppercase mb-1">Niveles registrados</div>
+                <div class="h4 font-weight-bold text-gray-800">{{ niveles|length }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-sena">Niveles registrados</h6>
+        <span class="badge badge-sena badge-pill">{{ niveles|length }}</span>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered sena-table" id="dataTable" width="100%">
+                <thead><tr><th>#</th><th>Nombre</th><th>Programas</th><th>Creado</th><th>Acciones</th></tr></thead>
+                <tbody>
+                    {% for n in niveles %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>
+                            <span class="badge badge-{% if 'tecnologo' in n.nombre.lower() %}primary{% elif 'tecnico' in n.nombre.lower() %}success{% else %}secondary{% endif %} px-2 py-1">
+                                {{ n.nombre }}
+                            </span>
+                        </td>
+                        <td>{{ n.programas|length }}</td>
+                        <td>{{ n.fecha_creacion.strftime('%d/%m/%Y') }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-sena" data-toggle="modal" data-target="#modalEditar"
+                                    data-id="{{ n.nivel_id }}" data-nombre="{{ n.nombre }}">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                            <form method="post" action="{{ url_for('formacion.eliminar_nivel', nivel_id=n.nivel_id) }}"
+                                  class="d-inline" onsubmit="return confirm('¿Eliminar?')">
+                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="text-center text-muted">Sin registros. Cree los niveles: Técnico, Tecnólogo, Curso Corto.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalCrear" tabindex="-1">
+    <div class="modal-dialog">
+        <form method="post" action="{{ url_for('formacion.crear_nivel') }}">
+            <div class="modal-content">
+                <div class="modal-header border-bottom-sena">
+                    <h5 class="modal-title font-weight-bold text-sena">Nuevo Nivel</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Nombre <span class="text-danger">*</span></label>
+                        <input type="text" name="nombre" class="form-control" required maxlength="255"
+                               placeholder="Ej: Técnico, Tecnólogo, Curso Corto Complementario">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sena">Guardar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEditar" tabindex="-1">
+    <div class="modal-dialog">
+        <form method="post" action="" id="formEditar">
+            <div class="modal-content">
+                <div class="modal-header border-bottom-sena">
+                    <h5 class="modal-title font-weight-bold text-sena">Editar Nivel</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Nombre <span class="text-danger">*</span></label>
+                        <input type="text" name="nombre" id="editNombre" class="form-control" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sena">Actualizar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$('#modalEditar').on('show.bs.modal', function(e) {
+    var btn = $(e.relatedTarget);
+    $('#editNombre').val(btn.data('nombre'));
+    $('#formEditar').attr('action', '/formacion/niveles/' + btn.data('id') + '/editar');
+});
+</script>
+{% endblock %}

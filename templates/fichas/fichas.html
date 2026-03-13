@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+{% block title %}Fichas{% endblock %}
+{% block nav_fichas %}active{% endblock %}
+
+{% block content %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <div>
+        <div class="text-xs font-weight-bold text-sena text-uppercase mb-1">Gestión Académica</div>
+        <h1 class="h3 mb-0 text-gray-800">Fichas de Formación</h1>
+    </div>
+    <button class="btn btn-sm btn-sena shadow-sm" data-toggle="modal" data-target="#modalCrear">
+        <i class="fas fa-plus fa-sm mr-1"></i> Nueva Ficha
+    </button>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-sena">Fichas registradas</h6>
+        <span class="badge badge-sena badge-pill">{{ fichas|length }}</span>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered sena-table" id="dataTable" width="100%">
+                <thead>
+                    <tr>
+                        <th>Código</th><th>Programa</th><th>Nivel</th><th>Instructor líder</th>
+                        <th>Coordinación</th><th>Aprendices</th><th>Inicio</th><th>Fin</th><th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for f in fichas %}
+                    <tr>
+                        <td><strong>{{ f.codigo }}</strong></td>
+                        <td>{{ f.programa.nombre }}</td>
+                        <td><span class="badge badge-info">{{ f.programa.nivel.nombre }}</span></td>
+                        <td>{{ f.instructor_lider.usuario.nombre_completo }}</td>
+                        <td>{{ f.coordinacion.nombre }}</td>
+                        <td>{{ f.aprendices|length }}</td>
+                        <td>{{ f.fecha_inicio.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ f.fecha_fin.strftime('%d/%m/%Y') }}</td>
+                        <td>
+                            <a href="{{ url_for('fichas.detalle', ficha_id=f.ficha_id) }}"
+                               class="btn btn-sm btn-sena" title="Ver detalle">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <button class="btn btn-sm btn-outline-sena" data-toggle="modal" data-target="#modalEditar"
+                                    data-id="{{ f.ficha_id }}"
+                                    data-codigo="{{ f.codigo }}"
+                                    data-programa="{{ f.programa_id }}"
+                                    data-coordinacion="{{ f.coordinacion_id }}"
+                                    data-ambiente="{{ f.ambiente_id }}"
+                                    data-instructor="{{ f.instructor_lider_id }}"
+                                    data-inicio="{{ f.fecha_inicio.strftime('%Y-%m-%d') }}"
+                                    data-productiva="{{ f.fecha_etapa_productiva.strftime('%Y-%m-%d') }}"
+                                    data-fin="{{ f.fecha_fin.strftime('%Y-%m-%d') }}">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                            <form method="post" action="{{ url_for('fichas.eliminar', ficha_id=f.ficha_id) }}"
+                                  class="d-inline" onsubmit="return confirm('¿Eliminar ficha {{ f.codigo }}?')">
+                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="9" class="text-center text-muted">Sin registros</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Crear -->
+<div class="modal fade" id="modalCrear" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <form method="post" action="{{ url_for('fichas.crear') }}">
+            <div class="modal-content">
+                <div class="modal-header border-bottom-sena">
+                    <h5 class="modal-title font-weight-bold text-sena">Nueva Ficha</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Código de ficha <span class="text-danger">*</span></label>
+                                <input type="number" name="codigo" class="form-control" required min="1">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Programa de formación <span class="text-danger">*</span></label>
+                                <select name="programa_id" class="form-control" required>
+                                    <option value="">Seleccionar...</option>
+                                    {% for p in programas %}
+                                    <option value="{{ p.programa_id }}">[{{ p.codigo }}] {{ p.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Coordinación <span class="text-danger">*</span></label>
+                                <select name="coordinacion_id" class="form-control" required>
+                                    <option value="">Seleccionar...</option>
+                                    {% for c in coordinaciones %}
+                                    <option value="{{ c.coordinacion_id }}">{{ c.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Ambiente <span class="text-danger">*</span></label>
+                                <select name="ambiente_id" class="form-control" required>
+                                    <option value="">Seleccionar...</option>
+                                    {% for a in ambientes %}
+                                    <option value="{{ a.ambiente_id }}">{{ a.nombre }} — {{ a.sede.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label>Instructor líder <span class="text-danger">*</span></label>
+                                <select name="instructor_lider_id" class="form-control" required>
+                                    <option value="">Seleccionar...</option>
+                                    {% for i in instructores %}
+                                    <option value="{{ i.instructor_id }}">{{ i.usuario.nombre_completo }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Fecha inicio <span class="text-danger">*</span></label>
+                                <input type="date" name="fecha_inicio" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Fecha etapa productiva <span class="text-danger">*</span></label>
+                                <input type="date" name="fecha_etapa_productiva" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Fecha fin <span class="text-danger">*</span></label>
+                                <input type="date" name="fecha_fin" class="form-control" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sena">Guardar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Editar -->
+<div class="modal fade" id="modalEditar" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <form method="post" action="" id="formEditar">
+            <div class="modal-content">
+                <div class="modal-header border-bottom-sena">
+                    <h5 class="modal-title font-weight-bold text-sena">Editar Ficha</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Código <span class="text-danger">*</span></label>
+                                <input type="number" name="codigo" id="editCodigo" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Programa <span class="text-danger">*</span></label>
+                                <select name="programa_id" id="editPrograma" class="form-control" required>
+                                    {% for p in programas %}
+                                    <option value="{{ p.programa_id }}">[{{ p.codigo }}] {{ p.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Coordinación <span class="text-danger">*</span></label>
+                                <select name="coordinacion_id" id="editCoordinacion" class="form-control" required>
+                                    {% for c in coordinaciones %}
+                                    <option value="{{ c.coordinacion_id }}">{{ c.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Ambiente <span class="text-danger">*</span></label>
+                                <select name="ambiente_id" id="editAmbiente" class="form-control" required>
+                                    {% for a in ambientes %}
+                                    <option value="{{ a.ambiente_id }}">{{ a.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label>Instructor líder <span class="text-danger">*</span></label>
+                                <select name="instructor_lider_id" id="editInstructor" class="form-control" required>
+                                    {% for i in instructores %}
+                                    <option value="{{ i.instructor_id }}">{{ i.usuario.nombre_completo }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Fecha inicio</label>
+                                <input type="date" name="fecha_inicio" id="editInicio" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Etapa productiva</label>
+                                <input type="date" name="fecha_etapa_productiva" id="editProductiva" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Fecha fin</label>
+                                <input type="date" name="fecha_fin" id="editFin" class="form-control" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sena">Actualizar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$('#modalEditar').on('show.bs.modal', function(e) {
+    var btn = $(e.relatedTarget);
+    $('#editCodigo').val(btn.data('codigo'));
+    $('#editPrograma').val(btn.data('programa'));
+    $('#editCoordinacion').val(btn.data('coordinacion'));
+    $('#editAmbiente').val(btn.data('ambiente'));
+    $('#editInstructor').val(btn.data('instructor'));
+    $('#editInicio').val(btn.data('inicio'));
+    $('#editProductiva').val(btn.data('productiva'));
+    $('#editFin').val(btn.data('fin'));
+    $('#formEditar').attr('action', '/fichas/' + btn.data('id') + '/editar');
+});
+</script>
+{% endblock %}

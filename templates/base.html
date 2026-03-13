@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>BARÍ LMS | {% block title %}{% endblock %}</title>
+    <link href="{{ url_for('static', filename='vendor/fontawesome-free/css/all.min.css') }}" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/sb-admin-2.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/sena-learn.css') }}" rel="stylesheet">
+    {% block extra_css %}{% endblock %}
+</head>
+<body id="page-top">
+<div id="wrapper">
+
+    <!-- Sidebar -->
+    <ul class="navbar-nav bg-gradient-sena sidebar sidebar-dark accordion" id="accordionSidebar">
+        <a class="sidebar-brand d-flex align-items-center justify-content-center"
+           href="{{ url_for('dashboard.dashboard_view', role_slug=session_user.dashboard_slug) if session_user else '/' }}">
+            <div class="sidebar-brand-icon">
+                <img src="{{ url_for('static', filename='img/logo-sena-blanco.png') }}" alt="SENA" class="sena-brand-logo">
+            </div>
+            <div class="sidebar-brand-text mx-3">BARÍ LMS</div>
+        </a>
+        <hr class="sidebar-divider my-0">
+
+        <!-- Dashboard -->
+        <li class="nav-item {% block nav_dashboard %}{% endblock %}">
+            <a class="nav-link" href="{{ url_for('dashboard.dashboard_view', role_slug=session_user.dashboard_slug) if session_user else '/' }}">
+                <i class="fas fa-fw fa-tachometer-alt"></i><span>Panel principal</span>
+            </a>
+        </li>
+        <hr class="sidebar-divider">
+
+        {% if session_user and session_user.role in ['Administrador', 'Administrativo'] %}
+        <!-- Estructura SENA -->
+        <div class="sidebar-heading">Estructura SENA</div>
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="#collapseEstructura" data-toggle="collapse" data-target="#collapseEstructura" aria-expanded="false">
+                <i class="fas fa-fw fa-sitemap"></i><span>Estructura</span>
+            </a>
+            <div id="collapseEstructura" class="collapse {% block nav_estructura_open %}{% endblock %}" data-parent="#accordionSidebar">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <a class="collapse-item {% block nav_regionales %}{% endblock %}" href="{{ url_for('sena.regionales') }}">Regionales</a>
+                    <a class="collapse-item {% block nav_centros %}{% endblock %}" href="{{ url_for('sena.centros') }}">Centros</a>
+                    <a class="collapse-item {% block nav_sedes %}{% endblock %}" href="{{ url_for('sena.sedes') }}">Sedes</a>
+                    <a class="collapse-item {% block nav_ambientes %}{% endblock %}" href="{{ url_for('sena.ambientes') }}">Ambientes</a>
+                    <a class="collapse-item {% block nav_coordinaciones %}{% endblock %}" href="{{ url_for('sena.coordinaciones') }}">Coordinaciones</a>
+                </div>
+            </div>
+        </li>
+        <hr class="sidebar-divider">
+
+        <!-- Formación -->
+        <div class="sidebar-heading">Formación</div>
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="#collapseFormacion" data-toggle="collapse" data-target="#collapseFormacion" aria-expanded="false">
+                <i class="fas fa-fw fa-graduation-cap"></i><span>Programas</span>
+            </a>
+            <div id="collapseFormacion" class="collapse {% block nav_formacion_open %}{% endblock %}" data-parent="#accordionSidebar">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <a class="collapse-item {% block nav_modalidades %}{% endblock %}" href="{{ url_for('formacion.modalidades') }}">Modalidades</a>
+                    <a class="collapse-item {% block nav_niveles %}{% endblock %}" href="{{ url_for('formacion.niveles') }}">Niveles</a>
+                    <a class="collapse-item {% block nav_programas %}{% endblock %}" href="{{ url_for('formacion.programas') }}">Programas</a>
+                </div>
+            </div>
+        </li>
+
+        <!-- Instructores -->
+        <li class="nav-item {% block nav_instructores %}{% endblock %}">
+            <a class="nav-link" href="{{ url_for('instructores.lista') }}">
+                <i class="fas fa-fw fa-chalkboard-teacher"></i><span>Instructores</span>
+            </a>
+        </li>
+
+        <!-- Fichas -->
+        <li class="nav-item {% block nav_fichas %}{% endblock %}">
+            <a class="nav-link" href="{{ url_for('fichas.lista') }}">
+                <i class="fas fa-fw fa-id-badge"></i><span>Fichas</span>
+            </a>
+        </li>
+
+        <!-- Aprendices -->
+        <li class="nav-item {% block nav_aprendices %}{% endblock %}">
+            <a class="nav-link" href="{{ url_for('aprendices.lista') }}">
+                <i class="fas fa-fw fa-user-graduate"></i><span>Aprendices</span>
+            </a>
+        </li>
+        <hr class="sidebar-divider">
+
+        {% if session_user.role == 'Administrador' %}
+        <!-- Admin -->
+        <div class="sidebar-heading">Administración</div>
+        <li class="nav-item {% block nav_usuarios %}{% endblock %}">
+            <a class="nav-link" href="{{ url_for('dashboard.usuarios_view') }}">
+                <i class="fas fa-fw fa-users-cog"></i><span>Usuarios y roles</span>
+            </a>
+        </li>
+        <hr class="sidebar-divider">
+        {% endif %}
+        {% endif %}
+
+        {% if session_user and session_user.role == 'Instructor' %}
+        <div class="sidebar-heading">Mis fichas</div>
+        <li class="nav-item {% block nav_mis_fichas %}{% endblock %}">
+            <a class="nav-link" href="{{ url_for('fichas.lista') }}">
+                <i class="fas fa-fw fa-id-badge"></i><span>Fichas asignadas</span>
+            </a>
+        </li>
+        <hr class="sidebar-divider">
+        {% endif %}
+
+        <!-- Logout -->
+        <li class="nav-item">
+            <form method="post" action="{{ url_for('auth.logout') }}">
+                <button type="submit" class="nav-link btn btn-link text-left w-100 logout-link">
+                    <i class="fas fa-fw fa-sign-out-alt"></i><span>Cerrar sesion</span>
+                </button>
+            </form>
+        </li>
+    </ul>
+    <!-- End Sidebar -->
+
+    <div id="content-wrapper" class="d-flex flex-column">
+        <div id="content">
+            <!-- Topbar -->
+            <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
+                <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
+                    <i class="fa fa-bars"></i>
+                </button>
+                <div class="mr-auto">
+                    {% if session_user %}
+                        <span class="sena-role-pill">{{ session_user.role }}</span>
+                    {% endif %}
+                </div>
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item no-arrow">
+                        <span class="nav-link text-gray-700">
+                            <span class="mr-2 d-none d-lg-inline">{{ session_user.name if session_user else '' }}</span>
+                            <i class="fas fa-user-circle fa-lg"></i>
+                        </span>
+                    </li>
+                </ul>
+            </nav>
+            <!-- End Topbar -->
+
+            <div class="container-fluid">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+
+        <footer class="sticky-footer bg-white">
+            <div class="container my-auto">
+                <div class="copyright text-center my-auto">
+                    <span>BARÍ LMS SENA &copy; 2026</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='vendor/jquery/jquery.min.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/jquery-easing/jquery.easing.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/sb-admin-2.min.js') }}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

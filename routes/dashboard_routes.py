@@ -20,7 +20,11 @@ DASHBOARDS = {
         "menu_heading": "Administracion",
         "menu": [
             {"icon": "fa-users-cog", "label": "Usuarios y roles", "url": "dashboard.usuarios_view"},
-            {"icon": "fa-chart-pie", "label": "Indicadores"},
+            {"icon": "fa-sitemap", "label": "Estructura SENA", "url": "sena.regionales"},
+            {"icon": "fa-graduation-cap", "label": "Programas", "url": "formacion.programas"},
+            {"icon": "fa-id-badge", "label": "Fichas", "url": "fichas.lista"},
+            {"icon": "fa-chalkboard-teacher", "label": "Instructores", "url": "instructores.lista"},
+            {"icon": "fa-user-graduate", "label": "Aprendices", "url": "aprendices.lista"},
         ],
         "metrics": [
             {"label": "Usuarios activos", "value": "1,284", "icon": "fa-users"},
@@ -51,8 +55,10 @@ DASHBOARDS = {
         "footer": "BARÍ LMS SENA - Administrativo",
         "menu_heading": "Operacion",
         "menu": [
-            {"icon": "fa-folder-open", "label": "Fichas y programas"},
-            {"icon": "fa-school", "label": "Ambientes y sedes"},
+            {"icon": "fa-id-badge", "label": "Fichas", "url": "fichas.lista"},
+            {"icon": "fa-user-graduate", "label": "Aprendices", "url": "aprendices.lista"},
+            {"icon": "fa-chalkboard-teacher", "label": "Instructores", "url": "instructores.lista"},
+            {"icon": "fa-graduation-cap", "label": "Programas", "url": "formacion.programas"},
         ],
         "metrics": [
             {"label": "Fichas activas", "value": "86", "icon": "fa-id-badge"},
@@ -140,14 +146,6 @@ DASHBOARDS = {
     },
 }
 
-
-@dashboard_routes.context_processor
-def inject_session_user():
-    from flask import session as flask_session
-    return {
-        "session_user": get_current_user(),
-        "session_user_email": flask_session.get("user_email", ""),
-    }
 
 
 @dashboard_routes.route("/dashboard/<role_slug>")

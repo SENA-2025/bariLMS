@@ -540,5 +540,74 @@ INSERT INTO catalogo_eps (nombre) VALUES
 INSERT INTO ubicacion_paises (nombre) VALUES ('Colombia');
 
 -- ================================================================
+--   11b. Tablas adicionales del LMS
+-- ================================================================
+
+-- Proyectos formativos (uno por ficha)
+DROP TABLE IF EXISTS actividades_aprendizaje;
+DROP TABLE IF EXISTS actividades_proyecto;
+DROP TABLE IF EXISTS fases;
+DROP TABLE IF EXISTS proyectos_formativos;
+DROP TABLE IF EXISTS ficha_instructor;
+
+SET FOREIGN_KEY_CHECKS = 0;
+
+CREATE TABLE proyectos_formativos (
+    proyecto_id     CHAR(36)        NOT NULL PRIMARY KEY,
+    ficha_id        CHAR(36)        NOT NULL UNIQUE,
+    titulo          VARCHAR(255)    NOT NULL,
+    descripcion     TEXT            NULL DEFAULT NULL,
+    fecha_creacion  TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    fecha_actualizacion TIMESTAMP   NULL DEFAULT NULL,
+    CONSTRAINT fk_pf__ficha FOREIGN KEY (ficha_id) REFERENCES fichas(ficha_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE fases (
+    fase_id         CHAR(36)        NOT NULL PRIMARY KEY,
+    proyecto_id     CHAR(36)        NOT NULL,
+    nombre          VARCHAR(255)    NOT NULL,
+    descripcion     TEXT            NULL DEFAULT NULL,
+    orden           TINYINT         NOT NULL DEFAULT 1,
+    fecha_creacion  TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    fecha_actualizacion TIMESTAMP   NULL DEFAULT NULL,
+    CONSTRAINT fk_fases__proyecto FOREIGN KEY (proyecto_id) REFERENCES proyectos_formativos(proyecto_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE actividades_proyecto (
+    actividad_proyecto_id CHAR(36)  NOT NULL PRIMARY KEY,
+    fase_id         CHAR(36)        NOT NULL,
+    nombre          VARCHAR(255)    NOT NULL,
+    descripcion     TEXT            NULL DEFAULT NULL,
+    orden           TINYINT         NOT NULL DEFAULT 1,
+    fecha_creacion  TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    fecha_actualizacion TIMESTAMP   NULL DEFAULT NULL,
+    CONSTRAINT fk_ap__fase FOREIGN KEY (fase_id) REFERENCES fases(fase_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE actividades_aprendizaje (
+    actividad_aprendizaje_id CHAR(36) NOT NULL PRIMARY KEY,
+    actividad_proyecto_id CHAR(36)  NOT NULL,
+    nombre          VARCHAR(255)    NOT NULL,
+    descripcion     TEXT            NULL DEFAULT NULL,
+    orden           TINYINT         NOT NULL DEFAULT 1,
+    fecha_creacion  TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    fecha_actualizacion TIMESTAMP   NULL DEFAULT NULL,
+    CONSTRAINT fk_aa__act_proyecto FOREIGN KEY (actividad_proyecto_id) REFERENCES actividades_proyecto(actividad_proyecto_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Instructores asignados a ficha (adicionales al líder)
+CREATE TABLE ficha_instructor (
+    ficha_instructor_id CHAR(36)    NOT NULL PRIMARY KEY,
+    ficha_id        CHAR(36)        NOT NULL,
+    instructor_id   CHAR(36)        NOT NULL,
+    fecha_asignacion TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_ficha_instructor (ficha_id, instructor_id),
+    CONSTRAINT fk_fi__ficha      FOREIGN KEY (ficha_id)      REFERENCES fichas(ficha_id) ON DELETE CASCADE,
+    CONSTRAINT fk_fi__instructor FOREIGN KEY (instructor_id) REFERENCES instructores(instructor_id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+-- ================================================================
 --   FIN DEL SCRIPT
 -- ================================================================

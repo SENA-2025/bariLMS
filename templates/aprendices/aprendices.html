@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Aprendices{% endblock %}
+{% block nav_aprendices %}active{% endblock %}
+
+{% block content %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <div>
+        <div class="text-xs font-weight-bold text-sena text-uppercase mb-1">Gestión Académica</div>
+        <h1 class="h3 mb-0 text-gray-800">Aprendices</h1>
+    </div>
+    <a href="{{ url_for('aprendices.carga_masiva') }}" class="btn btn-sm btn-sena shadow-sm">
+        <i class="fas fa-upload fa-sm mr-1"></i> Carga Masiva
+    </a>
+</div>
+
+<!-- Filtros -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-sena">Filtros</h6>
+    </div>
+    <div class="card-body py-2">
+        <form method="get" class="form-inline">
+            <div class="form-group mr-3">
+                <label class="mr-2">Ficha:</label>
+                <select name="ficha_id" class="form-control form-control-sm">
+                    <option value="">Todas</option>
+                    {% for f in fichas %}
+                    <option value="{{ f.ficha_id }}" {% if ficha_filtro == f.ficha_id %}selected{% endif %}>
+                        {{ f.codigo }} — {{ f.programa.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group mr-3">
+                <label class="mr-2">Estado:</label>
+                <select name="estado" class="form-control form-control-sm">
+                    <option value="">Todos</option>
+                    <option value="Activo" {% if estado_filtro == 'Activo' %}selected{% endif %}>Activo</option>
+                    <option value="Inactivo" {% if estado_filtro == 'Inactivo' %}selected{% endif %}>Inactivo</option>
+                    <option value="Suspendido" {% if estado_filtro == 'Suspendido' %}selected{% endif %}>Suspendido</option>
+                    <option value="Retirado" {% if estado_filtro == 'Retirado' %}selected{% endif %}>Retirado</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-sm btn-sena">Filtrar</button>
+            <a href="{{ url_for('aprendices.lista') }}" class="btn btn-sm btn-outline-secondary ml-2">Limpiar</a>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-sena">Aprendices registrados</h6>
+        <span class="badge badge-sena badge-pill">{{ aprendices|length }}</span>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered sena-table" id="dataTable" width="100%">
+                <thead>
+                    <tr>
+                        <th>#</th><th>Nombre completo</th><th>Identificación</th>
+                        <th>Correo</th><th>Ficha</th><th>Programa</th><th>Estado</th><th>Ingreso</th><th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in aprendices %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ a.usuario.nombre_completo }}</td>
+                        <td><span class="badge badge-secondary">{{ a.usuario.tipo_documento }}</span> {{ a.usuario.identificacion }}</td>
+                        <td>{{ a.usuario.correo }}</td>
+                        <td><strong>{{ a.ficha.codigo }}</strong></td>
+                        <td>{{ a.ficha.programa.nombre }}</td>
+                        <td>
+                            <span class="badge badge-{% if a.estado == 'Activo' %}success{% elif a.estado == 'Retirado' %}danger{% elif a.estado == 'Suspendido' %}warning{% else %}secondary{% endif %}">
+                                {{ a.estado }}
+                            </span>
+                        </td>
+                        <td>{{ a.fecha_ingreso.strftime('%d/%m/%Y') }}</td>
+                        <td>
+                            <a href="{{ url_for('fichas.detalle', ficha_id=a.ficha_id) }}"
+                               class="btn btn-sm btn-outline-sena" title="Ver ficha">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="9" class="text-center text-muted">Sin registros</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

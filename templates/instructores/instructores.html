@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% block title %}Instructores{% endblock %}
+{% block nav_instructores %}active{% endblock %}
+
+{% block content %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <div>
+        <div class="text-xs font-weight-bold text-sena text-uppercase mb-1">Personal</div>
+        <h1 class="h3 mb-0 text-gray-800">Instructores</h1>
+    </div>
+    <button class="btn btn-sm btn-sena shadow-sm" data-toggle="modal" data-target="#modalCrear">
+        <i class="fas fa-plus fa-sm mr-1"></i> Nuevo Instructor
+    </button>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-sena">Instructores registrados</h6>
+        <span class="badge badge-sena badge-pill">{{ instructores|length }}</span>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered sena-table" id="dataTable" width="100%">
+                <thead>
+                    <tr>
+                        <th>#</th><th>Nombre completo</th><th>Identificación</th>
+                        <th>Correo</th><th>Coordinación</th><th>Fichas a cargo</th><th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for i in instructores %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ i.usuario.nombre_completo }}</td>
+                        <td><span class="badge badge-secondary">{{ i.usuario.tipo_documento }}</span> {{ i.usuario.identificacion }}</td>
+                        <td>{{ i.usuario.correo }}</td>
+                        <td>{{ i.coordinacion.nombre }}</td>
+                        <td>{{ i.fichas_lider|length }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-sena" data-toggle="modal" data-target="#modalEditar"
+                                    data-id="{{ i.instructor_id }}"
+                                    data-coordinacion="{{ i.coordinacion_id }}">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                            <form method="post" action="{{ url_for('instructores.eliminar', instructor_id=i.instructor_id) }}"
+                                  class="d-inline" onsubmit="return confirm('¿Eliminar este instructor?')">
+                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="7" class="text-center text-muted">Sin registros</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Crear Instructor (crea usuario + instructor) -->
+<div class="modal fade" id="modalCrear" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <form method="post" action="{{ url_for('instructores.crear') }}">
+            <div class="modal-content">
+                <div class="modal-header border-bottom-sena">
+                    <h5 class="modal-title font-weight-bold text-sena">Nuevo Instructor</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <h6 class="font-weight-bold text-sena mb-3">Datos personales</h6>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Tipo doc. <span class="text-danger">*</span></label>
+                                <select name="tipo_documento" class="form-control" required>
+                                    <option value="CC">CC</option>
+                                    <option value="CE">CE</option>
+                                    <option value="PPT">PPT</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="form-group">
+                                <label>Identificación <span class="text-danger">*</span></label>
+                                <input type="text" name="identificacion" class="form-control" required maxlength="20">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Correo <span class="text-danger">*</span></label>
+                                <input type="email" name="correo" class="form-control" required maxlength="254">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Primer nombre <span class="text-danger">*</span></label>
+                                <input type="text" name="primer_nombre" class="form-control" required maxlength="100">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Segundo nombre</label>
+                                <input type="text" name="segundo_nombre" class="form-control" maxlength="100">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Primer apellido <span class="text-danger">*</span></label>
+                                <input type="text" name="primer_apellido" class="form-control" required maxlength="100">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Segundo apellido</label>
+                                <input type="text" name="segundo_apellido" class="form-control" maxlength="100">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Contraseña temporal <span class="text-danger">*</span></label>
+                                <input type="password" name="contrasena" class="form-control" required minlength="8">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Coordinación <span class="text-danger">*</span></label>
+                                <select name="coordinacion_id" class="form-control" required>
+                                    <option value="">Seleccionar...</option>
+                                    {% for c in coordinaciones %}
+                                    <option value="{{ c.coordinacion_id }}">{{ c.nombre }} — {{ c.centro.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sena">Guardar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Editar (solo cambia coordinación) -->
+<div class="modal fade" id="modalEditar" tabindex="-1">
+    <div class="modal-dialog">
+        <form method="post" action="" id="formEditar">
+            <div class="modal-content">
+                <div class="modal-header border-bottom-sena">
+                    <h5 class="modal-title font-weight-bold text-sena">Editar Coordinación del Instructor</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Coordinación <span class="text-danger">*</span></label>
+                        <select name="coordinacion_id" id="editCoordinacion" class="form-control" required>
+                            {% for c in coordinaciones %}
+                            <option value="{{ c.coordinacion_id }}">{{ c.nombre }} — {{ c.centro.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sena">Actualizar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$('#modalEditar').on('show.bs.modal', function(e) {
+    var btn = $(e.relatedTarget);
+    $('#editCoordinacion').val(btn.data('coordinacion'));
+    $('#formEditar').attr('action', '/instructores/' + btn.data('id') + '/editar');
+});
+</script>
+{% endblock %}

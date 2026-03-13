@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Ambientes{% endblock %}
+{% block nav_estructura_open %}show{% endblock %}
+{% block nav_ambientes %}active{% endblock %}
+
+{% block content %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <div>
+        <div class="text-xs font-weight-bold text-sena text-uppercase mb-1">Estructura SENA</div>
+        <h1 class="h3 mb-0 text-gray-800">Ambientes de Formación</h1>
+    </div>
+    <button class="btn btn-sm btn-sena shadow-sm" data-toggle="modal" data-target="#modalCrear">
+        <i class="fas fa-plus fa-sm mr-1"></i> Nuevo Ambiente
+    </button>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-sena">Listado de Ambientes</h6>
+        <span class="badge badge-sena badge-pill">{{ ambientes|length }}</span>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered sena-table" id="dataTable" width="100%">
+                <thead>
+                    <tr><th>#</th><th>Nombre</th><th>Sede</th><th>Centro</th><th>Fichas activas</th><th>Acciones</th></tr>
+                </thead>
+                <tbody>
+                    {% for a in ambientes %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ a.nombre }}</td>
+                        <td>{{ a.sede.nombre }}</td>
+                        <td>{{ a.sede.centro.nombre }}</td>
+                        <td>{{ a.fichas|length }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-sena"
+                                    data-toggle="modal" data-target="#modalEditar"
+                                    data-id="{{ a.ambiente_id }}"
+                                    data-nombre="{{ a.nombre }}"
+                                    data-sede="{{ a.sede_id }}">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                            <form method="post" action="{{ url_for('sena.eliminar_ambiente', ambiente_id=a.ambiente_id) }}"
+                                  class="d-inline" onsubmit="return confirm('¿Eliminar este ambiente?')">
+                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" class="text-center text-muted">Sin registros</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Crear -->
+<div class="modal fade" id="modalCrear" tabindex="-1">
+    <div class="modal-dialog">
+        <form method="post" action="{{ url_for('sena.crear_ambiente') }}">
+            <div class="modal-content">
+                <div class="modal-header border-bottom-sena">
+                    <h5 class="modal-title font-weight-bold text-sena">Nuevo Ambiente</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Sede <span class="text-danger">*</span></label>
+                        <select name="sede_id" class="form-control" required>
+                            <option value="">Seleccionar...</option>
+                            {% for s in sedes %}
+                            <option value="{{ s.sede_id }}">{{ s.nombre }} — {{ s.centro.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre <span class="text-danger">*</span></label>
+                        <input type="text" name="nombre" class="form-control" required maxlength="255">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sena">Guardar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Editar -->
+<div class="modal fade" id="modalEditar" tabindex="-1">
+    <div class="modal-dialog">
+        <form method="post" action="" id="formEditar">
+            <div class="modal-content">
+                <div class="modal-header border-bottom-sena">
+                    <h5 class="modal-title font-weight-bold text-sena">Editar Ambiente</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Sede <span class="text-danger">*</span></label>
+                        <select name="sede_id" id="editSede" class="form-control" required>
+                            {% for s in sedes %}
+                            <option value="{{ s.sede_id }}">{{ s.nombre }} — {{ s.centro.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre <span class="text-danger">*</span></label>
+                        <input type="text" name="nombre" id="editNombre" class="form-control" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sena">Actualizar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$('#modalEditar').on('show.bs.modal', function(e) {
+    var btn = $(e.relatedTarget);
+    $('#editNombre').val(btn.data('nombre'));
+    $('#editSede').val(btn.data('sede'));
+    $('#formEditar').attr('action', '/sena/ambientes/' + btn.data('id') + '/editar');
+});
+</script>
+{% endblock %}

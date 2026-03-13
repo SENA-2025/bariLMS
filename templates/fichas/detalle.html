@@ -1,0 +1,490 @@
+{% extends "base.html" %}
+{% block title %}Ficha {{ ficha.codigo }}{% endblock %}
+{% block nav_fichas %}active{% endblock %}
+
+{% block content %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <div>
+        <div class="text-xs font-weight-bold text-sena text-uppercase mb-1">Ficha de Formación</div>
+        <h1 class="h3 mb-0 text-gray-800">Ficha <strong>{{ ficha.codigo }}</strong></h1>
+    </div>
+    <a href="{{ url_for('fichas.lista') }}" class="btn btn-sm btn-outline-secondary shadow-sm">
+        <i class="fas fa-arrow-left fa-sm mr-1"></i> Volver
+    </a>
+</div>
+
+<!-- Datos generales -->
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <div class="card shadow h-100">
+            <div class="card-header py-3 border-bottom-sena">
+                <h6 class="m-0 font-weight-bold text-sena">Información general</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Programa:</strong> {{ ficha.programa.nombre }}</p>
+                        <p><strong>Código SENA:</strong> <code>{{ ficha.programa.codigo }}</code></p>
+                        <p><strong>Nivel:</strong> <span class="badge badge-info">{{ ficha.programa.nivel.nombre }}</span></p>
+                        <p><strong>Modalidad:</strong> {{ ficha.programa.modalidad.nombre }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Coordinación:</strong> {{ ficha.coordinacion.nombre }}</p>
+                        <p><strong>Ambiente:</strong> {{ ficha.ambiente.nombre }}</p>
+                        <p><strong>Instructor líder:</strong> {{ ficha.instructor_lider.usuario.nombre_completo }}</p>
+                        <p><strong>Aprendices:</strong> {{ ficha.aprendices|length }}</p>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-md-4">
+                        <p class="mb-0"><small class="text-muted">Inicio</small></p>
+                        <strong>{{ ficha.fecha_inicio.strftime('%d/%m/%Y') }}</strong>
+                    </div>
+                    <div class="col-md-4">
+                        <p class="mb-0"><small class="text-muted">Etapa productiva</small></p>
+                        <strong>{{ ficha.fecha_etapa_productiva.strftime('%d/%m/%Y') }}</strong>
+                    </div>
+                    <div class="col-md-4">
+                        <p class="mb-0"><small class="text-muted">Fin</small></p>
+                        <strong>{{ ficha.fecha_fin.strftime('%d/%m/%Y') }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card shadow h-100">
+            <div class="card-header py-3 border-bottom-sena d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-sena">Instructores asignados</h6>
+                <button class="btn btn-sm btn-sena" data-toggle="modal" data-target="#modalAsignarInstructor">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>{{ ficha.instructor_lider.usuario.nombre_completo }}</span>
+                        <span class="badge badge-sena">Líder</span>
+                    </li>
+                    {% for fi in ficha.instructores_asignados %}
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>{{ fi.instructor.usuario.nombre_completo }}</span>
+                        <form method="post" action="{{ url_for('fichas.desasignar_instructor', ficha_id=ficha.ficha_id, fi_id=fi.ficha_instructor_id) }}" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-danger btn-xs"><i class="fas fa-times"></i></button>
+                        </form>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Proyecto Formativo -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3 border-bottom-sena d-flex justify-content-between align-items-center">
+        <h6 class="m-0 font-weight-bold text-sena">
+            <i class="fas fa-project-diagram mr-2"></i>Proyecto Formativo
+        </h6>
+        {% if not ficha.proyecto_formativo %}
+        <button class="btn btn-sm btn-sena" data-toggle="modal" data-target="#modalCrearProyecto">
+            <i class="fas fa-plus mr-1"></i>Crear proyecto
+        </button>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        {% if ficha.proyecto_formativo %}
+            {% set proyecto = ficha.proyecto_formativo %}
+            <h5 class="text-gray-800">{{ proyecto.titulo }}</h5>
+            <p class="text-muted">{{ proyecto.descripcion or 'Sin descripción.' }}</p>
+
+            <!-- Fases -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="font-weight-bold text-sena mb-0">Fases del proyecto</h6>
+                <button class="btn btn-sm btn-outline-sena" data-toggle="modal" data-target="#modalCrearFase"
+                        data-proyecto="{{ proyecto.proyecto_id }}">
+                    <i class="fas fa-plus"></i> Fase
+                </button>
+            </div>
+
+            {% for fase in proyecto.fases %}
+            <div class="card mb-3 border-left-sena">
+                <div class="card-header py-2 d-flex justify-content-between align-items-center">
+                    <span class="font-weight-bold">Fase {{ fase.orden }}: {{ fase.nombre }}</span>
+                    <div>
+                        <button class="btn btn-sm btn-outline-sena" data-toggle="modal" data-target="#modalCrearActProy"
+                                data-fase="{{ fase.fase_id }}">
+                            <i class="fas fa-plus"></i> Actividad de proyecto
+                        </button>
+                        <form method="post" action="{{ url_for('fichas.eliminar_fase', fase_id=fase.fase_id) }}"
+                              class="d-inline" onsubmit="return confirm('¿Eliminar fase?')">
+                            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </div>
+                </div>
+                <div class="card-body py-2">
+                    {% if fase.descripcion %}<p class="text-muted small">{{ fase.descripcion }}</p>{% endif %}
+
+                    {% for act_p in fase.actividades_proyecto %}
+                    <div class="ml-3 mb-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="font-weight-bold small">{{ act_p.orden }}. {{ act_p.nombre }}</span>
+                            <div>
+                                <button class="btn btn-xs btn-outline-info" data-toggle="modal" data-target="#modalCrearActApz"
+                                        data-actproyecto="{{ act_p.actividad_proyecto_id }}">
+                                    <i class="fas fa-plus"></i> Act. aprendizaje
+                                </button>
+                                <form method="post" action="{{ url_for('fichas.eliminar_act_proyecto', act_id=act_p.actividad_proyecto_id) }}"
+                                      class="d-inline" onsubmit="return confirm('¿Eliminar?')">
+                                    <button type="submit" class="btn btn-xs btn-outline-danger"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </div>
+                        </div>
+                        {% if act_p.actividades_aprendizaje %}
+                        <ul class="list-unstyled ml-3 mt-1">
+                            {% for act_a in act_p.actividades_aprendizaje %}
+                            <li class="small text-muted">
+                                <i class="fas fa-circle fa-xs mr-1"></i>{{ act_a.orden }}. {{ act_a.nombre }}
+                                <form method="post" action="{{ url_for('fichas.eliminar_act_aprendizaje', act_id=act_a.actividad_aprendizaje_id) }}"
+                                      class="d-inline" onsubmit="return confirm('¿Eliminar?')">
+                                    <button type="submit" class="btn btn-xs btn-link text-danger p-0"><i class="fas fa-times"></i></button>
+                                </form>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted small ml-3">Sin actividades de proyecto.</p>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <p class="text-muted">Sin fases registradas.</p>
+            {% endfor %}
+        {% else %}
+            <p class="text-muted">Esta ficha no tiene proyecto formativo. Créalo con el botón de arriba.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Aprendices -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3 border-bottom-sena d-flex justify-content-between align-items-center">
+        <h6 class="m-0 font-weight-bold text-sena">
+            <i class="fas fa-user-graduate mr-2"></i>Aprendices ({{ ficha.aprendices|length }})
+        </h6>
+        <div>
+            <a href="{{ url_for('aprendices.carga_masiva', ficha_id=ficha.ficha_id) }}" class="btn btn-sm btn-outline-sena mr-1">
+                <i class="fas fa-upload mr-1"></i>Carga masiva
+            </a>
+            <button class="btn btn-sm btn-sena" data-toggle="modal" data-target="#modalAgregarAprendiz">
+                <i class="fas fa-plus mr-1"></i>Agregar
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-sm sena-table" id="tablaAprendices" width="100%">
+                <thead>
+                    <tr><th>Nombre</th><th>Identificación</th><th>Estado</th><th>Ingreso</th><th>Acciones</th></tr>
+                </thead>
+                <tbody>
+                    {% for a in ficha.aprendices %}
+                    <tr>
+                        <td>{{ a.usuario.nombre_completo }}</td>
+                        <td><span class="badge badge-secondary">{{ a.usuario.tipo_documento }}</span> {{ a.usuario.identificacion }}</td>
+                        <td>
+                            <span class="badge badge-{% if a.estado == 'Activo' %}success{% elif a.estado == 'Retirado' %}danger{% else %}warning{% endif %}">
+                                {{ a.estado }}
+                            </span>
+                        </td>
+                        <td>{{ a.fecha_ingreso.strftime('%d/%m/%Y') }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-sena" data-toggle="modal" data-target="#modalEditarAprendiz"
+                                    data-id="{{ a.aprendiz_id }}" data-estado="{{ a.estado }}">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                            <form method="post" action="{{ url_for('aprendices.eliminar', aprendiz_id=a.aprendiz_id) }}"
+                                  class="d-inline" onsubmit="return confirm('¿Retirar este aprendiz?')">
+                                <input type="hidden" name="redirect_ficha" value="{{ ficha.ficha_id }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="text-center text-muted">Sin aprendices</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modales -->
+{% if not ficha.proyecto_formativo %}
+<div class="modal fade" id="modalCrearProyecto" tabindex="-1">
+    <div class="modal-dialog">
+        <form method="post" action="{{ url_for('fichas.crear_proyecto', ficha_id=ficha.ficha_id) }}">
+            <div class="modal-content">
+                <div class="modal-header border-bottom-sena">
+                    <h5 class="modal-title font-weight-bold text-sena">Nuevo Proyecto Formativo</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Título <span class="text-danger">*</span></label>
+                        <input type="text" name="titulo" class="form-control" required maxlength="255">
+                    </div>
+                    <div class="form-group">
+                        <label>Descripción</label>
+                        <textarea name="descripcion" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sena">Crear</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<div class="modal fade" id="modalCrearFase" tabindex="-1">
+    <div class="modal-dialog">
+        <form method="post" action="" id="formCrearFase">
+            <div class="modal-content">
+                <div class="modal-header border-bottom-sena">
+                    <h5 class="modal-title font-weight-bold text-sena">Nueva Fase</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Nombre <span class="text-danger">*</span></label>
+                        <input type="text" name="nombre" class="form-control" required maxlength="255"
+                               placeholder="Ej: Análisis, Planeación, Ejecución">
+                    </div>
+                    <div class="form-group">
+                        <label>Orden</label>
+                        <input type="number" name="orden" class="form-control" min="1" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Descripción</label>
+                        <textarea name="descripcion" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sena">Guardar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="modalCrearActProy" tabindex="-1">
+    <div class="modal-dialog">
+        <form method="post" action="" id="formCrearActProy">
+            <div class="modal-content">
+                <div class="modal-header border-bottom-sena">
+                    <h5 class="modal-title font-weight-bold text-sena">Nueva Actividad de Proyecto</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Nombre <span class="text-danger">*</span></label>
+                        <input type="text" name="nombre" class="form-control" required maxlength="255">
+                    </div>
+                    <div class="form-group">
+                        <label>Orden</label>
+                        <input type="number" name="orden" class="form-control" min="1" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Descripción</label>
+                        <textarea name="descripcion" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sena">Guardar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="modalCrearActApz" tabindex="-1">
+    <div class="modal-dialog">
+        <form method="post" action="" id="formCrearActApz">
+            <div class="modal-content">
+                <div class="modal-header border-bottom-sena">
+                    <h5 class="modal-title font-weight-bold text-sena">Nueva Actividad de Aprendizaje</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Nombre <span class="text-danger">*</span></label>
+                        <input type="text" name="nombre" class="form-control" required maxlength="255">
+                    </div>
+                    <div class="form-group">
+                        <label>Orden</label>
+                        <input type="number" name="orden" class="form-control" min="1" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Descripción</label>
+                        <textarea name="descripcion" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sena">Guardar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="modalAsignarInstructor" tabindex="-1">
+    <div class="modal-dialog">
+        <form method="post" action="{{ url_for('fichas.asignar_instructor', ficha_id=ficha.ficha_id) }}">
+            <div class="modal-content">
+                <div class="modal-header border-bottom-sena">
+                    <h5 class="modal-title font-weight-bold text-sena">Asignar Instructor</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Instructor <span class="text-danger">*</span></label>
+                        <select name="instructor_id" class="form-control" required>
+                            <option value="">Seleccionar...</option>
+                            {% for i in instructores_disponibles %}
+                            <option value="{{ i.instructor_id }}">{{ i.usuario.nombre_completo }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sena">Asignar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="modalAgregarAprendiz" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <form method="post" action="{{ url_for('aprendices.crear', ficha_id=ficha.ficha_id) }}">
+            <div class="modal-content">
+                <div class="modal-header border-bottom-sena">
+                    <h5 class="modal-title font-weight-bold text-sena">Agregar Aprendiz</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Tipo doc. <span class="text-danger">*</span></label>
+                                <select name="tipo_documento" class="form-control" required>
+                                    <option value="CC">CC</option>
+                                    <option value="TI">TI</option>
+                                    <option value="CE">CE</option>
+                                    <option value="PPT">PPT</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="form-group">
+                                <label>Identificación <span class="text-danger">*</span></label>
+                                <input type="text" name="identificacion" class="form-control" required maxlength="20">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Correo <span class="text-danger">*</span></label>
+                                <input type="email" name="correo" class="form-control" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3"><div class="form-group"><label>Primer nombre *</label><input type="text" name="primer_nombre" class="form-control" required></div></div>
+                        <div class="col-md-3"><div class="form-group"><label>Segundo nombre</label><input type="text" name="segundo_nombre" class="form-control"></div></div>
+                        <div class="col-md-3"><div class="form-group"><label>Primer apellido *</label><input type="text" name="primer_apellido" class="form-control" required></div></div>
+                        <div class="col-md-3"><div class="form-group"><label>Segundo apellido</label><input type="text" name="segundo_apellido" class="form-control"></div></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Contraseña temporal <span class="text-danger">*</span></label>
+                                <input type="password" name="contrasena" class="form-control" required minlength="8">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Fecha de ingreso <span class="text-danger">*</span></label>
+                                <input type="date" name="fecha_ingreso" class="form-control" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sena">Agregar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEditarAprendiz" tabindex="-1">
+    <div class="modal-dialog">
+        <form method="post" action="" id="formEditarAprendiz">
+            <div class="modal-content">
+                <div class="modal-header border-bottom-sena">
+                    <h5 class="modal-title font-weight-bold text-sena">Cambiar estado de aprendiz</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Estado</label>
+                        <select name="estado" id="editEstado" class="form-control" required>
+                            <option value="Activo">Activo</option>
+                            <option value="Inactivo">Inactivo</option>
+                            <option value="Suspendido">Suspendido</option>
+                            <option value="Retirado">Retirado</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sena">Actualizar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$('#modalCrearFase').on('show.bs.modal', function(e) {
+    var proyecto = $(e.relatedTarget).data('proyecto');
+    $('#formCrearFase').attr('action', '/fichas/proyecto/' + proyecto + '/fases/crear');
+});
+$('#modalCrearActProy').on('show.bs.modal', function(e) {
+    var fase = $(e.relatedTarget).data('fase');
+    $('#formCrearActProy').attr('action', '/fichas/fases/' + fase + '/actividades/crear');
+});
+$('#modalCrearActApz').on('show.bs.modal', function(e) {
+    var actP = $(e.relatedTarget).data('actproyecto');
+    $('#formCrearActApz').attr('action', '/fichas/actividades-proyecto/' + actP + '/actividades-aprendizaje/crear');
+});
+$('#modalEditarAprendiz').on('show.bs.modal', function(e) {
+    var btn = $(e.relatedTarget);
+    $('#editEstado').val(btn.data('estado'));
+    $('#formEditarAprendiz').attr('action', '/aprendices/' + btn.data('id') + '/editar');
+});
+</script>
+{% endblock %}
