@@ -50,18 +50,27 @@ DEFAULT_USERS = [
     },
 ]
 
+DEFAULT_LEVELS = [
+    "Técnico",
+    "Tecnólogo",
+    "Operario",
+    "Auxiliar",
+    "Curso",
+]
+
 DASHBOARDS = {
     "administrador": {
         "role": "Administrador",
         "icon": "fa-user-shield",
         "area": "Direccionamiento institucional",
         "title": "Tablero del Administrador",
-        "text": "Supervisa la operacion general de BARÍ LMS, define lineamientos y controla el acceso de los perfiles del LMS.",
+        "text": "Supervisa la operación general de BARÍ LMS, define lineamientos y controla el acceso de los perfiles del LMS.",
         "footer": "BARÍ LMS SENA - Administrador",
-        "menu_heading": "Administracion",
+        "menu_heading": "Administración",
         "menu": [
             {"icon": "fa-users-cog", "label": "Usuarios y roles", "endpoint": "admin_users"},
             {"icon": "fa-sitemap", "label": "Estructura institucional", "endpoint": "admin_structure"},
+            {"icon": "fa-graduation-cap", "label": "Gestión académica", "endpoint": "admin_academic"},
             {
                 "icon": "fa-chart-pie",
                 "label": "Indicadores",
@@ -77,26 +86,26 @@ DASHBOARDS = {
         ],
         "tasks_title": "Frentes prioritarios",
         "tasks": [
-            {"title": "Gestion de usuarios", "text": "Aprobar nuevas cuentas y validar asignacion de perfiles."},
+            {"title": "Gestión de usuarios", "text": "Aprobar nuevas cuentas y validar asignación de perfiles."},
             {"title": "Estructura institucional", "text": "Administrar regionales, centros, coordinaciones, sedes y ambientes."},
             {"title": "Seguimiento", "text": "Consultar indicadores de uso, permanencia y actividad por centro."},
         ],
         "table_title": "Resumen operativo",
-        "table_headers": ["Unidad", "Estado", "Observacion"],
+        "table_headers": ["Unidad", "Estado", "Observación"],
         "table_rows": [
             ["Regional Distrito Capital", "98%", "Sin novedades"],
             ["Regional Antioquia", "94%", "Actualizar instructores"],
-            ["Regional Valle", "91%", "Revision de permisos"],
+            ["Regional Valle", "91%", "Revisión de permisos"],
         ],
     },
     "administrativo": {
         "role": "Administrativo",
         "icon": "fa-clipboard-check",
-        "area": "Apoyo academico y operativo",
+        "area": "Apoyo académico y operativo",
         "title": "Tablero Administrativo",
-        "text": "Consolida fichas, programas, ambientes y apoyo documental para el despliegue de la formacion por proyectos.",
+        "text": "Consolida fichas, programas, ambientes y apoyo documental para el despliegue de la formación por proyectos.",
         "footer": "BARÍ LMS SENA - Administrativo",
-        "menu_heading": "Operacion",
+        "menu_heading": "Operación",
         "menu": [
             {
                 "icon": "fa-folder-open",
@@ -119,38 +128,43 @@ DASHBOARDS = {
         ],
         "tasks_title": "Pendientes",
         "tasks": [
-            {"title": "Matricula", "text": "Consolidar aprendices por ficha y programa."},
+            {"title": "Matrícula", "text": "Consolidar aprendices por ficha y programa."},
             {"title": "Ambientes", "text": "Validar capacidad y disponibilidad por sede."},
             {"title": "Soporte documental", "text": "Publicar formatos y circulares internas."},
         ],
-        "table_title": "Control academico",
+        "table_title": "Control académico",
         "table_headers": ["Ficha", "Programa", "Estado"],
         "table_rows": [
-            ["ADSI 2675854", "Analisis y Desarrollo", "Completa"],
+            ["ADSI 2675854", "Análisis y Desarrollo", "Completa"],
             ["SST 2675921", "Seguridad y Salud", "Pendiente soporte"],
-            ["Cocina 2676018", "Tecnico en Cocina", "Actualizada"],
+            ["Cocina 2676018", "Técnico en Cocina", "Actualizada"],
         ],
     },
     "instructor": {
         "role": "Instructor",
         "icon": "fa-chalkboard-teacher",
-        "area": "Ejecucion formativa",
+        "area": "Ejecución formativa",
         "title": "Tablero del Instructor",
         "text": "Organiza resultados de aprendizaje, evidencias, proyectos y seguimiento del avance de cada ficha.",
         "footer": "BARÍ LMS SENA - Instructor",
-        "menu_heading": "Formacion",
+        "menu_heading": "Formación",
         "menu": [
             {
                 "icon": "fa-book-reader",
-                "label": "Planeacion",
+                "label": "Planeación",
                 "endpoint": "dashboard",
                 "endpoint_kwargs": {"role_slug": "instructor"},
             },
             {
                 "icon": "fa-clipboard-check",
-                "label": "Evaluacion",
+                "label": "Evaluación",
                 "endpoint": "dashboard",
                 "endpoint_kwargs": {"role_slug": "instructor"},
+            },
+            {
+                "icon": "fa-key",
+                "label": "Cambiar contraseña",
+                "endpoint": "instructor_change_password",
             },
         ],
         "metrics": [
@@ -161,16 +175,16 @@ DASHBOARDS = {
         ],
         "tasks_title": "Acciones docentes",
         "tasks": [
-            {"title": "Planeacion", "text": "Programar actividades alineadas al proyecto formativo."},
+            {"title": "Planeación", "text": "Programar actividades alineadas al proyecto formativo."},
             {"title": "Seguimiento", "text": "Retroalimentar evidencias y avances semanales."},
-            {"title": "Evaluacion", "text": "Registrar desempeno por resultado de aprendizaje."},
+            {"title": "Evaluación", "text": "Registrar desempeño por resultado de aprendizaje."},
         ],
         "table_title": "Seguimiento de fichas",
         "table_headers": ["Ficha", "Actividad", "Estado"],
         "table_rows": [
             ["Ficha 2675854", "Sprint de prototipo", "15 entregas pendientes"],
-            ["Ficha 2675860", "Sustentacion parcial", "Programada"],
-            ["Ficha 2675902", "Bitacora de proyecto", "Al dia"],
+            ["Ficha 2675860", "Sustentación parcial", "Programada"],
+            ["Ficha 2675902", "Bitácora de proyecto", "Al día"],
         ],
     },
     "aprendiz": {
@@ -205,12 +219,12 @@ DASHBOARDS = {
         "tasks": [
             {"title": "Proyecto formativo", "text": "Consultar entregables y fechas de corte."},
             {"title": "Ruta individual", "text": "Ver resultados alcanzados y faltantes."},
-            {"title": "Comunicacion", "text": "Revisar mensajes de instructor y coordinacion."},
+            {"title": "Comunicación", "text": "Revisar mensajes de instructor y coordinación."},
         ],
-        "table_title": "Proximas entregas",
+        "table_title": "Próximas entregas",
         "table_headers": ["Actividad", "Fecha", "Estado"],
         "table_rows": [
-            ["Bitacora semanal", "14 de marzo de 2026", "Pendiente"],
+            ["Bitácora semanal", "14 de marzo de 2026", "Pendiente"],
             ["Prototipo funcional", "18 de marzo de 2026", "En progreso"],
             ["Autoevaluacion", "20 de marzo de 2026", "No iniciada"],
         ],
@@ -230,7 +244,7 @@ ENTITY_CONFIG = {
     },
     "centro": {
         "table": "centro",
-        "label": "Centro de formacion",
+        "label": "Centro de formación",
         "parent_key": "regional_id",
         "fields": ["id_regional", "nombre"],
         "required": ["id_regional", "nombre"],
@@ -240,7 +254,7 @@ ENTITY_CONFIG = {
     },
     "coordinacion": {
         "table": "coordinacion",
-        "label": "Coordinacion",
+        "label": "Coordinación",
         "parent_key": "centro_id",
         "fields": ["id_centro", "nombre"],
         "required": ["id_centro", "nombre"],
@@ -262,15 +276,16 @@ ENTITY_CONFIG = {
         "table": "instructor",
         "label": "Instructor",
         "parent_key": "coordinacion_id",
-        "fields": ["id_coordinacion", "documento", "nombres", "apellidos", "correo"],
+        "fields": ["id_coordinacion", "id_area", "documento", "nombres", "apellidos", "correo"],
         "required": ["id_coordinacion", "documento", "nombres", "apellidos"],
         "context_key": "coordinacion_id",
         "select_aliases": {
             "id_coordinacion": "coordinacion_id",
+            "id_area": "area_id",
             "correo": "email",
             "id_usuario": "user_id",
         },
-        "form_to_db": {"coordinacion_id": "id_coordinacion", "email": "correo"},
+        "form_to_db": {"coordinacion_id": "id_coordinacion", "area_id": "id_area", "email": "correo"},
     },
     "aprendiz": {
         "table": "aprendiz",
@@ -291,6 +306,106 @@ ENTITY_CONFIG = {
         "context_key": "sede_id",
         "select_aliases": {"id_sede": "sede_id"},
         "form_to_db": {"sede_id": "id_sede"},
+    },
+    "red": {
+        "table": "red_conocimiento",
+        "label": "Red de conocimiento",
+        "parent_key": None,
+        "fields": ["nombre"],
+        "required": ["nombre"],
+        "context_key": "red_id",
+        "select_aliases": {},
+        "form_to_db": {},
+    },
+    "area": {
+        "table": "area",
+        "label": "Area",
+        "parent_key": "red_id",
+        "fields": ["id_red_conocimiento", "nombre"],
+        "required": ["id_red_conocimiento", "nombre"],
+        "context_key": "area_id",
+        "select_aliases": {"id_red_conocimiento": "red_id"},
+        "form_to_db": {"red_id": "id_red_conocimiento"},
+    },
+    "nivel": {
+        "table": "nivel_formacion",
+        "label": "Nivel de formación",
+        "parent_key": None,
+        "fields": ["nombre"],
+        "required": ["nombre"],
+        "context_key": "nivel_id",
+        "select_aliases": {},
+        "form_to_db": {},
+    },
+    "programa": {
+        "table": "programa_formacion",
+        "label": "Programa de formación",
+        "parent_key": "area_id",
+        "fields": ["id_area", "id_nivel_formacion", "nombre"],
+        "required": ["id_area", "id_nivel_formacion", "nombre"],
+        "context_key": "programa_id",
+        "select_aliases": {"id_area": "area_id", "id_nivel_formacion": "nivel_id"},
+        "form_to_db": {"area_id": "id_area", "nivel_id": "id_nivel_formacion"},
+    },
+    "ficha": {
+        "table": "ficha_formacion",
+        "label": "Ficha de formación",
+        "parent_key": "programa_id",
+        "fields": ["numero", "id_programa_formacion", "id_proyecto_formativo", "id_coordinacion", "id_instructor"],
+        "required": ["numero", "id_programa_formacion", "id_proyecto_formativo", "id_coordinacion"],
+        "context_key": "programa_id",
+        "select_aliases": {
+            "id_programa_formacion": "programa_id",
+            "id_proyecto_formativo": "proyecto_formativo_id",
+            "id_coordinacion": "coordinacion_id",
+            "id_instructor": "instructor_id",
+        },
+        "form_to_db": {
+            "programa_id": "id_programa_formacion",
+            "proyecto_formativo_id": "id_proyecto_formativo",
+            "coordinacion_id": "id_coordinacion",
+            "instructor_id": "id_instructor",
+        },
+    },
+    "proyecto_formativo": {
+        "table": "proyecto_formativo",
+        "label": "Proyecto formativo",
+        "parent_key": None,
+        "fields": ["codigo", "nombre"],
+        "required": ["codigo", "nombre"],
+        "context_key": "proyecto_formativo_id",
+        "select_aliases": {},
+        "form_to_db": {},
+    },
+    "fase_proyecto": {
+        "table": "fase_proyecto",
+        "label": "Fase del proyecto",
+        "parent_key": "proyecto_formativo_id",
+        "fields": ["id_proyecto_formativo", "nombre"],
+        "required": ["id_proyecto_formativo", "nombre"],
+        "context_key": "fase_id",
+        "select_aliases": {"id_proyecto_formativo": "proyecto_formativo_id"},
+        "form_to_db": {"proyecto_formativo_id": "id_proyecto_formativo"},
+    },
+    "actividad_proyecto": {
+        "table": "actividad_proyecto",
+        "label": "Actividad del proyecto",
+        "parent_key": "fase_id",
+        "fields": ["id_fase_proyecto", "nombre"],
+        "required": ["id_fase_proyecto", "nombre"],
+        "context_key": "fase_id",
+        "select_aliases": {"id_fase_proyecto": "fase_id"},
+        "form_to_db": {"fase_id": "id_fase_proyecto"},
+    },
+    "actividad_aprendizaje": {
+        "table": "actividad_aprendizaje",
+        "label": "Actividad de aprendizaje",
+        "parent_key": "actividad_proyecto_id",
+        "fields": ["id_actividad_proyecto", "nombre"],
+        "required": ["id_actividad_proyecto", "nombre"],
+        "context_key": "actividad_proyecto_id",
+        "select_aliases": {"id_actividad_proyecto": "actividad_proyecto_id"},
+        "form_to_db": {"actividad_proyecto_id": "id_actividad_proyecto"},
     },
 }
 
@@ -466,6 +581,99 @@ def initialize_database():
         )
         """
     )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS red_conocimiento (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT NOT NULL UNIQUE
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS area (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_red_conocimiento INTEGER NOT NULL,
+            nombre TEXT NOT NULL,
+            FOREIGN KEY (id_red_conocimiento) REFERENCES red_conocimiento(id) ON DELETE CASCADE
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS nivel_formacion (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT NOT NULL UNIQUE
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS programa_formacion (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_area INTEGER NOT NULL,
+            id_nivel_formacion INTEGER NOT NULL,
+            nombre TEXT NOT NULL,
+            FOREIGN KEY (id_area) REFERENCES area(id) ON DELETE CASCADE,
+            FOREIGN KEY (id_nivel_formacion) REFERENCES nivel_formacion(id) ON DELETE CASCADE
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS ficha_formacion (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            numero TEXT NOT NULL UNIQUE,
+            id_programa_formacion INTEGER NOT NULL,
+            id_proyecto_formativo INTEGER,
+            id_coordinacion INTEGER NOT NULL,
+            id_instructor INTEGER,
+            FOREIGN KEY (id_programa_formacion) REFERENCES programa_formacion(id) ON DELETE CASCADE,
+            FOREIGN KEY (id_proyecto_formativo) REFERENCES proyecto_formativo(id) ON DELETE SET NULL,
+            FOREIGN KEY (id_coordinacion) REFERENCES coordinacion(id) ON DELETE CASCADE,
+            FOREIGN KEY (id_instructor) REFERENCES instructor(id) ON DELETE SET NULL
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS proyecto_formativo (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            codigo TEXT NOT NULL UNIQUE,
+            nombre TEXT NOT NULL
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS fase_proyecto (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_proyecto_formativo INTEGER NOT NULL,
+            nombre TEXT NOT NULL,
+            FOREIGN KEY (id_proyecto_formativo) REFERENCES proyecto_formativo(id) ON DELETE CASCADE
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS actividad_proyecto (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_fase_proyecto INTEGER NOT NULL,
+            nombre TEXT NOT NULL,
+            FOREIGN KEY (id_fase_proyecto) REFERENCES fase_proyecto(id) ON DELETE CASCADE
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS actividad_aprendizaje (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_actividad_proyecto INTEGER NOT NULL,
+            nombre TEXT NOT NULL,
+            FOREIGN KEY (id_actividad_proyecto) REFERENCES actividad_proyecto(id) ON DELETE CASCADE
+        )
+        """
+    )
     db.commit()
 
     instructor_columns = {
@@ -473,6 +681,17 @@ def initialize_database():
     }
     if "id_usuario" not in instructor_columns:
         db.execute("ALTER TABLE instructor ADD COLUMN id_usuario INTEGER")
+        db.commit()
+        instructor_columns.add("id_usuario")
+    if "id_area" not in instructor_columns:
+        db.execute("ALTER TABLE instructor ADD COLUMN id_area INTEGER")
+        db.commit()
+
+    ficha_columns = {
+        row["name"] for row in db.execute("PRAGMA table_info(ficha_formacion)").fetchall()
+    }
+    if "id_proyecto_formativo" not in ficha_columns:
+        db.execute("ALTER TABLE ficha_formacion ADD COLUMN id_proyecto_formativo INTEGER")
         db.commit()
 
     user_count = db.execute("SELECT COUNT(*) AS total FROM usuario").fetchone()["total"]
@@ -491,6 +710,14 @@ def initialize_database():
                     user["active"],
                 ),
             )
+        db.commit()
+
+    level_count = db.execute("SELECT COUNT(*) AS total FROM nivel_formacion").fetchone()["total"]
+    if level_count == 0:
+        db.executemany(
+            "INSERT INTO nivel_formacion (nombre) VALUES (?)",
+            [(level,) for level in DEFAULT_LEVELS],
+        )
         db.commit()
 
 
@@ -790,6 +1017,7 @@ def normalize_structure_context(args):
         "selected_centro": centro,
         "selected_coordinacion": coordinacion,
         "selected_sede": sede,
+        "areas_academicas": get_entities("area", order_by="nombre ASC"),
         "regionales": get_entities("regional", order_by="nombre ASC"),
         "centros": get_entities("centro", "id_regional = ?", (regional_id,), "nombre ASC") if regional_id else [],
         "coordinaciones": get_entities("coordinacion", "id_centro = ?", (centro_id,), "nombre ASC") if centro_id else [],
@@ -832,7 +1060,8 @@ def entity_form_data(entity, form):
     form_to_db = ENTITY_CONFIG[entity].get("form_to_db", {})
     for field in ENTITY_CONFIG[entity]["fields"]:
         form_field = next((name for name, db_name in form_to_db.items() if db_name == field), field)
-        raw = form.get(form_field, "").strip() if field not in {"capacidad"} else form.get(form_field, "").strip()
+        values = [value.strip() for value in form.getlist(form_field)]
+        raw = next((value for value in reversed(values) if value != ""), "")
         if field.endswith("_id") or field.startswith("id_"):
             data[field] = parse_int(raw)
         elif field == "capacidad":
@@ -850,6 +1079,10 @@ def validate_entity_payload(entity, data):
 
     if entity == "ambiente" and data["capacidad"] is not None and data["capacidad"] < 0:
         return "La capacidad no puede ser negativa."
+    if entity == "instructor" and data.get("id_area") is not None and get_entity("area", data["id_area"]) is None:
+        return "El área académica seleccionada no existe."
+    if entity == "ficha" and data["id_instructor"] in ("", None):
+        data["id_instructor"] = None
 
     return None
 
@@ -895,6 +1128,8 @@ def entity_select_clause(entity):
         fields.append(f"{field} AS {alias}" if alias else field)
     if entity == "instructor" and "id_usuario AS user_id" not in fields and "user_id" not in alias_map.values():
         fields.append("id_usuario AS user_id")
+    if entity == "instructor" and "id_area AS area_id" not in fields:
+        fields.append("id_area AS area_id")
     return ", ".join(fields)
 
 
@@ -993,7 +1228,7 @@ def admin_users_create():
         )
 
     if role not in AVAILABLE_ROLES:
-        flash("El rol seleccionado no es valido.", "danger")
+        flash("El rol seleccionado no es válido.", "danger")
         return redirect(url_for("admin_users"))
 
     if get_user_by_email(email) is not None:
@@ -1062,7 +1297,7 @@ def admin_users_update(user_id):
         return redirect(url_for("admin_users_edit", user_id=user_id))
 
     if role not in AVAILABLE_ROLES:
-        flash("El rol seleccionado no es valido.", "danger")
+        flash("El rol seleccionado no es válido.", "danger")
         return redirect(url_for("admin_users_edit", user_id=user_id))
 
     existing = get_user_by_email(email)
@@ -1274,6 +1509,447 @@ def admin_structure_delete(entity, item_id):
     delete_entity(entity, item_id)
     flash(f"{ENTITY_CONFIG[entity]['label']} eliminada correctamente.", "success")
     return redirect(url_for("admin_structure", **redirect_args))
+
+
+def academic_redirect_args(form_data, overrides=None):
+    args = {
+        "red_id": parse_int(form_data.get("red_id")),
+        "area_id": parse_int(form_data.get("area_id")),
+        "programa_id": parse_int(form_data.get("programa_id")),
+        "nivel_id": parse_int(form_data.get("nivel_id")),
+        "proyecto_formativo_id": parse_int(form_data.get("proyecto_formativo_id")),
+        "fase_id": parse_int(form_data.get("fase_id")),
+        "actividad_proyecto_id": parse_int(form_data.get("actividad_proyecto_id")),
+    }
+    overrides = overrides or {}
+    args.update(overrides)
+    return {key: value for key, value in args.items() if value}
+
+
+def validate_academic_payload(entity, data):
+    validation_error = validate_entity_payload(entity, data)
+    if validation_error:
+        return validation_error
+
+    if entity == "programa":
+        if data.get("id_area") is None or data.get("id_nivel_formacion") is None:
+            return "El programa debe tener área y nivel de formación."
+        if get_entity("area", data["id_area"]) is None:
+            return "El área seleccionada no existe."
+        if get_entity("nivel", data["id_nivel_formacion"]) is None:
+            return "El nivel de formación seleccionado no existe."
+
+    if entity == "ficha":
+        programa = get_entity("programa", data["id_programa_formacion"])
+        if programa is None:
+            return "El programa seleccionado no existe."
+        proyecto_formativo = get_entity("proyecto_formativo", data["id_proyecto_formativo"])
+        if proyecto_formativo is None:
+            return "El proyecto formativo seleccionado no existe."
+        coordinacion = get_entity("coordinacion", data["id_coordinacion"])
+        if coordinacion is None:
+            return "La coordinación seleccionada no existe."
+        if data.get("id_instructor"):
+            instructor = get_entity("instructor", data["id_instructor"])
+            if instructor is None:
+                return "El instructor seleccionado no existe."
+            instructor_area_id = instructor["area_id"] if "area_id" in instructor.keys() else None
+            if not instructor_area_id or instructor_area_id != programa["area_id"]:
+                return "El instructor asignado debe pertenecer a la misma área del programa."
+            if instructor["coordinacion_id"] != data["id_coordinacion"]:
+                return "El instructor asignado debe pertenecer a la coordinación seleccionada."
+    if entity == "fase_proyecto":
+        if get_entity("proyecto_formativo", data["id_proyecto_formativo"]) is None:
+            return "El proyecto formativo seleccionado no existe."
+    if entity == "actividad_proyecto":
+        if get_entity("fase_proyecto", data["id_fase_proyecto"]) is None:
+            return "La fase seleccionada no existe."
+    if entity == "actividad_aprendizaje":
+        if get_entity("actividad_proyecto", data["id_actividad_proyecto"]) is None:
+            return "La actividad de proyecto seleccionada no existe."
+
+    return None
+
+
+def normalize_academic_context(args):
+    red_id = parse_int(args.get("red_id"))
+    area_id = parse_int(args.get("area_id"))
+    programa_id = parse_int(args.get("programa_id"))
+    nivel_id = parse_int(args.get("nivel_id"))
+    proyecto_formativo_id = parse_int(args.get("proyecto_formativo_id"))
+    fase_id = parse_int(args.get("fase_id"))
+    actividad_proyecto_id = parse_int(args.get("actividad_proyecto_id"))
+    edit_entity = args.get("edit_entity")
+    edit_id = parse_int(args.get("edit_id"))
+
+    red = get_entity("red", red_id)
+    if red is None:
+        red_id = None
+        area_id = None
+        programa_id = None
+
+    area = get_entity("area", area_id)
+    if area is None or (red_id and area["red_id"] != red_id):
+        area = None
+        area_id = None
+        programa_id = None
+
+    programa = get_entity("programa", programa_id)
+    if programa is None or (area_id and programa["area_id"] != area_id):
+        programa = None
+        programa_id = None
+
+    nivel = get_entity("nivel", nivel_id)
+    if nivel is None:
+        nivel_id = None
+
+    proyecto_formativo = get_entity("proyecto_formativo", proyecto_formativo_id)
+    if proyecto_formativo is None:
+        proyecto_formativo_id = None
+        fase_id = None
+
+    fase_proyecto = get_entity("fase_proyecto", fase_id)
+    if fase_proyecto is None or (
+        proyecto_formativo_id and fase_proyecto["proyecto_formativo_id"] != proyecto_formativo_id
+    ):
+        fase_proyecto = None
+        fase_id = None
+        actividad_proyecto_id = None
+
+    actividad_proyecto = get_entity("actividad_proyecto", actividad_proyecto_id)
+    if actividad_proyecto is None or (fase_id and actividad_proyecto["fase_id"] != fase_id):
+        actividad_proyecto = None
+        actividad_proyecto_id = None
+
+    if edit_entity not in {
+        "red",
+        "area",
+        "nivel",
+        "programa",
+        "ficha",
+        "proyecto_formativo",
+        "fase_proyecto",
+        "actividad_proyecto",
+        "actividad_aprendizaje",
+    }:
+        edit_entity = None
+        edit_id = None
+
+    editing_item = get_entity(edit_entity, edit_id) if edit_entity and edit_id else None
+    if edit_entity == "area" and (editing_item is None or editing_item["red_id"] != red_id):
+        edit_entity = None
+        edit_id = None
+    if edit_entity == "programa" and (editing_item is None or editing_item["area_id"] != area_id):
+        edit_entity = None
+        edit_id = None
+    if edit_entity == "ficha" and (editing_item is None or editing_item["programa_id"] != programa_id):
+        edit_entity = None
+        edit_id = None
+    if edit_entity == "fase_proyecto" and (
+        editing_item is None or editing_item["proyecto_formativo_id"] != proyecto_formativo_id
+    ):
+        edit_entity = None
+        edit_id = None
+    if edit_entity == "actividad_proyecto" and (editing_item is None or editing_item["fase_id"] != fase_id):
+        edit_entity = None
+        edit_id = None
+    if edit_entity == "actividad_aprendizaje" and (
+        editing_item is None or editing_item["actividad_proyecto_id"] != actividad_proyecto_id
+    ):
+        edit_entity = None
+        edit_id = None
+    if edit_entity in {"red", "nivel"} and editing_item is None:
+        edit_entity = None
+        edit_id = None
+    if edit_entity == "proyecto_formativo" and editing_item is None:
+        edit_entity = None
+        edit_id = None
+
+    fichas = []
+    if programa_id:
+        db = get_db()
+        fichas = db.execute(
+            """
+            SELECT f.id, f.numero, f.id_programa_formacion AS programa_id,
+                   f.id_proyecto_formativo AS proyecto_formativo_id,
+                   f.id_coordinacion AS coordinacion_id, f.id_instructor AS instructor_id,
+                   pf.nombre AS proyecto_formativo_nombre,
+                   c.nombre AS coordinacion_nombre,
+                   i.nombres || ' ' || i.apellidos AS instructor_nombre
+            FROM ficha_formacion f
+            LEFT JOIN proyecto_formativo pf ON pf.id = f.id_proyecto_formativo
+            JOIN coordinacion c ON c.id = f.id_coordinacion
+            LEFT JOIN instructor i ON i.id = f.id_instructor
+            WHERE f.id_programa_formacion = ?
+            ORDER BY f.numero ASC
+            """,
+            (programa_id,),
+        ).fetchall()
+
+    instructores_area = []
+    if programa:
+        instructores_area = get_db().execute(
+            """
+            SELECT id, documento, nombres, apellidos, correo AS email,
+                   id_area AS area_id, id_coordinacion AS coordinacion_id
+            FROM instructor
+            WHERE id_area = ?
+            ORDER BY nombres ASC, apellidos ASC
+            """,
+            (programa["area_id"],),
+        ).fetchall()
+
+    fases_proyecto = (
+        get_entities("fase_proyecto", "id_proyecto_formativo = ?", (proyecto_formativo_id,), "nombre ASC")
+        if proyecto_formativo_id
+        else []
+    )
+    actividades_proyecto = (
+        get_entities("actividad_proyecto", "id_fase_proyecto = ?", (fase_id,), "nombre ASC")
+        if fase_id
+        else []
+    )
+    actividades_aprendizaje = (
+        get_entities("actividad_aprendizaje", "id_actividad_proyecto = ?", (actividad_proyecto_id,), "nombre ASC")
+        if actividad_proyecto_id
+        else []
+    )
+
+    return {
+        "redes": get_entities("red", order_by="nombre ASC"),
+        "areas": get_entities("area", "id_red_conocimiento = ?", (red_id,), "nombre ASC") if red_id else [],
+        "niveles": get_entities("nivel", order_by="nombre ASC"),
+        "programas": get_entities("programa", "id_area = ?", (area_id,), "nombre ASC") if area_id else [],
+        "fichas": fichas,
+        "coordinaciones_disponibles": get_entities("coordinacion", order_by="nombre ASC"),
+        "instructores_area": instructores_area,
+        "proyectos_formativos": get_entities("proyecto_formativo", order_by="codigo ASC, nombre ASC"),
+        "fases_proyecto": fases_proyecto,
+        "actividades_proyecto": actividades_proyecto,
+        "actividades_aprendizaje": actividades_aprendizaje,
+        "selected_red": red,
+        "selected_area": area,
+        "selected_programa": programa,
+        "selected_nivel": nivel,
+        "selected_proyecto_formativo": proyecto_formativo,
+        "selected_fase_proyecto": fase_proyecto,
+        "selected_actividad_proyecto": actividad_proyecto,
+        "edit_entity": edit_entity,
+        "edit_id": edit_id,
+        "editing_item": editing_item,
+        "red_id": red_id,
+        "area_id": area_id,
+        "programa_id": programa_id,
+        "nivel_id": nivel_id,
+        "proyecto_formativo_id": proyecto_formativo_id,
+        "fase_id": fase_id,
+        "actividad_proyecto_id": actividad_proyecto_id,
+    }
+
+
+@app.route("/admin/academic")
+@role_required("Administrador")
+def admin_academic():
+    context = normalize_academic_context(request.args)
+    return render_template("admin_academic.html", user=current_user(), **context)
+
+
+@app.post("/admin/academic/<entity>/create")
+@role_required("Administrador")
+def admin_academic_create(entity):
+    if entity not in {"red", "area", "nivel", "programa", "ficha", "proyecto_formativo", "fase_proyecto", "actividad_proyecto", "actividad_aprendizaje"}:
+        return redirect(url_for("admin_academic"))
+
+    data = entity_form_data(entity, request.form)
+    validation_error = validate_academic_payload(entity, data)
+    if validation_error:
+        flash(validation_error, "danger")
+        return redirect(url_for("admin_academic", **academic_redirect_args(request.form)))
+
+    try:
+        created_id = insert_entity(entity, data)
+    except sqlite3.IntegrityError:
+        flash(f"No fue posible crear {ENTITY_CONFIG[entity]['label'].lower()}. Verifica que no exista un dato duplicado.", "danger")
+        return redirect(url_for("admin_academic", **academic_redirect_args(request.form)))
+
+    redirect_args = academic_redirect_args(
+        request.form,
+        {ENTITY_CONFIG[entity]["context_key"]: created_id, "edit_entity": None, "edit_id": None},
+    )
+    flash(f"{ENTITY_CONFIG[entity]['label']} creada correctamente.", "success")
+    return redirect(url_for("admin_academic", **redirect_args))
+
+
+@app.get("/admin/academic/<entity>/<int:item_id>/edit")
+@role_required("Administrador")
+def admin_academic_edit(entity, item_id):
+    if entity not in {"red", "area", "nivel", "programa", "ficha", "proyecto_formativo", "fase_proyecto", "actividad_proyecto", "actividad_aprendizaje"}:
+        return redirect(url_for("admin_academic"))
+
+    item = get_entity(entity, item_id)
+    if item is None:
+        flash("El elemento solicitado no existe.", "danger")
+        return redirect(url_for("admin_academic"))
+
+    overrides = {"edit_entity": entity, "edit_id": item_id}
+    if entity == "red":
+        overrides["red_id"] = item_id
+    elif entity == "area":
+        overrides["red_id"] = item["red_id"]
+        overrides["area_id"] = item_id
+    elif entity == "programa":
+        area = get_entity("area", item["area_id"])
+        overrides["red_id"] = area["red_id"]
+        overrides["area_id"] = item["area_id"]
+        overrides["programa_id"] = item_id
+        overrides["nivel_id"] = item["nivel_id"]
+    elif entity == "ficha":
+        programa = get_entity("programa", item["programa_id"])
+        area = get_entity("area", programa["area_id"])
+        overrides["red_id"] = area["red_id"]
+        overrides["area_id"] = area["id"]
+        overrides["programa_id"] = programa["id"]
+    elif entity == "nivel":
+        overrides["nivel_id"] = item_id
+    elif entity == "proyecto_formativo":
+        overrides["proyecto_formativo_id"] = item_id
+    elif entity == "fase_proyecto":
+        overrides["proyecto_formativo_id"] = item["proyecto_formativo_id"]
+        overrides["fase_id"] = item_id
+    elif entity == "actividad_proyecto":
+        fase = get_entity("fase_proyecto", item["fase_id"])
+        overrides["proyecto_formativo_id"] = fase["proyecto_formativo_id"]
+        overrides["fase_id"] = fase["id"]
+        overrides["actividad_proyecto_id"] = item_id
+    elif entity == "actividad_aprendizaje":
+        actividad_proyecto = get_entity("actividad_proyecto", item["actividad_proyecto_id"])
+        fase = get_entity("fase_proyecto", actividad_proyecto["fase_id"])
+        overrides["proyecto_formativo_id"] = fase["proyecto_formativo_id"]
+        overrides["fase_id"] = fase["id"]
+        overrides["actividad_proyecto_id"] = actividad_proyecto["id"]
+
+    return redirect(url_for("admin_academic", **overrides))
+
+
+@app.post("/admin/academic/<entity>/<int:item_id>/update")
+@role_required("Administrador")
+def admin_academic_update(entity, item_id):
+    if entity not in {"red", "area", "nivel", "programa", "ficha", "proyecto_formativo", "fase_proyecto", "actividad_proyecto", "actividad_aprendizaje"}:
+        return redirect(url_for("admin_academic"))
+
+    existing = get_entity(entity, item_id)
+    if existing is None:
+        flash("El elemento solicitado no existe.", "danger")
+        return redirect(url_for("admin_academic"))
+
+    data = entity_form_data(entity, request.form)
+    validation_error = validate_academic_payload(entity, data)
+    if validation_error:
+        flash(validation_error, "danger")
+        return redirect(
+            url_for(
+                "admin_academic",
+                **academic_redirect_args(request.form, {"edit_entity": entity, "edit_id": item_id}),
+            )
+        )
+
+    try:
+        update_entity(entity, item_id, data)
+    except sqlite3.IntegrityError:
+        flash(f"No fue posible actualizar {ENTITY_CONFIG[entity]['label'].lower()}. Verifica los datos ingresados.", "danger")
+        return redirect(
+            url_for(
+                "admin_academic",
+                **academic_redirect_args(request.form, {"edit_entity": entity, "edit_id": item_id}),
+            )
+        )
+
+    flash(f"{ENTITY_CONFIG[entity]['label']} actualizada correctamente.", "success")
+    return redirect(url_for("admin_academic", **academic_redirect_args(request.form)))
+
+
+@app.post("/admin/academic/<entity>/<int:item_id>/delete")
+@role_required("Administrador")
+def admin_academic_delete(entity, item_id):
+    if entity not in {"red", "area", "nivel", "programa", "ficha", "proyecto_formativo", "fase_proyecto", "actividad_proyecto", "actividad_aprendizaje"}:
+        return redirect(url_for("admin_academic"))
+
+    item = get_entity(entity, item_id)
+    if item is None:
+        flash("El elemento solicitado no existe.", "danger")
+        return redirect(url_for("admin_academic"))
+
+    redirect_args = academic_redirect_args(request.form)
+    if entity == "red" and redirect_args.get("red_id") == item_id:
+        redirect_args.pop("red_id", None)
+        redirect_args.pop("area_id", None)
+        redirect_args.pop("programa_id", None)
+    elif entity == "area" and redirect_args.get("area_id") == item_id:
+        redirect_args.pop("area_id", None)
+        redirect_args.pop("programa_id", None)
+    elif entity == "programa" and redirect_args.get("programa_id") == item_id:
+        redirect_args.pop("programa_id", None)
+    elif entity == "nivel" and redirect_args.get("nivel_id") == item_id:
+        redirect_args.pop("nivel_id", None)
+    elif entity == "proyecto_formativo" and redirect_args.get("proyecto_formativo_id") == item_id:
+        redirect_args.pop("proyecto_formativo_id", None)
+        redirect_args.pop("fase_id", None)
+    elif entity == "fase_proyecto" and redirect_args.get("fase_id") == item_id:
+        redirect_args.pop("fase_id", None)
+        redirect_args.pop("actividad_proyecto_id", None)
+    elif entity == "actividad_proyecto" and redirect_args.get("actividad_proyecto_id") == item_id:
+        redirect_args.pop("actividad_proyecto_id", None)
+
+    delete_entity(entity, item_id)
+    flash(f"{ENTITY_CONFIG[entity]['label']} eliminada correctamente.", "success")
+    return redirect(url_for("admin_academic", **redirect_args))
+
+
+@app.route("/instructor/password", methods=["GET", "POST"])
+@role_required("Instructor")
+def instructor_change_password():
+    user = current_user()
+
+    if request.method == "POST":
+        current_password = request.form.get("current_password", "")
+        new_password = request.form.get("new_password", "")
+        confirm_password = request.form.get("confirm_password", "")
+
+        user_record = get_user_by_email(user["email"])
+        if user_record is None:
+            flash("No fue posible validar el usuario actual.", "danger")
+            return redirect(url_for("instructor_change_password"))
+
+        if not current_password or not new_password or not confirm_password:
+            flash("Todos los campos son obligatorios.", "danger")
+            return render_template("instructor_change_password.html", user=user)
+
+        if not check_password_hash(user_record["password_hash"], current_password):
+            flash("La contraseña actual es incorrecta.", "danger")
+            return render_template("instructor_change_password.html", user=user)
+
+        if new_password != confirm_password:
+            flash("La nueva contraseña y su confirmación no coinciden.", "danger")
+            return render_template("instructor_change_password.html", user=user)
+
+        if len(new_password) < 8:
+            flash("La nueva contraseña debe tener al menos 8 caracteres.", "danger")
+            return render_template("instructor_change_password.html", user=user)
+
+        if current_password == new_password:
+            flash("La nueva contraseña debe ser diferente a la actual.", "danger")
+            return render_template("instructor_change_password.html", user=user)
+
+        db = get_db()
+        db.execute(
+            "UPDATE usuario SET contrasena_hash = ? WHERE id = ?",
+            (generate_password_hash(new_password), user["id"]),
+        )
+        db.commit()
+        flash("Contraseña actualizada correctamente.", "success")
+        return redirect(url_for("instructor_change_password"))
+
+    return render_template("instructor_change_password.html", user=user)
 
 
 if __name__ == "__main__":

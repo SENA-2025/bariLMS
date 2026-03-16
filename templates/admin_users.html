@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="Administracion de usuarios y roles de BARÍ LMS">
+    <meta name="description" content="Administración de usuarios y roles de BARÍ LMS">
     <title>BARÍ LMS | Usuarios y roles</title>
     <link href="{{ url_for('static', filename='vendor/fontawesome-free/css/all.min.css') }}" rel="stylesheet" type="text/css">
     <link href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900" rel="stylesheet">
@@ -33,7 +33,7 @@
                 </a>
             </li>
             <hr class="sidebar-divider">
-            <div class="sidebar-heading">Administracion</div>
+            <div class="sidebar-heading">Administración</div>
             <li class="nav-item active">
                 <a class="nav-link" href="{{ url_for('admin_users') }}">
                     <i class="fas fa-fw fa-users-cog"></i>
@@ -47,6 +47,12 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin_academic') }}">
+                    <i class="fas fa-fw fa-graduation-cap"></i>
+                    <span>Gestión académica</span>
+                </a>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link" href="{{ url_for('dashboard', role_slug='administrador') }}">
                     <i class="fas fa-fw fa-chart-pie"></i>
                     <span>Indicadores</span>
@@ -56,7 +62,7 @@
                 <form method="post" action="{{ url_for('logout') }}">
                     <button type="submit" class="nav-link btn btn-link text-left w-100 logout-link">
                         <i class="fas fa-fw fa-sign-out-alt"></i>
-                        <span>Cerrar sesion</span>
+                        <span>Cerrar sesión</span>
                     </button>
                 </form>
             </li>
@@ -82,7 +88,7 @@
                 <div class="container-fluid">
                     <div class="d-sm-flex align-items-center justify-content-between mb-4">
                         <div>
-                            <div class="text-uppercase small font-weight-bold text-sena mb-2">Modulo administrativo</div>
+                            <div class="text-uppercase small font-weight-bold text-sena mb-2">Módulo administrativo</div>
                             <h1 class="h3 mb-0 text-gray-800">Usuarios y roles</h1>
                         </div>
                         <a href="{{ url_for('dashboard', role_slug='administrador') }}" class="btn btn-outline-success btn-sm shadow-sm">
@@ -149,7 +155,7 @@
                                         </div>
                                         <div class="form-group">
                                             <label for="password">
-                                                {% if editing_user %}Nueva contrasena{% else %}Contrasena{% endif %}
+                                                {% if editing_user %}Nueva contraseña{% else %}Contraseña{% endif %}
                                             </label>
                                             <input
                                                 type="password"
@@ -159,7 +165,7 @@
                                                 {% if not editing_user %}required{% endif %}
                                             >
                                             {% if editing_user %}
-                                                <small class="form-text text-muted">Deja este campo vacio para conservar la contrasena actual.</small>
+                                                <small class="form-text text-muted">Deja este campo vacío para conservar la contraseña actual.</small>
                                             {% endif %}
                                         </div>
                                         <div class="custom-control custom-switch mb-4">
@@ -176,7 +182,7 @@
                                             {% if editing_user %}Guardar cambios{% else %}Crear usuario{% endif %}
                                         </button>
                                         {% if editing_user %}
-                                            <a href="{{ url_for('admin_users') }}" class="btn btn-light btn-block mt-2">Cancelar edicion</a>
+                                            <a href="{{ url_for('admin_users') }}" class="btn btn-light btn-block mt-2">Cancelar edición</a>
                                         {% endif %}
                                     </form>
                                 </div>

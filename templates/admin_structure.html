@@ -10,7 +10,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="Gestion de estructura institucional de BARÍ LMS">
+    <meta name="description" content="Gestión de estructura institucional de BARÍ LMS">
     <title>BARÍ LMS | Estructura institucional</title>
     <link href="{{ url_for('static', filename='vendor/fontawesome-free/css/all.min.css') }}" rel="stylesheet" type="text/css">
     <link href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900" rel="stylesheet">
@@ -34,7 +34,7 @@
                 </a>
             </li>
             <hr class="sidebar-divider">
-            <div class="sidebar-heading">Administracion</div>
+            <div class="sidebar-heading">Administración</div>
             <li class="nav-item">
                 <a class="nav-link" href="{{ url_for('admin_users') }}">
                     <i class="fas fa-fw fa-users-cog"></i>
@@ -48,6 +48,12 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin_academic') }}">
+                    <i class="fas fa-fw fa-graduation-cap"></i>
+                    <span>Gestión académica</span>
+                </a>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link" href="{{ url_for('dashboard', role_slug='administrador') }}">
                     <i class="fas fa-fw fa-chart-pie"></i>
                     <span>Indicadores</span>
@@ -57,7 +63,7 @@
                 <form method="post" action="{{ url_for('logout') }}">
                     <button type="submit" class="nav-link btn btn-link text-left w-100 logout-link">
                         <i class="fas fa-fw fa-sign-out-alt"></i>
-                        <span>Cerrar sesion</span>
+                        <span>Cerrar sesión</span>
                     </button>
                 </form>
             </li>
@@ -83,7 +89,7 @@
                 <div class="container-fluid">
                     <div class="d-sm-flex align-items-center justify-content-between mb-4">
                         <div>
-                            <div class="text-uppercase small font-weight-bold text-sena mb-2">Modulo administrativo</div>
+                            <div class="text-uppercase small font-weight-bold text-sena mb-2">Módulo administrativo</div>
                             <h1 class="h3 mb-0 text-gray-800">Estructura institucional</h1>
                         </div>
                         <a href="{{ url_for('dashboard', role_slug='administrador') }}" class="btn btn-outline-success btn-sm shadow-sm">
@@ -99,7 +105,7 @@
                             Centro: {{ selected_centro.nombre if selected_centro else 'Sin seleccionar' }}
                         </span>
                         <span class="structure-chip {% if selected_coordinacion %}active{% endif %}">
-                            Coordinacion: {{ selected_coordinacion.nombre if selected_coordinacion else 'Sin seleccionar' }}
+                            Coordinación: {{ selected_coordinacion.nombre if selected_coordinacion else 'Sin seleccionar' }}
                         </span>
                         <span class="structure-chip {% if selected_sede %}active{% endif %}">
                             Sede: {{ selected_sede.nombre if selected_sede else 'Sin seleccionar' }}
@@ -139,7 +145,7 @@
                                                     {% if edit_entity == 'regional' %}Guardar regional{% else %}Crear regional{% endif %}
                                                 </button>
                                                 {% if edit_entity == 'regional' %}
-                                                    <a href="{{ url_for('admin_structure', regional_id=regional_id) }}" class="btn btn-light btn-block mt-2">Cancelar edicion</a>
+                                                    <a href="{{ url_for('admin_structure', regional_id=regional_id) }}" class="btn btn-light btn-block mt-2">Cancelar edición</a>
                                                 {% endif %}
                                             </form>
                                         </div>
@@ -183,7 +189,7 @@
                         <div class="col-12 mb-4">
                             <div class="card shadow border-0 structure-card">
                                 <div class="card-header py-3 border-bottom-sena d-flex justify-content-between align-items-center">
-                                    <h6 class="m-0 font-weight-bold text-sena">Centros de formacion de {{ selected_regional.nombre }}</h6>
+                                    <h6 class="m-0 font-weight-bold text-sena">Centros de formación de {{ selected_regional.nombre }}</h6>
                                     <span class="badge badge-primary badge-pill">{{ centros|length }}</span>
                                 </div>
                                 <div class="card-body">
@@ -200,7 +206,7 @@
                                                     {% if edit_entity == 'centro' %}Guardar centro{% else %}Crear centro{% endif %}
                                                 </button>
                                                 {% if edit_entity == 'centro' %}
-                                                    <a href="{{ url_for('admin_structure', regional_id=regional_id, centro_id=centro_id) }}" class="btn btn-light btn-block mt-2">Cancelar edicion</a>
+                                                    <a href="{{ url_for('admin_structure', regional_id=regional_id, centro_id=centro_id) }}" class="btn btn-light btn-block mt-2">Cancelar edición</a>
                                                 {% endif %}
                                             </form>
                                         </div>
@@ -260,14 +266,14 @@
                                             {% if edit_entity == 'coordinacion' %}Guardar coordinacion{% else %}Crear coordinacion{% endif %}
                                         </button>
                                         {% if edit_entity == 'coordinacion' %}
-                                            <a href="{{ url_for('admin_structure', regional_id=regional_id, centro_id=centro_id, coordinacion_id=coordinacion_id, sede_id=sede_id) }}" class="btn btn-light btn-block mt-2">Cancelar edicion</a>
+                                            <a href="{{ url_for('admin_structure', regional_id=regional_id, centro_id=centro_id, coordinacion_id=coordinacion_id, sede_id=sede_id) }}" class="btn btn-light btn-block mt-2">Cancelar edición</a>
                                         {% endif %}
                                     </form>
                                     <div class="table-responsive">
                                         <table class="table table-bordered sena-table">
                                             <thead>
                                                 <tr>
-                                                    <th>Coordinacion</th>
+                                                    <th>Coordinación</th>
                                                     <th>Acciones</th>
                                                 </tr>
                                             </thead>
@@ -314,7 +320,7 @@
                                             {% if edit_entity == 'sede' %}Guardar sede{% else %}Crear sede{% endif %}
                                         </button>
                                         {% if edit_entity == 'sede' %}
-                                            <a href="{{ url_for('admin_structure', regional_id=regional_id, centro_id=centro_id, coordinacion_id=coordinacion_id, sede_id=sede_id) }}" class="btn btn-light btn-block mt-2">Cancelar edicion</a>
+                                            <a href="{{ url_for('admin_structure', regional_id=regional_id, centro_id=centro_id, coordinacion_id=coordinacion_id, sede_id=sede_id) }}" class="btn btn-light btn-block mt-2">Cancelar edición</a>
                                         {% endif %}
                                     </form>
                                     <div class="table-responsive">
@@ -372,9 +378,18 @@
                                                 <input type="email" class="form-control" name="email" value="{{ editing_item.email if edit_entity == 'instructor' else '' }}">
                                             </div>
                                         </div>
+                                        <div class="form-group">
+                                            <label>Área académica</label>
+                                            <select class="form-control" name="area_id">
+                                                <option value="">Sin asignar</option>
+                                                {% for area in areas_academicas %}
+                                                    <option value="{{ area.id }}" {% if edit_entity == 'instructor' and editing_item.area_id == area.id %}selected{% endif %}>{{ area.nombre }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
                                         <small class="form-text text-muted mb-3">
                                             Al crear el instructor se genera automaticamente un usuario con rol Instructor.
-                                            La contrasena inicial sera el numero de documento. Si no registras correo, el sistema creara uno tecnico.
+                                            La contraseña inicial será el número de documento. Si no registras correo, el sistema creará uno técnico.
                                         </small>
                                         <div class="form-row">
                                             <div class="form-group col-md-6">
@@ -390,7 +405,7 @@
                                             {% if edit_entity == 'instructor' %}Guardar instructor{% else %}Crear instructor{% endif %}
                                         </button>
                                         {% if edit_entity == 'instructor' %}
-                                            <a href="{{ url_for('admin_structure', regional_id=regional_id, centro_id=centro_id, coordinacion_id=coordinacion_id, sede_id=sede_id) }}" class="btn btn-light btn-block mt-2">Cancelar edicion</a>
+                                            <a href="{{ url_for('admin_structure', regional_id=regional_id, centro_id=centro_id, coordinacion_id=coordinacion_id, sede_id=sede_id) }}" class="btn btn-light btn-block mt-2">Cancelar edición</a>
                                         {% endif %}
                                     </form>
                                     <div class="table-responsive">
@@ -399,6 +414,7 @@
                                                 <tr>
                                                     <th>Instructor</th>
                                                     <th>Documento</th>
+                                                    <th>Area</th>
                                                     <th>Correo</th>
                                                     <th>Acciones</th>
                                                 </tr>
@@ -408,6 +424,12 @@
                                                     <tr>
                                                         <td>{{ item.nombres }} {{ item.apellidos }}</td>
                                                         <td>{{ item.documento }}</td>
+                                                        <td>
+                                                            {% for area in areas_academicas %}
+                                                                {% if item.area_id == area.id %}{{ area.nombre }}{% endif %}
+                                                            {% endfor %}
+                                                            {% if not item.area_id %}-{% endif %}
+                                                        </td>
                                                         <td>{{ item.email or '-' }}</td>
                                                         <td class="text-nowrap">
                                                             <a href="{{ url_for('admin_structure_edit', entity='instructor', item_id=item.id) }}" class="btn btn-sm btn-outline-success"><i class="fas fa-pen"></i></a>
@@ -420,7 +442,7 @@
                                                         </td>
                                                     </tr>
                                                 {% else %}
-                                                    <tr><td colspan="4" class="text-center text-muted">No hay instructores registrados.</td></tr>
+                                                    <tr><td colspan="5" class="text-center text-muted">No hay instructores registrados.</td></tr>
                                                 {% endfor %}
                                             </tbody>
                                         </table>
@@ -463,7 +485,7 @@
                                             {% if edit_entity == 'aprendiz' %}Guardar aprendiz{% else %}Crear aprendiz{% endif %}
                                         </button>
                                         {% if edit_entity == 'aprendiz' %}
-                                            <a href="{{ url_for('admin_structure', regional_id=regional_id, centro_id=centro_id, coordinacion_id=coordinacion_id, sede_id=sede_id) }}" class="btn btn-light btn-block mt-2">Cancelar edicion</a>
+                                            <a href="{{ url_for('admin_structure', regional_id=regional_id, centro_id=centro_id, coordinacion_id=coordinacion_id, sede_id=sede_id) }}" class="btn btn-light btn-block mt-2">Cancelar edición</a>
                                         {% endif %}
                                     </form>
                                     <div class="table-responsive">
@@ -528,7 +550,7 @@
                                                     {% if edit_entity == 'ambiente' %}Guardar ambiente{% else %}Crear ambiente{% endif %}
                                                 </button>
                                                 {% if edit_entity == 'ambiente' %}
-                                                    <a href="{{ url_for('admin_structure', regional_id=regional_id, centro_id=centro_id, coordinacion_id=coordinacion_id, sede_id=sede_id) }}" class="btn btn-light btn-block mt-2">Cancelar edicion</a>
+                                                    <a href="{{ url_for('admin_structure', regional_id=regional_id, centro_id=centro_id, coordinacion_id=coordinacion_id, sede_id=sede_id) }}" class="btn btn-light btn-block mt-2">Cancelar edición</a>
                                                 {% endif %}
                                             </form>
                                         </div>

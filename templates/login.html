@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="Inicio de sesion de BARÍ LMS para el LMS SENA">
-    <title>BARÍ LMS | Inicio de sesion</title>
+    <meta name="description" content="Inicio de sesión de BARÍ LMS para el LMS SENA">
+    <title>BARÍ LMS | Inicio de sesión</title>
     <link href="{{ url_for('static', filename='vendor/fontawesome-free/css/all.min.css') }}" rel="stylesheet" type="text/css">
     <link href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/sb-admin-2.min.css') }}" rel="stylesheet">
@@ -30,7 +30,7 @@
                                     <div class="text-uppercase small font-weight-bold mb-2">BARÍ</div>
                                     <h1 class="h2 font-weight-bold mb-3">LMS SENA</h1>
                                     <p class="mb-4">
-                                        Plataforma para la gestion de la formación por proyectos del SENA.
+                                        Plataforma para la gestión de la formación por proyectos del SENA.
                                     </p>
                                 </div>
                             </div>
@@ -38,7 +38,7 @@
                                 <div class="p-5">
                                     <div class="mb-4">
                                         <div class="text-uppercase small font-weight-bold text-sena mb-2">Acceso institucional</div>
-                                        <h2 class="h3 text-gray-900 mb-1">Iniciar sesion</h2>
+                                        <h2 class="h3 text-gray-900 mb-1">Iniciar sesión</h2>
                                     </div>
                                     {% with messages = get_flashed_messages(with_categories=true) %}
                                         {% if messages %}
@@ -54,7 +54,7 @@
                                         </div>
                                         <div class="form-group">
                                             <input type="password" class="form-control form-control-user" name="password"
-                                                placeholder="Contrasena" required>
+                                                placeholder="Contraseña" required>
                                         </div>
                                         <div class="form-group">
                                             <select class="custom-select px-4" name="role" required>
