@@ -198,14 +198,7 @@ DASHBOARDS = {
             {
                 "icon": "fa-project-diagram",
                 "label": "Mi proyecto",
-                "endpoint": "dashboard",
-                "endpoint_kwargs": {"role_slug": "aprendiz"},
-            },
-            {
-                "icon": "fa-file-alt",
-                "label": "Evidencias",
-                "endpoint": "dashboard",
-                "endpoint_kwargs": {"role_slug": "aprendiz"},
+                "endpoint": "aprendiz_fichas",
             },
         ],
         "metrics": [
@@ -2394,6 +2387,250 @@ def api_instructor_act_aprendizaje_nueva(act_proy_id):
     )
     db.commit()
     return jsonify({"ok": True, "id": cursor.lastrowid, "nombre": nombre})
+
+
+# ============================================================
+# RUTAS DEL APRENDIZ
+# ============================================================
+
+@app.route("/aprendiz/fichas")
+@role_required("Aprendiz")
+def aprendiz_fichas():
+    user = current_user()
+    db = get_db()
+
+    aprendiz = db.execute(
+        "SELECT id, ficha, nombres, apellidos FROM aprendiz WHERE lower(nombres || ' ' || apellidos) LIKE lower(?) || '%'",
+        (user["name"],),
+    ).fetchone()
+
+    if aprendiz is None:
+        flash("No tienes un perfil de aprendiz asociado.", "warning")
+        return redirect(url_for("dashboard", role_slug="aprendiz"))
+
+    fichas = []
+    if aprendiz["ficha"]:
+        fichas = db.execute(
+            """
+            SELECT f.id, f.numero,
+                   p.nombre AS programa_nombre,
+                   pf.nombre AS proyecto_nombre,
+                   pf.codigo AS proyecto_codigo,
+                   n.nombre AS nivel_nombre
+            FROM ficha_formacion f
+            JOIN programa_formacion p ON p.id = f.id_programa_formacion
+            LEFT JOIN proyecto_formativo pf ON pf.id = f.id_proyecto_formativo
+            LEFT JOIN nivel_formacion n ON n.id = p.id_nivel_formacion
+            WHERE f.numero = ?
+            ORDER BY f.numero ASC
+            """,
+            (aprendiz["ficha"],),
+        ).fetchall()
+
+    return render_template("aprendiz/fichas.html", user=user, fichas=fichas)
+
+
+@app.route("/aprendiz/ficha/<int:ficha_id>/proyecto")
+@role_required("Aprendiz")
+def aprendiz_proyecto(ficha_id):
+    user = current_user()
+    db = get_db()
+
+    aprendiz = db.execute(
+        "SELECT id, ficha FROM aprendiz WHERE lower(nombres || ' ' || apellidos) LIKE lower(?) || '%'",
+        (user["name"],),
+    ).fetchone()
+
+    if aprendiz is None:
+        flash("No tienes un perfil de aprendiz asociado.", "warning")
+        return redirect(url_for("dashboard", role_slug="aprendiz"))
+
+    ficha = db.execute(
+        """
+        SELECT f.id, f.numero,
+               p.nombre AS programa_nombre,
+               pf.nombre AS proyecto_nombre,
+               pf.codigo AS proyecto_codigo,
+               pf.id AS proyecto_id,
+               n.nombre AS nivel_nombre
+        FROM ficha_formacion f
+        JOIN programa_formacion p ON p.id = f.id_programa_formacion
+        LEFT JOIN proyecto_formativo pf ON pf.id = f.id_proyecto_formativo
+        LEFT JOIN nivel_formacion n ON n.id = p.id_nivel_formacion
+        WHERE f.id = ?
+        """,
+        (ficha_id,),
+    ).fetchone()
+
+    if ficha is None:
+        flash("La ficha solicitada no existe.", "danger")
+        return redirect(url_for("aprendiz_fichas"))
+
+    if aprendiz["ficha"] != ficha["numero"]:
+        flash("No tienes acceso a esta ficha.", "danger")
+        return redirect(url_for("aprendiz_fichas"))
+
+    return render_template("aprendiz/fases.html", user=user, ficha=ficha)
+
+
+@app.route("/api/aprendiz/ficha/<int:ficha_id>/tree")
+@role_required("Aprendiz")
+def api_aprendiz_ficha_tree(ficha_id):
+    user = current_user()
+    db = get_db()
+
+    ficha = db.execute(
+        "SELECT id_proyecto_formativo, numero FROM ficha_formacion WHERE id = ?",
+        (ficha_id,),
+    ).fetchone()
+
+    if ficha is None or ficha["id_proyecto_formativo"] is None:
+        return jsonify({"fases": []})
+
+    usuario_id = user["id"]
+
+    fases = db.execute(
+        "SELECT id, nombre FROM fase_proyecto WHERE id_proyecto_formativo = ? ORDER BY id ASC",
+        (ficha["id_proyecto_formativo"],),
+    ).fetchall()
+
+    result = []
+    for fase in fases:
+        acts_proy = db.execute(
+            "SELECT id, nombre FROM actividad_proyecto WHERE id_fase_proyecto = ? ORDER BY id ASC",
+            (fase["id"],),
+        ).fetchall()
+
+        fase_data = {"id": fase["id"], "nombre": fase["nombre"], "actividades_proyecto": []}
+        for ap in acts_proy:
+            competencias = db.execute(
+                """
+                SELECT aa.id, aa.nombre,
+                       ga.url AS guia_url,
+                       ea.id AS evidencia_id,
+                       ea.descripcion AS evidencia_descripcion,
+                       ee.id AS entrega_id,
+                       ee.url AS entrega_url,
+                       ee.calificacion,
+                       ee.observaciones
+                FROM actividad_aprendizaje aa
+                LEFT JOIN guia_aprendizaje ga ON ga.id_actividad_aprendizaje = aa.id
+                LEFT JOIN evidencia_aprendizaje ea ON ea.id_actividad_aprendizaje = aa.id
+                LEFT JOIN entrega_evidencia ee ON ee.id_evidencia_aprendizaje = ea.id
+                       AND ee.id_usuario = ?
+                WHERE aa.id_actividad_proyecto = ?
+                ORDER BY aa.id ASC
+                """,
+                (usuario_id, ap["id"]),
+            ).fetchall()
+
+            ap_data = {
+                "id": ap["id"],
+                "nombre": ap["nombre"],
+                "competencias": [
+                    {
+                        "id": comp["id"],
+                        "nombre": comp["nombre"],
+                        "guia_url": comp["guia_url"],
+                        "evidencia_id": comp["evidencia_id"],
+                        "evidencia_desc": comp["evidencia_descripcion"],
+                        "entrega_id": comp["entrega_id"],
+                        "entrega_url": comp["entrega_url"],
+                        "calificacion": comp["calificacion"],
+                        "observaciones": comp["observaciones"],
+                    }
+                    for comp in competencias
+                ],
+            }
+            fase_data["actividades_proyecto"].append(ap_data)
+        result.append(fase_data)
+
+    return jsonify({"fases": result})
+
+
+@app.route("/api/aprendiz/competencia/<int:comp_id>/detalle")
+@role_required("Aprendiz")
+def api_aprendiz_competencia_detalle(comp_id):
+    db = get_db()
+    detalle = db.execute(
+        """
+        SELECT aa.id, aa.nombre,
+               ga.url AS guia_url,
+               ea.id AS evidencia_id,
+               ea.descripcion AS evidencia_descripcion
+        FROM actividad_aprendizaje aa
+        LEFT JOIN guia_aprendizaje ga ON ga.id_actividad_aprendizaje = aa.id
+        LEFT JOIN evidencia_aprendizaje ea ON ea.id_actividad_aprendizaje = aa.id
+        WHERE aa.id = ?
+        """,
+        (comp_id,),
+    ).fetchone()
+
+    if detalle is None:
+        return jsonify({"error": "Competencia no encontrada"}), 404
+
+    return jsonify({
+        "id": detalle["id"],
+        "nombre": detalle["nombre"],
+        "guia_url": detalle["guia_url"],
+        "evidencia_id": detalle["evidencia_id"],
+        "evidencia_descripcion": detalle["evidencia_descripcion"],
+    })
+
+
+@app.route("/api/aprendiz/entrega", methods=["POST"])
+@role_required("Aprendiz")
+def api_aprendiz_entrega():
+    data = request.get_json() or {}
+    evidencia_id = parse_int(data.get("evidencia_id"))
+    url = data.get("url", "").strip()
+    entrega_id = data.get("entrega_id")
+
+    if evidencia_id is None:
+        return jsonify({"ok": False, "error": "ID de evidencia requerido"}), 400
+
+    if not url:
+        return jsonify({"ok": False, "error": "URL requerida"}), 400
+
+    user = current_user()
+    db = get_db()
+
+    evidencia = db.execute(
+        "SELECT id FROM evidencia_aprendizaje WHERE id = ?",
+        (evidencia_id,),
+    ).fetchone()
+
+    if evidencia is None:
+        return jsonify({"ok": False, "error": "Evidencia no encontrada"}), 400
+
+    if entrega_id:
+        entrega_id = parse_int(entrega_id)
+        db.execute(
+            "UPDATE entrega_evidencia SET url = ?, entregado_en = CURRENT_TIMESTAMP WHERE id = ?",
+            (url, entrega_id),
+        )
+        db.commit()
+        return jsonify({"ok": True, "entrega_id": entrega_id})
+    else:
+        existing = db.execute(
+            "SELECT id FROM entrega_evidencia WHERE id_evidencia_aprendizaje = ? AND id_usuario = ?",
+            (evidencia_id, user["id"]),
+        ).fetchone()
+
+        if existing:
+            db.execute(
+                "UPDATE entrega_evidencia SET url = ?, entregado_en = CURRENT_TIMESTAMP WHERE id = ?",
+                (url, existing["id"]),
+            )
+            db.commit()
+            return jsonify({"ok": True, "entrega_id": existing["id"]})
+        else:
+            cursor = db.execute(
+                "INSERT INTO entrega_evidencia (id_evidencia_aprendizaje, id_usuario, url) VALUES (?, ?, ?)",
+                (evidencia_id, user["id"], url),
+            )
+            db.commit()
+            return jsonify({"ok": True, "entrega_id": cursor.lastrowid})
 
 
 if __name__ == "__main__":
