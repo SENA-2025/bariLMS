@@ -1,14 +1,20 @@
 import copy
 import os
-import sqlite3
 from functools import wraps
 
+import psycopg2
+from psycopg2 import IntegrityError
+from psycopg2.extras import RealDictCursor
 from flask import Flask, flash, g, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "bari-lms-dev-key")
-app.config["DATABASE"] = os.path.join(app.root_path, "bari_lms.db")
+app.config["PGHOST"] = os.environ.get("PGHOST", "127.0.0.1")
+app.config["PGPORT"] = int(os.environ.get("PGPORT", "5432"))
+app.config["PGDATABASE"] = os.environ.get("PGDATABASE", "bari_lms")
+app.config["PGUSER"] = os.environ.get("PGUSER", "postgres")
+app.config["PGPASSWORD"] = os.environ.get("PGPASSWORD", "")
 
 ROLE_TO_SLUG = {
     "Administrador": "administrador",
@@ -69,6 +75,7 @@ DASHBOARDS = {
         "menu_heading": "Administración",
         "menu": [
             {"icon": "fa-users-cog", "label": "Usuarios y roles", "endpoint": "admin_users"},
+            {"icon": "fa-user-friends", "label": "Gestionar personas", "endpoint": "admin_people"},
             {"icon": "fa-sitemap", "label": "Estructura institucional", "endpoint": "admin_structure"},
             {"icon": "fa-graduation-cap", "label": "Gestión académica", "endpoint": "admin_academic"},
             {
@@ -275,27 +282,27 @@ ENTITY_CONFIG = {
     "instructor": {
         "table": "instructor",
         "label": "Instructor",
-        "parent_key": "coordinacion_id",
-        "fields": ["id_coordinacion", "id_area", "documento", "nombres", "apellidos", "correo"],
-        "required": ["id_coordinacion", "documento", "nombres", "apellidos"],
-        "context_key": "coordinacion_id",
+        "parent_key": "centro_id",
+        "fields": ["id_centro", "id_area", "documento", "nombres", "apellidos", "correo"],
+        "required": ["id_centro", "documento", "nombres", "apellidos"],
+        "context_key": "centro_id",
         "select_aliases": {
-            "id_coordinacion": "coordinacion_id",
+            "id_centro": "centro_id",
             "id_area": "area_id",
             "correo": "email",
             "id_usuario": "user_id",
         },
-        "form_to_db": {"coordinacion_id": "id_coordinacion", "area_id": "id_area", "email": "correo"},
+        "form_to_db": {"centro_id": "id_centro", "area_id": "id_area", "email": "correo"},
     },
     "aprendiz": {
         "table": "aprendiz",
         "label": "Aprendiz",
-        "parent_key": "coordinacion_id",
-        "fields": ["id_coordinacion", "documento", "nombres", "apellidos", "ficha"],
-        "required": ["id_coordinacion", "documento", "nombres", "apellidos"],
-        "context_key": "coordinacion_id",
-        "select_aliases": {"id_coordinacion": "coordinacion_id"},
-        "form_to_db": {"coordinacion_id": "id_coordinacion"},
+        "parent_key": "regional_id",
+        "fields": ["id_regional", "documento", "nombres", "apellidos", "correo", "ficha"],
+        "required": ["id_regional", "documento", "nombres", "apellidos"],
+        "context_key": "regional_id",
+        "select_aliases": {"id_regional": "regional_id", "correo": "email", "id_usuario": "user_id"},
+        "form_to_db": {"regional_id": "id_regional"},
     },
     "ambiente": {
         "table": "ambiente",
@@ -407,6 +414,16 @@ ENTITY_CONFIG = {
         "select_aliases": {"id_actividad_proyecto": "actividad_proyecto_id"},
         "form_to_db": {"actividad_proyecto_id": "id_actividad_proyecto"},
     },
+    "administrativo_persona": {
+        "table": "personal_administrativo",
+        "label": "Personal administrativo",
+        "parent_key": "centro_id",
+        "fields": ["id_centro", "documento", "nombres", "apellidos", "correo", "cargo"],
+        "required": ["id_centro", "documento", "nombres", "apellidos", "cargo"],
+        "context_key": "centro_id",
+        "select_aliases": {"id_centro": "centro_id", "correo": "email", "id_usuario": "user_id"},
+        "form_to_db": {"centro_id": "id_centro"},
+    },
 }
 
 TABLE_NAMES = {
@@ -445,19 +462,82 @@ COLUMN_RENAMES = {
     "sede": {"centro_id": "id_centro"},
     "instructor": {
         "coordinacion_id": "id_coordinacion",
+        "centro_id": "id_centro",
         "email": "correo",
         "user_id": "id_usuario",
     },
-    "aprendiz": {"coordinacion_id": "id_coordinacion"},
+    "aprendiz": {"coordinacion_id": "id_coordinacion", "regional_id": "id_regional"},
     "ambiente": {"sede_id": "id_sede"},
 }
 
 
+class CursorWrapper:
+    def __init__(self, cursor=None):
+        self.cursor = cursor
+
+    def fetchone(self):
+        if self.cursor is None:
+            return None
+        try:
+            return self.cursor.fetchone()
+        finally:
+            self.cursor.close()
+            self.cursor = None
+
+    def fetchall(self):
+        if self.cursor is None:
+            return []
+        try:
+            return self.cursor.fetchall()
+        finally:
+            self.cursor.close()
+            self.cursor = None
+
+
+class PostgresConnection:
+    def __init__(self, connection):
+        self.connection = connection
+
+    @staticmethod
+    def _normalize_query(query):
+        return query.replace("?", "%s")
+
+    def execute(self, query, params=()):
+        cursor = self.connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute(self._normalize_query(query), params)
+        if cursor.description is None:
+            cursor.close()
+            return CursorWrapper()
+        return CursorWrapper(cursor)
+
+    def executemany(self, query, seq_of_params):
+        cursor = self.connection.cursor()
+        try:
+            cursor.executemany(self._normalize_query(query), seq_of_params)
+        finally:
+            cursor.close()
+        return CursorWrapper()
+
+    def commit(self):
+        self.connection.commit()
+
+    def rollback(self):
+        self.connection.rollback()
+
+    def close(self):
+        self.connection.close()
+
+
 def get_db():
     if "db" not in g:
-        g.db = sqlite3.connect(app.config["DATABASE"])
-        g.db.row_factory = sqlite3.Row
-        g.db.execute("PRAGMA foreign_keys = ON")
+        connection = psycopg2.connect(
+            host=app.config["PGHOST"],
+            port=app.config["PGPORT"],
+            dbname=app.config["PGDATABASE"],
+            user=app.config["PGUSER"],
+            password=app.config["PGPASSWORD"],
+        )
+        g.db = PostgresConnection(connection)
     return g.db
 
 
@@ -468,12 +548,48 @@ def close_db(_error):
         db.close()
 
 
+def get_existing_tables():
+    return {
+        row["name"]
+        for row in get_db().execute(
+            """
+            SELECT tablename AS name
+            FROM pg_tables
+            WHERE schemaname = 'public'
+            """
+        ).fetchall()
+    }
+
+
+def get_table_columns(table_name):
+    return {
+        row["name"]
+        for row in get_db().execute(
+            """
+            SELECT column_name AS name
+            FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = ?
+            """,
+            (table_name,),
+        ).fetchall()
+    }
+
+
+def constraint_exists(table_name, constraint_name):
+    row = get_db().execute(
+        """
+        SELECT 1 AS exists_flag
+        FROM information_schema.table_constraints
+        WHERE table_schema = 'public' AND table_name = ? AND constraint_name = ?
+        """,
+        (table_name, constraint_name),
+    ).fetchone()
+    return row is not None
+
+
 def initialize_database():
     db = get_db()
-    existing_tables = {
-        row["name"]
-        for row in db.execute("SELECT name FROM sqlite_master WHERE type = 'table'").fetchall()
-    }
+    existing_tables = get_existing_tables()
     for old_name, new_name in LEGACY_TABLE_NAMES.items():
         if old_name in existing_tables and new_name not in existing_tables:
             db.execute(f"ALTER TABLE {old_name} RENAME TO {new_name}")
@@ -483,9 +599,7 @@ def initialize_database():
     for table_name, rename_map in COLUMN_RENAMES.items():
         if table_name not in existing_tables:
             continue
-        table_columns = {
-            row["name"] for row in db.execute(f"PRAGMA table_info({table_name})").fetchall()
-        }
+        table_columns = get_table_columns(table_name)
         for old_column, new_column in rename_map.items():
             if old_column in table_columns and new_column not in table_columns:
                 db.execute(f"ALTER TABLE {table_name} RENAME COLUMN {old_column} TO {new_column}")
@@ -495,20 +609,20 @@ def initialize_database():
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS usuario (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             correo TEXT UNIQUE NOT NULL,
             contrasena_hash TEXT NOT NULL,
             rol TEXT NOT NULL,
             nombre TEXT NOT NULL,
-            activo INTEGER NOT NULL DEFAULT 1,
-            creado_en TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            activo BOOLEAN NOT NULL DEFAULT TRUE,
+            creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
         )
         """
     )
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS regional (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             nombre TEXT NOT NULL UNIQUE
         )
         """
@@ -516,7 +630,7 @@ def initialize_database():
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS centro (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             id_regional INTEGER NOT NULL,
             nombre TEXT NOT NULL,
             FOREIGN KEY (id_regional) REFERENCES regional(id) ON DELETE CASCADE
@@ -526,7 +640,7 @@ def initialize_database():
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS coordinacion (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             id_centro INTEGER NOT NULL,
             nombre TEXT NOT NULL,
             FOREIGN KEY (id_centro) REFERENCES centro(id) ON DELETE CASCADE
@@ -536,7 +650,7 @@ def initialize_database():
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS sede (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             id_centro INTEGER NOT NULL,
             nombre TEXT NOT NULL,
             FOREIGN KEY (id_centro) REFERENCES centro(id) ON DELETE CASCADE
@@ -546,34 +660,51 @@ def initialize_database():
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS instructor (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            id_coordinacion INTEGER NOT NULL,
+            id SERIAL PRIMARY KEY,
+            id_centro INTEGER NOT NULL,
             documento TEXT NOT NULL,
             nombres TEXT NOT NULL,
             apellidos TEXT NOT NULL,
             correo TEXT,
             id_usuario INTEGER,
-            FOREIGN KEY (id_coordinacion) REFERENCES coordinacion(id) ON DELETE CASCADE
+            FOREIGN KEY (id_centro) REFERENCES centro(id) ON DELETE CASCADE
         )
         """
     )
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS aprendiz (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            id_coordinacion INTEGER NOT NULL,
+            id SERIAL PRIMARY KEY,
+            id_regional INTEGER,
             documento TEXT NOT NULL,
             nombres TEXT NOT NULL,
             apellidos TEXT NOT NULL,
+            correo TEXT,
+            id_usuario INTEGER,
             ficha TEXT,
-            FOREIGN KEY (id_coordinacion) REFERENCES coordinacion(id) ON DELETE CASCADE
+            FOREIGN KEY (id_regional) REFERENCES regional(id) ON DELETE CASCADE
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS personal_administrativo (
+            id SERIAL PRIMARY KEY,
+            id_centro INTEGER NOT NULL,
+            documento TEXT NOT NULL,
+            nombres TEXT NOT NULL,
+            apellidos TEXT NOT NULL,
+            correo TEXT,
+            cargo TEXT NOT NULL,
+            id_usuario INTEGER,
+            FOREIGN KEY (id_centro) REFERENCES centro(id) ON DELETE CASCADE
         )
         """
     )
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS ambiente (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             id_sede INTEGER NOT NULL,
             nombre TEXT NOT NULL,
             capacidad INTEGER,
@@ -584,7 +715,7 @@ def initialize_database():
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS red_conocimiento (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             nombre TEXT NOT NULL UNIQUE
         )
         """
@@ -592,7 +723,7 @@ def initialize_database():
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS area (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             id_red_conocimiento INTEGER NOT NULL,
             nombre TEXT NOT NULL,
             FOREIGN KEY (id_red_conocimiento) REFERENCES red_conocimiento(id) ON DELETE CASCADE
@@ -602,7 +733,7 @@ def initialize_database():
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS nivel_formacion (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             nombre TEXT NOT NULL UNIQUE
         )
         """
@@ -610,7 +741,7 @@ def initialize_database():
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS programa_formacion (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             id_area INTEGER NOT NULL,
             id_nivel_formacion INTEGER NOT NULL,
             nombre TEXT NOT NULL,
@@ -622,7 +753,7 @@ def initialize_database():
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS ficha_formacion (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             numero TEXT NOT NULL UNIQUE,
             id_programa_formacion INTEGER NOT NULL,
             id_proyecto_formativo INTEGER,
@@ -638,7 +769,7 @@ def initialize_database():
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS proyecto_formativo (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             codigo TEXT NOT NULL UNIQUE,
             nombre TEXT NOT NULL
         )
@@ -647,7 +778,7 @@ def initialize_database():
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS fase_proyecto (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             id_proyecto_formativo INTEGER NOT NULL,
             nombre TEXT NOT NULL,
             FOREIGN KEY (id_proyecto_formativo) REFERENCES proyecto_formativo(id) ON DELETE CASCADE
@@ -657,7 +788,7 @@ def initialize_database():
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS actividad_proyecto (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             id_fase_proyecto INTEGER NOT NULL,
             nombre TEXT NOT NULL,
             FOREIGN KEY (id_fase_proyecto) REFERENCES fase_proyecto(id) ON DELETE CASCADE
@@ -667,7 +798,7 @@ def initialize_database():
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS actividad_aprendizaje (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             id_actividad_proyecto INTEGER NOT NULL,
             nombre TEXT NOT NULL,
             FOREIGN KEY (id_actividad_proyecto) REFERENCES actividad_proyecto(id) ON DELETE CASCADE
@@ -676,22 +807,92 @@ def initialize_database():
     )
     db.commit()
 
-    instructor_columns = {
-        row["name"] for row in db.execute("PRAGMA table_info(instructor)").fetchall()
-    }
+    instructor_columns = get_table_columns("instructor")
+    if "id_centro" not in instructor_columns:
+        db.execute("ALTER TABLE instructor ADD COLUMN IF NOT EXISTS id_centro INTEGER")
+        db.commit()
+        instructor_columns.add("id_centro")
     if "id_usuario" not in instructor_columns:
-        db.execute("ALTER TABLE instructor ADD COLUMN id_usuario INTEGER")
+        db.execute("ALTER TABLE instructor ADD COLUMN IF NOT EXISTS id_usuario INTEGER")
         db.commit()
         instructor_columns.add("id_usuario")
     if "id_area" not in instructor_columns:
-        db.execute("ALTER TABLE instructor ADD COLUMN id_area INTEGER")
+        db.execute("ALTER TABLE instructor ADD COLUMN IF NOT EXISTS id_area INTEGER")
+        db.commit()
+        instructor_columns.add("id_area")
+    if "id_coordinacion" in instructor_columns:
+        db.execute(
+            """
+            UPDATE instructor i
+            SET id_centro = c.id_centro
+            FROM coordinacion c
+            WHERE (i.id_centro IS NULL OR i.id_centro = 0) AND i.id_coordinacion = c.id
+            """
+        )
+        db.commit()
+        db.execute("ALTER TABLE instructor DROP CONSTRAINT IF EXISTS instructor_id_coordinacion_fkey")
+        db.commit()
+        db.execute("ALTER TABLE instructor DROP COLUMN IF EXISTS id_coordinacion")
+        db.commit()
+        instructor_columns.remove("id_coordinacion")
+    if not constraint_exists("instructor", "instructor_id_centro_fkey"):
+        db.execute(
+            """
+            ALTER TABLE instructor
+            ADD CONSTRAINT instructor_id_centro_fkey
+            FOREIGN KEY (id_centro) REFERENCES centro(id) ON DELETE CASCADE
+            """
+        )
+        db.commit()
+    db.execute("ALTER TABLE instructor ALTER COLUMN id_centro SET NOT NULL")
+    db.commit()
+
+    aprendiz_columns = get_table_columns("aprendiz")
+    if "id_regional" not in aprendiz_columns:
+        db.execute("ALTER TABLE aprendiz ADD COLUMN IF NOT EXISTS id_regional INTEGER")
+        db.commit()
+        aprendiz_columns.add("id_regional")
+    if "correo" not in aprendiz_columns:
+        db.execute("ALTER TABLE aprendiz ADD COLUMN IF NOT EXISTS correo TEXT")
+        db.commit()
+        aprendiz_columns.add("correo")
+    if "id_usuario" not in aprendiz_columns:
+        db.execute("ALTER TABLE aprendiz ADD COLUMN IF NOT EXISTS id_usuario INTEGER")
+        db.commit()
+        aprendiz_columns.add("id_usuario")
+    if "id_coordinacion" in aprendiz_columns:
+        db.execute(
+            """
+            UPDATE aprendiz a
+            SET id_regional = c.id_regional
+            FROM coordinacion co
+            JOIN centro c ON c.id = co.id_centro
+            WHERE a.id_regional IS NULL AND a.id_coordinacion = co.id
+            """
+        )
+        db.commit()
+        db.execute("ALTER TABLE aprendiz DROP CONSTRAINT IF EXISTS aprendiz_id_coordinacion_fkey")
+        db.commit()
+        db.execute("ALTER TABLE aprendiz DROP COLUMN IF EXISTS id_coordinacion")
+        db.commit()
+        aprendiz_columns.remove("id_coordinacion")
+
+    if not constraint_exists("aprendiz", "aprendiz_id_regional_fkey"):
+        db.execute(
+            """
+            ALTER TABLE aprendiz
+            ADD CONSTRAINT aprendiz_id_regional_fkey
+            FOREIGN KEY (id_regional) REFERENCES regional(id) ON DELETE CASCADE
+            """
+        )
         db.commit()
 
-    ficha_columns = {
-        row["name"] for row in db.execute("PRAGMA table_info(ficha_formacion)").fetchall()
-    }
+    db.execute("ALTER TABLE aprendiz ALTER COLUMN id_regional SET NOT NULL")
+    db.commit()
+
+    ficha_columns = get_table_columns("ficha_formacion")
     if "id_proyecto_formativo" not in ficha_columns:
-        db.execute("ALTER TABLE ficha_formacion ADD COLUMN id_proyecto_formativo INTEGER")
+        db.execute("ALTER TABLE ficha_formacion ADD COLUMN IF NOT EXISTS id_proyecto_formativo INTEGER")
         db.commit()
 
     user_count = db.execute("SELECT COUNT(*) AS total FROM usuario").fetchone()["total"]
@@ -738,7 +939,7 @@ def current_user():
         return None
 
     user = get_user_by_email(email)
-    if user is None or user["active"] != 1:
+    if user is None or not user["active"]:
         session.clear()
         return None
 
@@ -812,90 +1013,124 @@ def get_user_by_id(user_id):
     ).fetchone()
 
 
-def generate_instructor_email(documento, email):
+PERSON_USER_CONFIG = {
+    "instructor": {
+        "role": "Instructor",
+        "email_prefix": "instructor",
+        "table": "instructor",
+        "email_column": "correo",
+        "user_column": "id_usuario",
+    },
+    "aprendiz": {
+        "role": "Aprendiz",
+        "email_prefix": "aprendiz",
+        "table": "aprendiz",
+        "email_column": "correo",
+        "user_column": "id_usuario",
+    },
+    "administrativo_persona": {
+        "role": "Administrativo",
+        "email_prefix": "administrativo",
+        "table": "personal_administrativo",
+        "email_column": "correo",
+        "user_column": "id_usuario",
+    },
+}
+
+
+def person_full_name(data):
+    return f"{data['nombres']} {data['apellidos']}".strip()
+
+
+def generate_person_email(prefix, documento, email):
     clean_email = (email or "").strip().lower()
     if clean_email:
         return clean_email
-    return f"instructor.{documento}@barilms.local"
+    return f"{prefix}.{documento}@barilms.local"
 
 
-def create_linked_instructor_user(instructor_id, data):
-    login_email = generate_instructor_email(data["documento"], data.get("correo"))
+def create_linked_person_user(entity, item_id, data):
+    config = PERSON_USER_CONFIG[entity]
+    login_email = generate_person_email(config["email_prefix"], data["documento"], data.get("correo"))
     if get_user_by_email(login_email) is not None:
-        raise ValueError("Ya existe un usuario con el correo que se intenta asignar al instructor.")
+        raise ValueError("Ya existe un usuario con el correo que se intenta asignar a la persona.")
 
     db = get_db()
     cursor = db.execute(
         """
         INSERT INTO usuario (correo, contrasena_hash, rol, nombre, activo)
-        VALUES (?, ?, 'Instructor', ?, 1)
+        VALUES (?, ?, ?, ?, TRUE)
+        RETURNING id
         """,
         (
             login_email,
             generate_password_hash(data["documento"]),
-            f"{data['nombres']} {data['apellidos']}".strip(),
+            config["role"],
+            person_full_name(data),
         ),
     )
-    user_id = cursor.lastrowid
+    user_id = cursor.fetchone()["id"]
     db.execute(
-        """
-        UPDATE instructor
-        SET correo = ?, id_usuario = ?
+        f"""
+        UPDATE {config['table']}
+        SET {config['email_column']} = ?, {config['user_column']} = ?
         WHERE id = ?
         """,
-        (login_email, user_id, instructor_id),
+        (login_email, user_id, item_id),
     )
     db.commit()
     return user_id
 
 
-def sync_instructor_user(instructor_id, data):
-    instructor = get_entity("instructor", instructor_id)
-    if instructor is None:
+def sync_linked_person_user(entity, item_id, data):
+    item = get_entity(entity, item_id)
+    if item is None:
         return
 
-    login_email = generate_instructor_email(data["documento"], data.get("correo"))
+    config = PERSON_USER_CONFIG[entity]
+    login_email = generate_person_email(config["email_prefix"], data["documento"], data.get("correo"))
     db = get_db()
 
-    if instructor["user_id"]:
+    if item["user_id"]:
         existing_user = get_user_by_email(login_email)
-        if existing_user is not None and existing_user["id"] != instructor["user_id"]:
-            raise ValueError("Ya existe un usuario con el correo que se intenta asignar al instructor.")
+        if existing_user is not None and existing_user["id"] != item["user_id"]:
+            raise ValueError("Ya existe un usuario con el correo que se intenta asignar a la persona.")
 
         db.execute(
             """
             UPDATE usuario
-            SET correo = ?, contrasena_hash = ?, rol = 'Instructor', nombre = ?, activo = 1
+            SET correo = ?, contrasena_hash = ?, rol = ?, nombre = ?, activo = TRUE
             WHERE id = ?
             """,
             (
                 login_email,
                 generate_password_hash(data["documento"]),
-                f"{data['nombres']} {data['apellidos']}".strip(),
-                instructor["user_id"],
+                config["role"],
+                person_full_name(data),
+                item["user_id"],
             ),
         )
         db.execute(
-            """
-            UPDATE instructor
-            SET correo = ?
+            f"""
+            UPDATE {config['table']}
+            SET {config['email_column']} = ?
             WHERE id = ?
             """,
-            (login_email, instructor_id),
+            (login_email, item_id),
         )
         db.commit()
         return
 
-    create_linked_instructor_user(instructor_id, data)
+    create_linked_person_user(entity, item_id, data)
 
 
-def delete_linked_instructor_user(instructor_id):
-    instructor = get_entity("instructor", instructor_id)
-    if instructor is None or not instructor["user_id"]:
+def delete_linked_person_user(entity, item_id):
+    item = get_entity(entity, item_id)
+    if item is None or not item["user_id"]:
         return
 
     db = get_db()
-    db.execute("DELETE FROM usuario WHERE id = ?", (instructor["user_id"],))
+    db.execute("DELETE FROM usuario WHERE id = ?", (item["user_id"],))
     db.commit()
 
 
@@ -907,6 +1142,44 @@ def get_all_users():
         ORDER BY creado_en DESC, id DESC
         """
     ).fetchall()
+
+
+def get_people_redirect_args(form_data, overrides=None):
+    args = {
+        "edit_entity": form_data.get("edit_entity"),
+        "edit_id": parse_int(form_data.get("edit_id")),
+    }
+    overrides = overrides or {}
+    args.update(overrides)
+    return {key: value for key, value in args.items() if value not in (None, "")}
+
+
+def normalize_people_context(args):
+    edit_entity = args.get("edit_entity")
+    edit_id = parse_int(args.get("edit_id"))
+    allowed = {"instructor", "aprendiz", "administrativo_persona"}
+
+    if edit_entity not in allowed:
+        edit_entity = None
+        edit_id = None
+
+    editing_item = get_entity(edit_entity, edit_id) if edit_entity and edit_id else None
+    if edit_entity and editing_item is None:
+        edit_entity = None
+        edit_id = None
+
+    return {
+        "regionales": get_entities("regional", order_by="nombre ASC"),
+        "coordinaciones": get_entities("coordinacion", order_by="nombre ASC"),
+        "centros": get_entities("centro", order_by="nombre ASC"),
+        "areas_academicas": get_entities("area", order_by="nombre ASC"),
+        "instructores": get_entities("instructor", order_by="nombres ASC, apellidos ASC"),
+        "aprendices": get_entities("aprendiz", order_by="nombres ASC, apellidos ASC"),
+        "administrativos": get_entities("administrativo_persona", order_by="nombres ASC, apellidos ASC"),
+        "edit_entity": edit_entity,
+        "edit_id": edit_id,
+        "editing_item": editing_item,
+    }
 
 
 def get_entity(entity, item_id):
@@ -930,7 +1203,7 @@ def get_entities(entity, where=None, params=(), order_by="id DESC"):
 
 def get_admin_dashboard_data():
     db = get_db()
-    total_active = db.execute("SELECT COUNT(*) AS total FROM usuario WHERE activo = 1").fetchone()["total"]
+    total_active = db.execute("SELECT COUNT(*) AS total FROM usuario WHERE activo = TRUE").fetchone()["total"]
     total_roles = db.execute("SELECT COUNT(DISTINCT rol) AS total FROM usuario").fetchone()["total"]
     total_regionales = db.execute("SELECT COUNT(*) AS total FROM regional").fetchone()["total"]
     total_centros = db.execute("SELECT COUNT(*) AS total FROM centro").fetchone()["total"]
@@ -1003,8 +1276,13 @@ def normalize_structure_context(args):
     if edit_entity in {"coordinacion", "sede"} and (editing_item is None or editing_item["centro_id"] != centro_id):
         edit_entity = None
         edit_id = None
-    if edit_entity in {"instructor", "aprendiz"} and (
-        editing_item is None or editing_item["coordinacion_id"] != coordinacion_id
+    if edit_entity == "instructor" and (
+        editing_item is None or editing_item["centro_id"] != centro_id
+    ):
+        edit_entity = None
+        edit_id = None
+    if edit_entity == "aprendiz" and (
+        editing_item is None or editing_item["regional_id"] != regional_id
     ):
         edit_entity = None
         edit_id = None
@@ -1023,13 +1301,13 @@ def normalize_structure_context(args):
         "coordinaciones": get_entities("coordinacion", "id_centro = ?", (centro_id,), "nombre ASC") if centro_id else [],
         "sedes": get_entities("sede", "id_centro = ?", (centro_id,), "nombre ASC") if centro_id else [],
         "instructores": (
-            get_entities("instructor", "id_coordinacion = ?", (coordinacion_id,), "nombres ASC, apellidos ASC")
-            if coordinacion_id
+            get_entities("instructor", "id_centro = ?", (centro_id,), "nombres ASC, apellidos ASC")
+            if centro_id
             else []
         ),
         "aprendices": (
-            get_entities("aprendiz", "id_coordinacion = ?", (coordinacion_id,), "nombres ASC, apellidos ASC")
-            if coordinacion_id
+            get_entities("aprendiz", "id_regional = ?", (regional_id,), "nombres ASC, apellidos ASC")
+            if regional_id
             else []
         ),
         "ambientes": get_entities("ambiente", "id_sede = ?", (sede_id,), "nombre ASC") if sede_id else [],
@@ -1079,8 +1357,12 @@ def validate_entity_payload(entity, data):
 
     if entity == "ambiente" and data["capacidad"] is not None and data["capacidad"] < 0:
         return "La capacidad no puede ser negativa."
+    if entity == "instructor" and get_entity("centro", data["id_centro"]) is None:
+        return "El centro de formación seleccionado no existe."
     if entity == "instructor" and data.get("id_area") is not None and get_entity("area", data["id_area"]) is None:
         return "El área académica seleccionada no existe."
+    if entity == "aprendiz" and get_entity("regional", data["id_regional"]) is None:
+        return "La regional seleccionada no existe."
     if entity == "ficha" and data["id_instructor"] in ("", None):
         data["id_instructor"] = None
 
@@ -1094,11 +1376,11 @@ def insert_entity(entity, data):
     values = tuple(data[field] for field in config["fields"])
     db = get_db()
     cursor = db.execute(
-        f"INSERT INTO {config['table']} ({columns}) VALUES ({placeholders})",
+        f"INSERT INTO {config['table']} ({columns}) VALUES ({placeholders}) RETURNING id",
         values,
     )
     db.commit()
-    return cursor.lastrowid
+    return cursor.fetchone()["id"]
 
 
 def update_entity(entity, item_id, data):
@@ -1130,6 +1412,8 @@ def entity_select_clause(entity):
         fields.append("id_usuario AS user_id")
     if entity == "instructor" and "id_area AS area_id" not in fields:
         fields.append("id_area AS area_id")
+    if entity in {"aprendiz", "administrativo_persona"} and "id_usuario AS user_id" not in fields:
+        fields.append("id_usuario AS user_id")
     return ", ".join(fields)
 
 
@@ -1151,7 +1435,7 @@ def login():
 
         if (
             user is None
-            or user["active"] != 1
+            or not user["active"]
             or user["role"] != role
             or not check_password_hash(user["password_hash"], password)
         ):
@@ -1205,6 +1489,103 @@ def admin_users():
     )
 
 
+@app.route("/admin/people")
+@role_required("Administrador")
+def admin_people():
+    context = normalize_people_context(request.args)
+    return render_template("admin_people.html", user=current_user(), **context)
+
+
+@app.post("/admin/people/<entity>/create")
+@role_required("Administrador")
+def admin_people_create(entity):
+    if entity not in {"instructor", "aprendiz", "administrativo_persona"}:
+        return redirect(url_for("admin_people"))
+
+    data = entity_form_data(entity, request.form)
+    validation_error = validate_entity_payload(entity, data)
+    if validation_error:
+        flash(validation_error, "danger")
+        return redirect(url_for("admin_people", **get_people_redirect_args(request.form)))
+
+    created_id = None
+    try:
+        created_id = insert_entity(entity, data)
+        create_linked_person_user(entity, created_id, data)
+    except IntegrityError:
+        get_db().rollback()
+        flash(f"No fue posible crear {ENTITY_CONFIG[entity]['label'].lower()}. Verifica que no exista un dato duplicado.", "danger")
+        return redirect(url_for("admin_people", **get_people_redirect_args(request.form)))
+    except ValueError as error:
+        if created_id is not None:
+            delete_entity(entity, created_id)
+        flash(str(error), "danger")
+        return redirect(url_for("admin_people", **get_people_redirect_args(request.form)))
+
+    flash(f"{ENTITY_CONFIG[entity]['label']} creada correctamente con su usuario asociado.", "success")
+    return redirect(url_for("admin_people"))
+
+
+@app.get("/admin/people/<entity>/<int:item_id>/edit")
+@role_required("Administrador")
+def admin_people_edit(entity, item_id):
+    if entity not in {"instructor", "aprendiz", "administrativo_persona"}:
+        return redirect(url_for("admin_people"))
+
+    if get_entity(entity, item_id) is None:
+        flash("La persona solicitada no existe.", "danger")
+        return redirect(url_for("admin_people"))
+
+    return redirect(url_for("admin_people", edit_entity=entity, edit_id=item_id))
+
+
+@app.post("/admin/people/<entity>/<int:item_id>/update")
+@role_required("Administrador")
+def admin_people_update(entity, item_id):
+    if entity not in {"instructor", "aprendiz", "administrativo_persona"}:
+        return redirect(url_for("admin_people"))
+
+    if get_entity(entity, item_id) is None:
+        flash("La persona solicitada no existe.", "danger")
+        return redirect(url_for("admin_people"))
+
+    data = entity_form_data(entity, request.form)
+    validation_error = validate_entity_payload(entity, data)
+    if validation_error:
+        flash(validation_error, "danger")
+        return redirect(url_for("admin_people", edit_entity=entity, edit_id=item_id))
+
+    try:
+        update_entity(entity, item_id, data)
+        sync_linked_person_user(entity, item_id, data)
+    except IntegrityError:
+        get_db().rollback()
+        flash(f"No fue posible actualizar {ENTITY_CONFIG[entity]['label'].lower()}. Verifica los datos ingresados.", "danger")
+        return redirect(url_for("admin_people", edit_entity=entity, edit_id=item_id))
+    except ValueError as error:
+        flash(str(error), "danger")
+        return redirect(url_for("admin_people", edit_entity=entity, edit_id=item_id))
+
+    flash(f"{ENTITY_CONFIG[entity]['label']} actualizada correctamente.", "success")
+    return redirect(url_for("admin_people"))
+
+
+@app.post("/admin/people/<entity>/<int:item_id>/delete")
+@role_required("Administrador")
+def admin_people_delete(entity, item_id):
+    if entity not in {"instructor", "aprendiz", "administrativo_persona"}:
+        return redirect(url_for("admin_people"))
+
+    if get_entity(entity, item_id) is None:
+        flash("La persona solicitada no existe.", "danger")
+        return redirect(url_for("admin_people"))
+
+    delete_linked_person_user(entity, item_id)
+    delete_entity(entity, item_id)
+    flash(f"{ENTITY_CONFIG[entity]['label']} eliminada correctamente.", "success")
+    return redirect(url_for("admin_people"))
+
+
 @app.post("/admin/users/create")
 @role_required("Administrador")
 def admin_users_create():
@@ -1212,7 +1593,7 @@ def admin_users_create():
     email = request.form.get("email", "").strip().lower()
     role = request.form.get("role", "").strip()
     password = request.form.get("password", "")
-    active = 1 if request.form.get("active") == "on" else 0
+    active = request.form.get("active") == "on"
 
     form_data = {"name": name, "email": email, "role": role, "active": active}
 
@@ -1290,7 +1671,7 @@ def admin_users_update(user_id):
     email = request.form.get("email", "").strip().lower()
     role = request.form.get("role", "").strip()
     password = request.form.get("password", "")
-    active = 1 if request.form.get("active") == "on" else 0
+    active = request.form.get("active") == "on"
 
     if not name or not email or not role:
         flash("Nombre, correo y rol son obligatorios.", "danger")
@@ -1305,7 +1686,7 @@ def admin_users_update(user_id):
         flash("Ya existe otro usuario con ese correo.", "danger")
         return redirect(url_for("admin_users_edit", user_id=user_id))
 
-    if current_user()["id"] == user_id and active != 1:
+    if current_user()["id"] == user_id and not active:
         flash("No puedes desactivar tu propia cuenta mientras la estas usando.", "danger")
         return redirect(url_for("admin_users_edit", user_id=user_id))
 
@@ -1378,20 +1759,21 @@ def admin_structure_create(entity):
     created_id = None
     try:
         created_id = insert_entity(entity, data)
-        if entity == "instructor":
-            create_linked_instructor_user(created_id, data)
-    except sqlite3.IntegrityError:
+        if entity in {"instructor", "aprendiz"}:
+            create_linked_person_user(entity, created_id, data)
+    except IntegrityError:
+        get_db().rollback()
         flash(f"No fue posible crear {ENTITY_CONFIG[entity]['label'].lower()}. Verifica que no exista un dato duplicado.", "danger")
         return redirect(url_for("admin_structure", **structure_redirect_args(request.form)))
     except ValueError as error:
-        if entity == "instructor" and created_id is not None:
-            delete_entity("instructor", created_id)
+        if entity in {"instructor", "aprendiz"} and created_id is not None:
+            delete_entity(entity, created_id)
         flash(str(error), "danger")
         return redirect(url_for("admin_structure", **structure_redirect_args(request.form)))
-    redirect_args = structure_redirect_args(
-        request.form,
-        {ENTITY_CONFIG[entity]["context_key"]: created_id, "edit_entity": None, "edit_id": None},
-    )
+    redirect_overrides = {"edit_entity": None, "edit_id": None}
+    if ENTITY_CONFIG[entity]["context_key"] != ENTITY_CONFIG[entity]["parent_key"]:
+        redirect_overrides[ENTITY_CONFIG[entity]["context_key"]] = created_id
+    redirect_args = structure_redirect_args(request.form, redirect_overrides)
     flash(f"{ENTITY_CONFIG[entity]['label']} creada correctamente.", "success")
     return redirect(url_for("admin_structure", **redirect_args))
 
@@ -1418,12 +1800,12 @@ def admin_structure_edit(entity, item_id):
         overrides["regional_id"] = centro["regional_id"]
         overrides["centro_id"] = item["centro_id"]
         overrides[ENTITY_CONFIG[entity]["context_key"]] = item_id
-    elif entity in {"instructor", "aprendiz"}:
-        coordinacion = get_entity("coordinacion", item["coordinacion_id"])
-        centro = get_entity("centro", coordinacion["centro_id"])
+    elif entity == "instructor":
+        centro = get_entity("centro", item["centro_id"])
         overrides["regional_id"] = centro["regional_id"]
         overrides["centro_id"] = centro["id"]
-        overrides["coordinacion_id"] = coordinacion["id"]
+    elif entity == "aprendiz":
+        overrides["regional_id"] = item["regional_id"]
     elif entity == "ambiente":
         sede = get_entity("sede", item["sede_id"])
         centro = get_entity("centro", sede["centro_id"])
@@ -1457,9 +1839,10 @@ def admin_structure_update(entity, item_id):
 
     try:
         update_entity(entity, item_id, data)
-        if entity == "instructor":
-            sync_instructor_user(item_id, data)
-    except sqlite3.IntegrityError:
+        if entity in {"instructor", "aprendiz"}:
+            sync_linked_person_user(entity, item_id, data)
+    except IntegrityError:
+        get_db().rollback()
         flash(f"No fue posible actualizar {ENTITY_CONFIG[entity]['label'].lower()}. Verifica los datos ingresados.", "danger")
         redirect_args = structure_redirect_args(
             request.form,
@@ -1504,8 +1887,8 @@ def admin_structure_delete(entity, item_id):
     elif entity == "sede" and redirect_args.get("sede_id") == item_id:
         redirect_args.pop("sede_id", None)
 
-    if entity == "instructor":
-        delete_linked_instructor_user(item_id)
+    if entity in {"instructor", "aprendiz"}:
+        delete_linked_person_user(entity, item_id)
     delete_entity(entity, item_id)
     flash(f"{ENTITY_CONFIG[entity]['label']} eliminada correctamente.", "success")
     return redirect(url_for("admin_structure", **redirect_args))
@@ -1556,8 +1939,9 @@ def validate_academic_payload(entity, data):
             instructor_area_id = instructor["area_id"] if "area_id" in instructor.keys() else None
             if not instructor_area_id or instructor_area_id != programa["area_id"]:
                 return "El instructor asignado debe pertenecer a la misma área del programa."
-            if instructor["coordinacion_id"] != data["id_coordinacion"]:
-                return "El instructor asignado debe pertenecer a la coordinación seleccionada."
+            centro_coordinacion = get_entity("centro", coordinacion["centro_id"])
+            if centro_coordinacion is None or instructor["centro_id"] != centro_coordinacion["id"]:
+                return "El instructor asignado debe pertenecer al centro de formación de la coordinación seleccionada."
     if entity == "fase_proyecto":
         if get_entity("proyecto_formativo", data["id_proyecto_formativo"]) is None:
             return "El proyecto formativo seleccionado no existe."
@@ -1691,7 +2075,7 @@ def normalize_academic_context(args):
         instructores_area = get_db().execute(
             """
             SELECT id, documento, nombres, apellidos, correo AS email,
-                   id_area AS area_id, id_coordinacion AS coordinacion_id
+                   id_area AS area_id, id_centro AS centro_id
             FROM instructor
             WHERE id_area = ?
             ORDER BY nombres ASC, apellidos ASC
@@ -1768,7 +2152,8 @@ def admin_academic_create(entity):
 
     try:
         created_id = insert_entity(entity, data)
-    except sqlite3.IntegrityError:
+    except IntegrityError:
+        get_db().rollback()
         flash(f"No fue posible crear {ENTITY_CONFIG[entity]['label'].lower()}. Verifica que no exista un dato duplicado.", "danger")
         return redirect(url_for("admin_academic", **academic_redirect_args(request.form)))
 
@@ -1855,7 +2240,8 @@ def admin_academic_update(entity, item_id):
 
     try:
         update_entity(entity, item_id, data)
-    except sqlite3.IntegrityError:
+    except IntegrityError:
+        get_db().rollback()
         flash(f"No fue posible actualizar {ENTITY_CONFIG[entity]['label'].lower()}. Verifica los datos ingresados.", "danger")
         return redirect(
             url_for(
