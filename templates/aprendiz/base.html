@@ -15,12 +15,25 @@
         .sidebar-brand { background: rgba(0,0,0,0.15) !important; }
         .sidebar .nav-item .nav-link { color: rgba(255,255,255,0.85) !important; }
         .sidebar .nav-item .nav-link:hover,
-        .sidebar .nav-item.active .nav-link { color: #fff !important; background: rgba(255,255,255,0.15); border-radius: 6px; }
+        .sidebar .nav-item.active .nav-link,
+        .sidebar .nav-item.nav-active .nav-link { color: #fff !important; background: rgba(255,255,255,0.15); border-radius: 6px; }
         .sidebar-divider { border-top: 1px solid rgba(255,255,255,0.2) !important; }
         .sidebar-heading { color: rgba(255,255,255,0.5) !important; }
         .logout-link { color: rgba(255,255,255,0.85) !important; background: none; border: none; text-align: left; padding: .75rem 1rem; width: 100%; }
         .logout-link:hover { color: white !important; background: rgba(255,255,255,0.15); border-radius: 6px; }
-        .nav-active .nav-link { background: rgba(255,255,255,0.15) !important; border-radius: 6px; }
+        /* Campana notificaciones */
+        .notif-bell { position: relative; cursor: pointer; }
+        .notif-badge {
+            position: absolute; top: 0; right: 0;
+            background: #e74a3b; color: white;
+            border-radius: 50%; width: 18px; height: 18px;
+            font-size: 0.65rem; font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            transform: translate(30%, -30%);
+        }
+        .notif-dropdown { min-width: 320px; max-height: 380px; overflow-y: auto; }
+        .notif-item { border-left: 3px solid #1a7a3c; margin: 4px 8px; border-radius: 6px; }
+        .notif-item:hover { background: #f8f9fc; }
     </style>
 </head>
 <body id="page-top">
@@ -36,7 +49,7 @@
         </a>
         <hr class="sidebar-divider my-0">
 
-        <li class="nav-item">
+        <li class="nav-item {% block menu_inicio %}{% endblock %}">
             <a class="nav-link" href="/dashboard/aprendiz">
                 <i class="fas fa-fw fa-home"></i>
                 <span>Inicio</span>
@@ -56,6 +69,22 @@
             <a class="nav-link" href="/aprendiz/fases">
                 <i class="fas fa-fw fa-layer-group"></i>
                 <span>Fases de Formación</span>
+            </a>
+        </li>
+        <li class="nav-item {% block menu_calificaciones %}{% endblock %}">
+            <a class="nav-link" href="/aprendiz/calificaciones">
+                <i class="fas fa-fw fa-star"></i>
+                <span>Calificaciones</span>
+            </a>
+        </li>
+
+        <hr class="sidebar-divider">
+        <div class="sidebar-heading px-3 mb-1">Mi Cuenta</div>
+
+        <li class="nav-item {% block menu_contrasena %}{% endblock %}">
+            <a class="nav-link" href="/aprendiz/cambiar-contrasena">
+                <i class="fas fa-fw fa-key"></i>
+                <span>Cambiar Contraseña</span>
             </a>
         </li>
 
@@ -79,17 +108,56 @@
                     <i class="fa fa-bars"></i>
                 </button>
                 <div class="ml-auto d-flex align-items-center">
+
+                    <!-- Campana de notificaciones -->
+                    <div class="dropdown mr-3">
+                        <a class="nav-link notif-bell px-2" href="#" id="notifDropdown"
+                           data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-bell fa-fw text-gray-400" style="font-size:1.1rem;"></i>
+                            {% if notificaciones and notificaciones|length > 0 %}
+                            <span class="notif-badge">{{ notificaciones|length }}</span>
+                            {% endif %}
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right shadow notif-dropdown p-0"
+                             aria-labelledby="notifDropdown">
+                            <div class="px-3 py-2 border-bottom">
+                                <span class="font-weight-bold text-gray-800 small">Notificaciones</span>
+                            </div>
+                            {% if notificaciones and notificaciones|length > 0 %}
+                                {% for n in notificaciones %}
+                                <a class="dropdown-item notif-item py-2 px-3"
+                                   href="{{ n.url_destino or '#' }}"
+                                   onclick="marcarLeida({{ n.id }}, this)">
+                                    <div class="d-flex align-items-start">
+                                        <i class="fas fa-circle text-{{ n.tipo }} mr-2 mt-1" style="font-size:0.5rem;"></i>
+                                        <div>
+                                            <div class="small font-weight-bold text-gray-800">{{ n.mensaje }}</div>
+                                            <div class="small text-muted">{{ n.creado_en.strftime('%d/%m/%Y %H:%M') if n.creado_en else '' }}</div>
+                                        </div>
+                                    </div>
+                                </a>
+                                {% endfor %}
+                            {% else %}
+                            <div class="text-center py-4 text-muted small">
+                                <i class="fas fa-check-circle text-success mb-2 d-block" style="font-size:1.5rem;"></i>
+                                Sin notificaciones nuevas
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Usuario -->
                     <span class="mr-3 d-none d-lg-inline text-gray-600 small font-weight-bold">
                         {{ session['nombre'] }}
                     </span>
-                    <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center" style="width:38px;height:38px;font-weight:700;font-size:1rem;">
+                    <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center"
+                         style="width:38px;height:38px;font-weight:700;font-size:1rem;">
                         {{ session['nombre'][0] | upper }}
                     </div>
                 </div>
             </nav>
             <!-- Fin Topbar -->
 
-            <!-- Contenido de cada página -->
             {% block content %}{% endblock %}
 
         </div>
@@ -108,6 +176,14 @@
 <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
 <script src="{{ url_for('static', filename='vendor/jquery-easing/jquery.easing.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/sb-admin-2.min.js') }}"></script>
+<script>
+function marcarLeida(id, el) {
+    fetch('/aprendiz/notificaciones/marcar-leida/' + id, { method: 'POST' })
+        .then(function() {
+            $(el).closest('.notif-item').fadeOut(300);
+        });
+}
+</script>
 {% block extra_js %}{% endblock %}
 </body>
 </html>
