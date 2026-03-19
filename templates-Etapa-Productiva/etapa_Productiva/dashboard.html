@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    {% include "components/head.html" %}
+</head>
+
+<body id="page-top">
+<div id="wrapper">
+
+    <!-- SIDEBAR -->
+    <ul class="navbar-nav bg-gradient-sena sidebar sidebar-dark accordion">
+
+        <a class="sidebar-brand d-flex align-items-center justify-content-center" href="#">
+            <div class="sidebar-brand-icon">
+                <img src="{{ url_for('static', filename='img/logo-sena-blanco.png') }}" class="sena-brand-logo">
+            </div>
+            <div class="sidebar-brand-text mx-3">BARÍ LMS</div>
+        </a>
+
+        <hr class="sidebar-divider my-0">
+
+        <li class="nav-item active">
+            <a class="nav-link" href="#">
+                <i class="fas fa-fw fa-tachometer-alt"></i>
+                <span>Panel principal</span>
+            </a>
+        </li>
+
+        <hr class="sidebar-divider">
+
+        <div class="sidebar-heading">
+            {{ dashboard.menu_heading | default("Menú") }}
+        </div>
+
+        {% if dashboard and dashboard.menu %}
+            {% for item in dashboard.menu %}
+                <li class="nav-item">
+                    <a class="nav-link" href="#">
+                        <i class="fas fa-fw {{ item.icon | default('fa-circle') }}"></i>
+                        <span>{{ item.label | default('Item') }}</span>
+                    </a>
+                </li>
+            {% endfor %}
+        {% else %}
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="fas fa-fw fa-circle"></i>
+                    <span>Elemento demo</span>
+                </a>
+            </li>
+        {% endif %}
+
+        <li class="nav-item">
+            <button class="nav-link btn btn-link w-100 text-left">
+                <i class="fas fa-fw fa-sign-out-alt"></i>
+                <span>Cerrar sesión</span>
+            </button>
+        </li>
+
+    </ul>
+
+    <!-- CONTENT -->
+    <div id="content-wrapper" class="d-flex flex-column">
+        <div id="content">
+
+            <!-- NAVBAR -->
+            <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 shadow">
+                <div class="mr-auto">
+                    <span class="sena-role-pill">
+                        {{ user.role | default("Rol demo") }}
+                    </span>
+                </div>
+
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item">
+                        <span class="nav-link">
+                            {{ user.name | default("Usuario Demo") }}
+                        </span>
+                    </li>
+                </ul>
+            </nav>
+
+            <!-- MAIN -->
+            <div class="container-fluid">
+
+                <!-- HERO -->
+                <div class="card shadow mb-4 border-0 sena-highlight">
+                    <div class="card-body p-4">
+                        <h1>{{ dashboard.title | default("Dashboard") }}</h1>
+                        <p>{{ dashboard.text | default("Descripción demo") }}</p>
+                        <div>{{ session_user_email | default("email@test.com") }}</div>
+                    </div>
+                </div>
+
+                <!-- METRICS -->
+                <div class="row">
+                    {% if dashboard and dashboard.metrics %}
+                        {% for metric in dashboard.metrics %}
+                            <div class="col-md-3 mb-4">
+                                <div class="card p-3">
+                                    <strong>{{ metric.label }}</strong>
+                                    <div>{{ metric.value }}</div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="col-md-3"><div class="card p-3">Métrica demo</div></div>
+                    {% endif %}
+                </div>
+
+                <!-- TABLE -->
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <h5>{{ dashboard.table_title | default("Tabla") }}</h5>
+
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    {% if dashboard and dashboard.table_headers %}
+                                        {% for h in dashboard.table_headers %}
+                                            <th>{{ h }}</th>
+                                        {% endfor %}
+                                    {% else %}
+                                        <th>Col 1</th><th>Col 2</th>
+                                    {% endif %}
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                {% if dashboard and dashboard.table_rows %}
+                                    {% for row in dashboard.table_rows %}
+                                        <tr>
+                                            {% for cell in row %}
+                                                <td>{{ cell }}</td>
+                                            {% endfor %}
+                                        </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr><td>Demo</td><td>Demo</td></tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <footer class="text-center mt-4">
+            {{ dashboard.footer | default("BARÍ LMS 2026") }}
+        </footer>
+
+    </div>
+</div>
+
+{% include "components/scripts.html" %}
+</body>
+</html>

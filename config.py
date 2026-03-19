@@ -3,6 +3,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+class psqldb:
+    # Replace these placeholders with your actual DBngin credentials
+    DB_HOST = "localhost" # DBngin often uses 'localhost' or '127.0.0.1'
+    DB_NAME = "bari"
+    DB_USER = "postgres"
+    DB_PASSWORD = ""
+    DB_PORT = "5450" # Check your specific port in DBngin
+        
 
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY")
