@@ -81,10 +81,17 @@
         </div>
     </div>
 
+    <!-- Buscador -->
+    <div class="mb-4">
+        <input type="text" id="buscador-fichas" class="form-control shadow-sm"
+               placeholder="&#xf002;  Buscar por número de ficha o programa..."
+               style="max-width:400px; font-family:'Nunito',sans-serif; border-radius:8px;">
+    </div>
+
     {% if fichas %}
-    <div class="row">
+    <div class="row" id="fichas-container">
         {% for ficha in fichas %}
-        <div class="col-lg-6 col-md-6 mb-4">
+        <div class="col-lg-6 col-md-6 mb-4 ficha-card-wrapper">
             <div class="ficha-card">
                 <div class="card-header-sena">
                     <div class="d-flex align-items-center justify-content-between">
@@ -105,7 +112,7 @@
                         {{ ficha.proyecto_nombre or 'Sin proyecto formativo' }}
                     </div>
                     
-                    <a href="#" class="btn btn-ver-proyecto">
+                    <a href="/aprendiz/ficha/{{ ficha.id }}" class="btn btn-ver-proyecto">
                         <i class="fas fa-eye mr-2"></i>Ver Detalles
                     </a>
                 </div>
@@ -125,4 +132,15 @@
     </div>
     {% endif %}
 </div>
+
+{% block extra_js %}
+<script>
+document.getElementById('buscador-fichas').addEventListener('input', function() {
+    var q = this.value.toLowerCase();
+    document.querySelectorAll('.ficha-card-wrapper').forEach(function(card) {
+        card.style.display = card.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}
 {% endblock %}
