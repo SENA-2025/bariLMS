@@ -278,7 +278,3 @@ usuarios ──→ notificaciones
 | Nombre | Rol en el proyecto | Rama |
 |---|---|---|
 | Santiago | Vista Aprendiz | `Santiago-Vista_Aprendiz` |
-| Jefferson | Vista Aprendiz (base) | `Jefferson-VistaAprendiz` |
-| Ana María | Vista Instructor | `Anamaria-VistaInstructor` |
-
-> Proyecto desarrollado en el Centro de Gestión de Mercados, Logística y Tecnologías de la Información — SENA Regional Distrito Capital · 2026
