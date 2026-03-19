@@ -158,6 +158,15 @@
                                             <a href="{{ url_for('admin_people') }}" class="btn btn-light btn-block mt-2">Cancelar edición</a>
                                         {% endif %}
                                     </form>
+                                    <hr>
+                                    <form method="post" action="{{ url_for('admin_people_import', entity='instructor') }}" enctype="multipart/form-data">
+                                        <div class="form-group mb-2">
+                                            <label>Cargue masivo CSV</label>
+                                            <input type="file" class="form-control-file" name="csv_file" accept=".csv" required>
+                                        </div>
+                                        <small class="form-text text-muted mb-3">Columnas: <code>centro_id,area_id,documento,nombres,apellidos,correo</code>. <code>area_id</code> y <code>correo</code> son opcionales.</small>
+                                        <button type="submit" class="btn btn-outline-success btn-block">Importar instructores</button>
+                                    </form>
                                 </div>
                             </div>
                         </div>
@@ -208,6 +217,15 @@
                                             <a href="{{ url_for('admin_people') }}" class="btn btn-light btn-block mt-2">Cancelar edición</a>
                                         {% endif %}
                                     </form>
+                                    <hr>
+                                    <form method="post" action="{{ url_for('admin_people_import', entity='aprendiz') }}" enctype="multipart/form-data">
+                                        <div class="form-group mb-2">
+                                            <label>Cargue masivo CSV</label>
+                                            <input type="file" class="form-control-file" name="csv_file" accept=".csv" required>
+                                        </div>
+                                        <small class="form-text text-muted mb-3">Columnas: <code>regional_id,documento,nombres,apellidos,correo,ficha</code>. <code>correo</code> y <code>ficha</code> son opcionales.</small>
+                                        <button type="submit" class="btn btn-outline-success btn-block">Importar aprendices</button>
+                                    </form>
                                 </div>
                             </div>
                         </div>
@@ -257,6 +275,15 @@
                                         {% if edit_entity == 'administrativo_persona' %}
                                             <a href="{{ url_for('admin_people') }}" class="btn btn-light btn-block mt-2">Cancelar edición</a>
                                         {% endif %}
+                                    </form>
+                                    <hr>
+                                    <form method="post" action="{{ url_for('admin_people_import', entity='administrativo_persona') }}" enctype="multipart/form-data">
+                                        <div class="form-group mb-2">
+                                            <label>Cargue masivo CSV</label>
+                                            <input type="file" class="form-control-file" name="csv_file" accept=".csv" required>
+                                        </div>
+                                        <small class="form-text text-muted mb-3">Columnas: <code>centro_id,documento,nombres,apellidos,cargo,correo</code>. <code>correo</code> es opcional.</small>
+                                        <button type="submit" class="btn btn-outline-success btn-block">Importar personal</button>
                                     </form>
                                 </div>
                             </div>

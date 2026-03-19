@@ -11,7 +11,12 @@ from bari_lms.services.auth import session_context
 
 
 def create_app():
-    app = Flask(__name__)
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    app = Flask(
+        __name__,
+        template_folder=os.path.join(project_root, "templates"),
+        static_folder=os.path.join(project_root, "static"),
+    )
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "bari-lms-dev-key")
     app.config["PGHOST"] = os.environ.get("PGHOST", "127.0.0.1")
     app.config["PGPORT"] = int(os.environ.get("PGPORT", "5432"))
