@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="Inicio de sesión — Etapa Productiva BARÍ LMS">
+    <title>BARÍ LMS | Etapa Productiva — Inicio de sesión</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo-sena-blanco.png') }}">
+    <link href="{{ url_for('static', filename='vendor/fontawesome-free/css/all.min.css') }}" rel="stylesheet" type="text/css">
+    <link href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/sb-admin-2.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/sena-learn.css') }}" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container sena-login d-flex align-items-center py-5">
+        <div class="row justify-content-center w-100">
+            <div class="col-xl-11 col-lg-12">
+                <div class="card sena-login-card border-0 shadow-lg">
+                    <div class="card-body p-0">
+                        <div class="row no-gutters">
+
+                            {# ── Left branding panel ── #}
+                            <div class="col-lg-5 sena-login-panel p-5 d-flex flex-column justify-content-between">
+                                <div>
+                                    <div class="display-illustration mb-4">
+                                        <img
+                                            src="{{ url_for('static', filename='img/logo-sena-blanco.png') }}"
+                                            alt="Logo SENA"
+                                            class="sena-logo-login"
+                                        >
+                                    </div>
+                                    <div class="text-uppercase small font-weight-bold mb-2">BARÍ</div>
+                                    <h1 class="h2 font-weight-bold mb-3">Etapa Productiva</h1>
+                                    <p class="mb-4">
+                                        Módulo de gestión de la etapa productiva del SENA.
+                                    </p>
+                                </div>
+
+                                {# ── Demo credentials hint ── #}
+                                {% if demo_users %}
+                                    <div class="mt-4">
+                                        <p class="small font-weight-bold text-white-50 mb-2 text-uppercase">
+                                            Accesos demo
+                                        </p>
+                                        {% for u in demo_users %}
+                                            <div class="small text-white-50 mb-1">
+                                                <i class="fas fa-user fa-xs mr-1"></i>
+                                                <strong>{{ u.role }}</strong> —
+                                                {{ u.email }}
+                                                <span class="text-white-50"> / {{ u.password }}</span>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            {# ── Right login form ── #}
+                            <div class="col-lg-7">
+                                <div class="p-5">
+                                    <div class="mb-4">
+                                        <div class="text-uppercase small font-weight-bold text-sena mb-2">
+                                            Acceso institucional
+                                        </div>
+                                        <h2 class="h3 text-gray-900 mb-1">Iniciar sesión</h2>
+                                    </div>
+
+                                    {# ── Flash messages ── #}
+                                    {% with messages = get_flashed_messages(with_categories=true) %}
+                                        {% if messages %}
+                                            {% for category, message in messages %}
+                                                <div class="alert alert-{{ category }}" role="alert">
+                                                    {{ message }}
+                                                </div>
+                                            {% endfor %}
+                                        {% endif %}
+                                    {% endwith %}
+
+                                    <form class="user" method="post" action="{{ url_for('index.login') }}">
+                                        <div class="form-group">
+                                            <input
+                                                type="email"
+                                                class="form-control form-control-user"
+                                                name="email"
+                                                placeholder="Correo institucional"
+                                                required
+                                            >
+                                        </div>
+                                        <div class="form-group">
+                                            <input
+                                                type="password"
+                                                class="form-control form-control-user"
+                                                name="password"
+                                                placeholder="Contraseña"
+                                                required
+                                            >
+                                        </div>
+                                        <div class="form-group">
+                                            <select class="custom-select px-4" name="role" required>
+                                                <option value="">Selecciona tu perfil</option>
+                                                {% for u in demo_users %}
+                                                    <option value="{{ u.role }}">{{ u.role }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <button type="submit" class="btn btn-sena btn-user btn-block">
+                                            Ingresar
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='vendor/jquery/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/jquery-easing/jquery.easing.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/sb-admin-2.min.js') }}"></script>
+</body>
+</html>
