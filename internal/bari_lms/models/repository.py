@@ -24,66 +24,64 @@ ENTITY_CONFIG = {
         "table": "centro",
         "label": "Centro de formación",
         "parent_key": "regional_id",
-        "fields": ["id_regional", "nombre"],
-        "required": ["id_regional", "nombre"],
+        "fields": ["regional_id", "nombre"],
+        "required": ["regional_id", "nombre"],
         "context_key": "centro_id",
-        "select_aliases": {"id_regional": "regional_id"},
-        "form_to_db": {"regional_id": "id_regional"},
+        "select_aliases": {},
+        "form_to_db": {},
     },
     "coordinacion": {
         "table": "coordinacion",
         "label": "Coordinación",
         "parent_key": "centro_id",
-        "fields": ["id_centro", "nombre"],
-        "required": ["id_centro", "nombre"],
+        "fields": ["centro_id", "nombre"],
+        "required": ["centro_id", "nombre"],
         "context_key": "coordinacion_id",
-        "select_aliases": {"id_centro": "centro_id"},
-        "form_to_db": {"centro_id": "id_centro"},
+        "select_aliases": {},
+        "form_to_db": {},
     },
     "sede": {
         "table": "sede",
         "label": "Sede",
         "parent_key": "centro_id",
-        "fields": ["id_centro", "nombre"],
-        "required": ["id_centro", "nombre"],
+        "fields": ["centro_id", "nombre"],
+        "required": ["centro_id", "nombre"],
         "context_key": "sede_id",
-        "select_aliases": {"id_centro": "centro_id"},
-        "form_to_db": {"centro_id": "id_centro"},
+        "select_aliases": {},
+        "form_to_db": {},
     },
     "instructor": {
         "table": "instructor",
         "label": "Instructor",
         "parent_key": "centro_id",
-        "fields": ["id_centro", "id_area", "documento", "nombres", "apellidos", "correo"],
-        "required": ["id_centro", "documento", "nombres", "apellidos"],
+        "fields": ["centro_id", "area_id", "documento", "nombres", "apellidos", "correo"],
+        "required": ["centro_id", "documento", "nombres", "apellidos"],
         "context_key": "centro_id",
         "select_aliases": {
-            "id_centro": "centro_id",
-            "id_area": "area_id",
             "correo": "email",
-            "id_usuario": "user_id",
+            "usuario_id": "user_id",
         },
-        "form_to_db": {"centro_id": "id_centro", "area_id": "id_area", "email": "correo"},
+        "form_to_db": {"email": "correo"},
     },
     "aprendiz": {
         "table": "aprendiz",
         "label": "Aprendiz",
         "parent_key": "regional_id",
-        "fields": ["id_regional", "documento", "nombres", "apellidos", "correo", "ficha"],
-        "required": ["id_regional", "documento", "nombres", "apellidos"],
+        "fields": ["regional_id", "documento", "nombres", "apellidos", "correo", "ficha"],
+        "required": ["regional_id", "documento", "nombres", "apellidos"],
         "context_key": "regional_id",
-        "select_aliases": {"id_regional": "regional_id", "correo": "email", "id_usuario": "user_id"},
-        "form_to_db": {"regional_id": "id_regional"},
+        "select_aliases": {"correo": "email", "usuario_id": "user_id"},
+        "form_to_db": {},
     },
     "ambiente": {
         "table": "ambiente",
         "label": "Ambiente",
         "parent_key": "sede_id",
-        "fields": ["id_sede", "nombre", "capacidad"],
-        "required": ["id_sede", "nombre"],
+        "fields": ["sede_id", "nombre", "capacidad"],
+        "required": ["sede_id", "nombre"],
         "context_key": "sede_id",
-        "select_aliases": {"id_sede": "sede_id"},
-        "form_to_db": {"sede_id": "id_sede"},
+        "select_aliases": {},
+        "form_to_db": {},
     },
     "red": {
         "table": "red_conocimiento",
@@ -99,11 +97,11 @@ ENTITY_CONFIG = {
         "table": "area",
         "label": "Area",
         "parent_key": "red_id",
-        "fields": ["id_red_conocimiento", "nombre"],
-        "required": ["id_red_conocimiento", "nombre"],
+        "fields": ["red_conocimiento_id", "nombre"],
+        "required": ["red_conocimiento_id", "nombre"],
         "context_key": "area_id",
-        "select_aliases": {"id_red_conocimiento": "red_id"},
-        "form_to_db": {"red_id": "id_red_conocimiento"},
+        "select_aliases": {"red_conocimiento_id": "red_id"},
+        "form_to_db": {"red_id": "red_conocimiento_id"},
     },
     "nivel": {
         "table": "nivel_formacion",
@@ -119,30 +117,24 @@ ENTITY_CONFIG = {
         "table": "programa_formacion",
         "label": "Programa de formación",
         "parent_key": "area_id",
-        "fields": ["id_area", "id_nivel_formacion", "nombre"],
-        "required": ["id_area", "id_nivel_formacion", "nombre"],
+        "fields": ["area_id", "nivel_formacion_id", "nombre"],
+        "required": ["area_id", "nivel_formacion_id", "nombre"],
         "context_key": "programa_id",
-        "select_aliases": {"id_area": "area_id", "id_nivel_formacion": "nivel_id"},
-        "form_to_db": {"area_id": "id_area", "nivel_id": "id_nivel_formacion"},
+        "select_aliases": {"nivel_formacion_id": "nivel_id"},
+        "form_to_db": {"nivel_id": "nivel_formacion_id"},
     },
     "ficha": {
         "table": "ficha_formacion",
         "label": "Ficha de formación",
         "parent_key": "programa_id",
-        "fields": ["numero", "id_programa_formacion", "id_proyecto_formativo", "id_coordinacion", "id_instructor"],
-        "required": ["numero", "id_programa_formacion", "id_proyecto_formativo", "id_coordinacion"],
+        "fields": ["numero", "programa_formacion_id", "proyecto_formativo_id", "coordinacion_id", "instructor_id"],
+        "required": ["numero", "programa_formacion_id", "proyecto_formativo_id", "coordinacion_id"],
         "context_key": "programa_id",
         "select_aliases": {
-            "id_programa_formacion": "programa_id",
-            "id_proyecto_formativo": "proyecto_formativo_id",
-            "id_coordinacion": "coordinacion_id",
-            "id_instructor": "instructor_id",
+            "programa_formacion_id": "programa_id",
         },
         "form_to_db": {
-            "programa_id": "id_programa_formacion",
-            "proyecto_formativo_id": "id_proyecto_formativo",
-            "coordinacion_id": "id_coordinacion",
-            "instructor_id": "id_instructor",
+            "programa_id": "programa_formacion_id",
         },
     },
     "proyecto_formativo": {
@@ -159,41 +151,41 @@ ENTITY_CONFIG = {
         "table": "fase_proyecto",
         "label": "Fase del proyecto",
         "parent_key": "proyecto_formativo_id",
-        "fields": ["id_proyecto_formativo", "nombre"],
-        "required": ["id_proyecto_formativo", "nombre"],
+        "fields": ["proyecto_formativo_id", "nombre"],
+        "required": ["proyecto_formativo_id", "nombre"],
         "context_key": "fase_id",
-        "select_aliases": {"id_proyecto_formativo": "proyecto_formativo_id"},
-        "form_to_db": {"proyecto_formativo_id": "id_proyecto_formativo"},
+        "select_aliases": {},
+        "form_to_db": {},
     },
     "actividad_proyecto": {
         "table": "actividad_proyecto",
         "label": "Actividad del proyecto",
         "parent_key": "fase_id",
-        "fields": ["id_fase_proyecto", "nombre"],
-        "required": ["id_fase_proyecto", "nombre"],
+        "fields": ["fase_proyecto_id", "nombre"],
+        "required": ["fase_proyecto_id", "nombre"],
         "context_key": "fase_id",
-        "select_aliases": {"id_fase_proyecto": "fase_id"},
-        "form_to_db": {"fase_id": "id_fase_proyecto"},
+        "select_aliases": {"fase_proyecto_id": "fase_id"},
+        "form_to_db": {"fase_id": "fase_proyecto_id"},
     },
     "actividad_aprendizaje": {
         "table": "actividad_aprendizaje",
         "label": "Actividad de aprendizaje",
         "parent_key": "actividad_proyecto_id",
-        "fields": ["id_actividad_proyecto", "nombre"],
-        "required": ["id_actividad_proyecto", "nombre"],
+        "fields": ["actividad_proyecto_id", "nombre"],
+        "required": ["actividad_proyecto_id", "nombre"],
         "context_key": "actividad_proyecto_id",
-        "select_aliases": {"id_actividad_proyecto": "actividad_proyecto_id"},
-        "form_to_db": {"actividad_proyecto_id": "id_actividad_proyecto"},
+        "select_aliases": {},
+        "form_to_db": {},
     },
     "administrativo_persona": {
         "table": "personal_administrativo",
         "label": "Personal administrativo",
         "parent_key": "centro_id",
-        "fields": ["id_centro", "documento", "nombres", "apellidos", "correo", "cargo"],
-        "required": ["id_centro", "documento", "nombres", "apellidos", "cargo"],
+        "fields": ["centro_id", "documento", "nombres", "apellidos", "correo", "cargo"],
+        "required": ["centro_id", "documento", "nombres", "apellidos", "cargo"],
         "context_key": "centro_id",
-        "select_aliases": {"id_centro": "centro_id", "correo": "email", "id_usuario": "user_id"},
-        "form_to_db": {"centro_id": "id_centro"},
+        "select_aliases": {"correo": "email", "usuario_id": "user_id"},
+        "form_to_db": {},
     },
 }
 
@@ -221,17 +213,45 @@ COLUMN_RENAMES = {
         "active": "activo",
         "created_at": "creado_en",
     },
-    "centro": {"regional_id": "id_regional"},
-    "coordinacion": {"centro_id": "id_centro"},
-    "sede": {"centro_id": "id_centro"},
+    # Legacy id_xxx → xxx_id renames (applied by initialize_database on old schemas)
+    "centro": {"id_regional": "regional_id"},
+    "coordinacion": {"id_centro": "centro_id"},
+    "sede": {"id_centro": "centro_id"},
     "instructor": {
-        "coordinacion_id": "id_coordinacion",
-        "centro_id": "id_centro",
-        "email": "correo",
-        "user_id": "id_usuario",
+        "id_coordinacion": "centro_id",
+        "id_centro": "centro_id",
+        "id_area": "area_id",
+        "id_usuario": "usuario_id",
     },
-    "aprendiz": {"coordinacion_id": "id_coordinacion", "regional_id": "id_regional"},
-    "ambiente": {"sede_id": "id_sede"},
+    "aprendiz": {
+        "id_coordinacion": "regional_id",
+        "id_regional": "regional_id",
+        "id_usuario": "usuario_id",
+    },
+    "ambiente": {"id_sede": "sede_id"},
+    "programa_formacion": {
+        "id_area": "area_id",
+        "id_nivel_formacion": "nivel_formacion_id",
+    },
+    "ficha_formacion": {
+        "id_programa_formacion": "programa_formacion_id",
+        "id_proyecto_formativo": "proyecto_formativo_id",
+        "id_coordinacion": "coordinacion_id",
+        "id_instructor": "instructor_id",
+    },
+    "fase_proyecto": {"id_proyecto_formativo": "proyecto_formativo_id"},
+    "actividad_proyecto": {"id_fase_proyecto": "fase_proyecto_id"},
+    "actividad_aprendizaje": {"id_actividad_proyecto": "actividad_proyecto_id"},
+    "personal_administrativo": {"id_centro": "centro_id", "id_usuario": "usuario_id"},
+    "area": {"id_red_conocimiento": "red_conocimiento_id"},
+    "guia_aprendizaje": {"id_actividad_aprendizaje": "actividad_aprendizaje_id"},
+    "evidencia_aprendizaje": {"id_actividad_aprendizaje": "actividad_aprendizaje_id"},
+    "entrega_evidencia": {"id_evidencia_aprendizaje": "evidencia_aprendizaje_id", "id_usuario": "usuario_id"},
+    "seccion_actividad": {"id_actividad_aprendizaje": "actividad_aprendizaje_id"},
+    "sub_seccion_actividad": {"id_seccion": "seccion_id"},
+    "guia_actividad_proyecto": {"id_actividad_proyecto": "actividad_proyecto_id"},
+    "ficha_instructor_competencia": {"id_ficha": "ficha_id", "id_instructor": "instructor_id"},
+    "asistencia_aprendiz": {"id_ficha": "ficha_id", "id_aprendiz": "aprendiz_id"},
 }
 
 PERSON_USER_CONFIG = {
@@ -240,21 +260,21 @@ PERSON_USER_CONFIG = {
         "email_prefix": "instructor",
         "table": "instructor",
         "email_column": "correo",
-        "user_column": "id_usuario",
+        "user_column": "usuario_id",
     },
     "aprendiz": {
         "role": "Aprendiz",
         "email_prefix": "aprendiz",
         "table": "aprendiz",
         "email_column": "correo",
-        "user_column": "id_usuario",
+        "user_column": "usuario_id",
     },
     "administrativo_persona": {
         "role": "Administrativo",
         "email_prefix": "administrativo",
         "table": "personal_administrativo",
         "email_column": "correo",
-        "user_column": "id_usuario",
+        "user_column": "usuario_id",
     },
 }
 
@@ -321,6 +341,14 @@ def parse_int(value):
         return int(value)
     except (TypeError, ValueError):
         return None
+
+
+def parse_uuid(value):
+    """Return a stripped UUID string, or None if blank/None."""
+    if value is None:
+        return None
+    stripped = str(value).strip()
+    return stripped if stripped else None
 
 
 def create_pool(app):
@@ -411,395 +439,362 @@ def initialize_database():
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS usuario (
-            id SERIAL PRIMARY KEY,
-            correo TEXT UNIQUE NOT NULL,
-            contrasena_hash TEXT NOT NULL,
-            rol TEXT NOT NULL,
-            nombre TEXT NOT NULL,
-            activo BOOLEAN NOT NULL DEFAULT TRUE,
-            creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            id             UUID        PRIMARY KEY,
+            correo         TEXT        UNIQUE NOT NULL,
+            contrasena_hash TEXT       NOT NULL,
+            rol            TEXT        NOT NULL,
+            nombre         TEXT        NOT NULL,
+            activo         BOOLEAN     NOT NULL DEFAULT TRUE,
+            creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            actualizado_en TIMESTAMPTZ
         )
         """
     )
-    db.execute("CREATE TABLE IF NOT EXISTS regional (id SERIAL PRIMARY KEY, nombre TEXT NOT NULL UNIQUE)")
+    db.execute(
+        "CREATE TABLE IF NOT EXISTS regional ("
+        "id UUID PRIMARY KEY, "
+        "nombre TEXT NOT NULL UNIQUE, "
+        "creado_en TIMESTAMPTZ NOT NULL DEFAULT NOW(), "
+        "actualizado_en TIMESTAMPTZ)"
+    )
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS centro (
-            id SERIAL PRIMARY KEY,
-            id_regional INTEGER NOT NULL,
-            nombre TEXT NOT NULL,
-            FOREIGN KEY (id_regional) REFERENCES regional(id) ON DELETE CASCADE
+            id             UUID        PRIMARY KEY,
+            regional_id    UUID        NOT NULL REFERENCES regional(id) ON DELETE RESTRICT,
+            nombre         TEXT        NOT NULL,
+            creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            actualizado_en TIMESTAMPTZ
         )
         """
     )
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS coordinacion (
-            id SERIAL PRIMARY KEY,
-            id_centro INTEGER NOT NULL,
-            nombre TEXT NOT NULL,
-            FOREIGN KEY (id_centro) REFERENCES centro(id) ON DELETE CASCADE
+            id             UUID        PRIMARY KEY,
+            centro_id      UUID        NOT NULL REFERENCES centro(id) ON DELETE RESTRICT,
+            nombre         TEXT        NOT NULL,
+            creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            actualizado_en TIMESTAMPTZ
         )
         """
     )
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS sede (
-            id SERIAL PRIMARY KEY,
-            id_centro INTEGER NOT NULL,
-            nombre TEXT NOT NULL,
-            FOREIGN KEY (id_centro) REFERENCES centro(id) ON DELETE CASCADE
+            id             UUID        PRIMARY KEY,
+            centro_id      UUID        NOT NULL REFERENCES centro(id) ON DELETE RESTRICT,
+            nombre         TEXT        NOT NULL,
+            creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            actualizado_en TIMESTAMPTZ
         )
         """
     )
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS instructor (
-            id SERIAL PRIMARY KEY,
-            id_centro INTEGER NOT NULL,
-            documento TEXT NOT NULL,
-            nombres TEXT NOT NULL,
-            apellidos TEXT NOT NULL,
-            correo TEXT,
-            id_usuario INTEGER,
-            FOREIGN KEY (id_centro) REFERENCES centro(id) ON DELETE CASCADE
+            id             UUID        PRIMARY KEY,
+            centro_id      UUID        NOT NULL REFERENCES centro(id) ON DELETE RESTRICT,
+            area_id        UUID        REFERENCES area(id) ON DELETE SET NULL,
+            documento      TEXT        NOT NULL,
+            nombres        TEXT        NOT NULL,
+            apellidos      TEXT        NOT NULL,
+            correo         TEXT,
+            usuario_id     UUID        REFERENCES usuario(id) ON DELETE SET NULL,
+            genero         TEXT        NOT NULL DEFAULT 'M',
+            creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            actualizado_en TIMESTAMPTZ
         )
         """
     )
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS aprendiz (
-            id SERIAL PRIMARY KEY,
-            id_regional INTEGER,
-            documento TEXT NOT NULL,
-            nombres TEXT NOT NULL,
-            apellidos TEXT NOT NULL,
-            correo TEXT,
-            id_usuario INTEGER,
-            ficha TEXT,
-            FOREIGN KEY (id_regional) REFERENCES regional(id) ON DELETE CASCADE
+            id             UUID        PRIMARY KEY,
+            regional_id    UUID        NOT NULL REFERENCES regional(id) ON DELETE RESTRICT,
+            documento      TEXT        NOT NULL,
+            nombres        TEXT        NOT NULL,
+            apellidos      TEXT        NOT NULL,
+            correo         TEXT,
+            usuario_id     UUID        REFERENCES usuario(id) ON DELETE SET NULL,
+            ficha          TEXT,
+            creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            actualizado_en TIMESTAMPTZ
         )
         """
     )
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS personal_administrativo (
-            id SERIAL PRIMARY KEY,
-            id_centro INTEGER NOT NULL,
-            documento TEXT NOT NULL,
-            nombres TEXT NOT NULL,
-            apellidos TEXT NOT NULL,
-            correo TEXT,
-            cargo TEXT NOT NULL,
-            id_usuario INTEGER,
-            FOREIGN KEY (id_centro) REFERENCES centro(id) ON DELETE CASCADE
+            id             UUID        PRIMARY KEY,
+            centro_id      UUID        NOT NULL REFERENCES centro(id) ON DELETE RESTRICT,
+            documento      TEXT        NOT NULL,
+            nombres        TEXT        NOT NULL,
+            apellidos      TEXT        NOT NULL,
+            correo         TEXT,
+            cargo          TEXT        NOT NULL,
+            usuario_id     UUID        REFERENCES usuario(id) ON DELETE SET NULL,
+            creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            actualizado_en TIMESTAMPTZ
         )
         """
     )
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS ambiente (
-            id SERIAL PRIMARY KEY,
-            id_sede INTEGER NOT NULL,
-            nombre TEXT NOT NULL,
-            capacidad INTEGER,
-            FOREIGN KEY (id_sede) REFERENCES sede(id) ON DELETE CASCADE
+            id             UUID        PRIMARY KEY,
+            sede_id        UUID        NOT NULL REFERENCES sede(id) ON DELETE RESTRICT,
+            nombre         TEXT        NOT NULL,
+            capacidad      INTEGER,
+            creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            actualizado_en TIMESTAMPTZ
         )
         """
     )
-    db.execute("CREATE TABLE IF NOT EXISTS red_conocimiento (id SERIAL PRIMARY KEY, nombre TEXT NOT NULL UNIQUE)")
+    db.execute(
+        "CREATE TABLE IF NOT EXISTS red_conocimiento ("
+        "id UUID PRIMARY KEY, "
+        "nombre TEXT NOT NULL UNIQUE, "
+        "creado_en TIMESTAMPTZ NOT NULL DEFAULT NOW(), "
+        "actualizado_en TIMESTAMPTZ)"
+    )
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS area (
-            id SERIAL PRIMARY KEY,
-            id_red_conocimiento INTEGER NOT NULL,
-            nombre TEXT NOT NULL,
-            FOREIGN KEY (id_red_conocimiento) REFERENCES red_conocimiento(id) ON DELETE CASCADE
+            id                  UUID        PRIMARY KEY,
+            red_conocimiento_id UUID        NOT NULL REFERENCES red_conocimiento(id) ON DELETE RESTRICT,
+            nombre              TEXT        NOT NULL,
+            creado_en           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            actualizado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
         """
     )
-    db.execute("CREATE TABLE IF NOT EXISTS nivel_formacion (id SERIAL PRIMARY KEY, nombre TEXT NOT NULL UNIQUE)")
+    db.execute(
+        "CREATE TABLE IF NOT EXISTS nivel_formacion ("
+        "id UUID PRIMARY KEY, "
+        "nombre TEXT NOT NULL UNIQUE, "
+        "creado_en TIMESTAMPTZ NOT NULL DEFAULT NOW(), "
+        "actualizado_en TIMESTAMPTZ)"
+    )
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS programa_formacion (
-            id SERIAL PRIMARY KEY,
-            id_area INTEGER NOT NULL,
-            id_nivel_formacion INTEGER NOT NULL,
-            nombre TEXT NOT NULL,
-            FOREIGN KEY (id_area) REFERENCES area(id) ON DELETE CASCADE,
-            FOREIGN KEY (id_nivel_formacion) REFERENCES nivel_formacion(id) ON DELETE CASCADE
+            id                 UUID        PRIMARY KEY,
+            area_id            UUID        NOT NULL REFERENCES area(id) ON DELETE RESTRICT,
+            nivel_formacion_id UUID        NOT NULL REFERENCES nivel_formacion(id) ON DELETE RESTRICT,
+            nombre             TEXT        NOT NULL,
+            creado_en          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            actualizado_en     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS proyecto_formativo (
+            id             UUID        PRIMARY KEY,
+            codigo         TEXT        NOT NULL UNIQUE,
+            nombre         TEXT        NOT NULL,
+            creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            actualizado_en TIMESTAMPTZ
         )
         """
     )
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS ficha_formacion (
-            id SERIAL PRIMARY KEY,
-            numero TEXT NOT NULL UNIQUE,
-            id_programa_formacion INTEGER NOT NULL,
-            id_proyecto_formativo INTEGER,
-            id_coordinacion INTEGER NOT NULL,
-            id_instructor INTEGER,
-            FOREIGN KEY (id_programa_formacion) REFERENCES programa_formacion(id) ON DELETE CASCADE,
-            FOREIGN KEY (id_proyecto_formativo) REFERENCES proyecto_formativo(id) ON DELETE SET NULL,
-            FOREIGN KEY (id_coordinacion) REFERENCES coordinacion(id) ON DELETE CASCADE,
-            FOREIGN KEY (id_instructor) REFERENCES instructor(id) ON DELETE SET NULL
+            id                    UUID        PRIMARY KEY,
+            numero                TEXT        NOT NULL UNIQUE,
+            programa_formacion_id UUID        NOT NULL REFERENCES programa_formacion(id) ON DELETE RESTRICT,
+            proyecto_formativo_id UUID        REFERENCES proyecto_formativo(id) ON DELETE SET NULL,
+            coordinacion_id       UUID        NOT NULL REFERENCES coordinacion(id) ON DELETE RESTRICT,
+            instructor_id         UUID        REFERENCES instructor(id) ON DELETE SET NULL,
+            creado_en             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            actualizado_en        TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
         """
     )
-    db.execute("CREATE TABLE IF NOT EXISTS proyecto_formativo (id SERIAL PRIMARY KEY, codigo TEXT NOT NULL UNIQUE, nombre TEXT NOT NULL)")
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS fase_proyecto (
-            id SERIAL PRIMARY KEY,
-            id_proyecto_formativo INTEGER NOT NULL,
-            nombre TEXT NOT NULL,
-            FOREIGN KEY (id_proyecto_formativo) REFERENCES proyecto_formativo(id) ON DELETE CASCADE
+            id                    UUID        PRIMARY KEY,
+            proyecto_formativo_id UUID        NOT NULL REFERENCES proyecto_formativo(id) ON DELETE CASCADE,
+            nombre                TEXT        NOT NULL,
+            creado_en             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            actualizado_en        TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
         """
     )
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS actividad_proyecto (
-            id SERIAL PRIMARY KEY,
-            id_fase_proyecto INTEGER NOT NULL,
-            nombre TEXT NOT NULL,
-            FOREIGN KEY (id_fase_proyecto) REFERENCES fase_proyecto(id) ON DELETE CASCADE
+            id               UUID        PRIMARY KEY,
+            fase_proyecto_id UUID        NOT NULL REFERENCES fase_proyecto(id) ON DELETE CASCADE,
+            nombre           TEXT        NOT NULL,
+            creado_en        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            actualizado_en   TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
         """
     )
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS actividad_aprendizaje (
-            id SERIAL PRIMARY KEY,
-            id_actividad_proyecto INTEGER NOT NULL,
-            nombre TEXT NOT NULL,
-            FOREIGN KEY (id_actividad_proyecto) REFERENCES actividad_proyecto(id) ON DELETE CASCADE
+            id                    UUID        PRIMARY KEY,
+            actividad_proyecto_id UUID        NOT NULL REFERENCES actividad_proyecto(id) ON DELETE CASCADE,
+            nombre                TEXT        NOT NULL,
+            descripcion           TEXT,
+            fecha_inicio          DATE,
+            fecha_fin             DATE,
+            orden                 INTEGER     NOT NULL DEFAULT 0,
+            creado_en             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            actualizado_en        TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
         """
     )
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS guia_aprendizaje (
-            id SERIAL PRIMARY KEY,
-            id_actividad_aprendizaje INTEGER NOT NULL UNIQUE,
-            url TEXT NOT NULL,
-            subido_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (id_actividad_aprendizaje) REFERENCES actividad_aprendizaje(id) ON DELETE CASCADE
+            id                       UUID        PRIMARY KEY,
+            actividad_aprendizaje_id UUID        NOT NULL UNIQUE REFERENCES actividad_aprendizaje(id) ON DELETE CASCADE,
+            url                      TEXT        NOT NULL,
+            subido_en                TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            creado_en                TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            actualizado_en           TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
         """
     )
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS evidencia_aprendizaje (
-            id SERIAL PRIMARY KEY,
-            id_actividad_aprendizaje INTEGER NOT NULL UNIQUE,
-            descripcion TEXT,
-            creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (id_actividad_aprendizaje) REFERENCES actividad_aprendizaje(id) ON DELETE CASCADE
+            id                       UUID        PRIMARY KEY,
+            actividad_aprendizaje_id UUID        NOT NULL UNIQUE REFERENCES actividad_aprendizaje(id) ON DELETE CASCADE,
+            descripcion              TEXT,
+            creado_en                TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            actualizado_en           TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
         """
     )
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS entrega_evidencia (
-            id SERIAL PRIMARY KEY,
-            id_evidencia_aprendizaje INTEGER NOT NULL,
-            id_usuario INTEGER NOT NULL,
-            url TEXT,
-            calificacion NUMERIC(5,2),
-            observaciones TEXT,
-            entregado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (id_evidencia_aprendizaje) REFERENCES evidencia_aprendizaje(id) ON DELETE CASCADE
+            id                       UUID        PRIMARY KEY,
+            evidencia_aprendizaje_id UUID        NOT NULL REFERENCES evidencia_aprendizaje(id) ON DELETE CASCADE,
+            usuario_id               UUID        NOT NULL REFERENCES usuario(id) ON DELETE RESTRICT,
+            url                      TEXT,
+            calificacion             NUMERIC(5,2),
+            observaciones            TEXT,
+            retroalimentacion        TEXT,
+            aprueba                  BOOLEAN,
+            calificado_en            TIMESTAMPTZ,
+            entregado_en             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            creado_en                TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            actualizado_en           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            UNIQUE (evidencia_aprendizaje_id, usuario_id)
         )
         """
     )
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS seccion_actividad (
-            id SERIAL PRIMARY KEY,
-            id_actividad_aprendizaje INTEGER NOT NULL,
-            nombre TEXT NOT NULL,
-            descripcion TEXT,
-            archivo_url TEXT,
-            archivo_tipo TEXT,
-            fecha_inicio DATE,
-            fecha_fin DATE,
-            orden INTEGER NOT NULL DEFAULT 0,
-            FOREIGN KEY (id_actividad_aprendizaje) REFERENCES actividad_aprendizaje(id) ON DELETE CASCADE
+            id                       UUID        PRIMARY KEY,
+            actividad_aprendizaje_id UUID        NOT NULL REFERENCES actividad_aprendizaje(id) ON DELETE CASCADE,
+            nombre                   TEXT        NOT NULL,
+            descripcion              TEXT,
+            archivo_url              TEXT,
+            archivo_tipo             TEXT,
+            fecha_inicio             DATE,
+            fecha_fin                DATE,
+            orden                    INTEGER     NOT NULL DEFAULT 0,
+            creado_en                TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            actualizado_en           TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
         """
     )
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS sub_seccion_actividad (
-            id SERIAL PRIMARY KEY,
-            id_seccion INTEGER NOT NULL,
-            nombre TEXT NOT NULL,
-            descripcion TEXT,
-            archivo_url TEXT,
-            archivo_tipo TEXT,
-            fecha_inicio DATE,
-            fecha_fin DATE,
-            orden INTEGER NOT NULL DEFAULT 0,
-            FOREIGN KEY (id_seccion) REFERENCES seccion_actividad(id) ON DELETE CASCADE
+            id             UUID        PRIMARY KEY,
+            seccion_id     UUID        NOT NULL REFERENCES seccion_actividad(id) ON DELETE CASCADE,
+            nombre         TEXT        NOT NULL,
+            descripcion    TEXT,
+            archivo_url    TEXT,
+            archivo_tipo   TEXT,
+            fecha_inicio   DATE,
+            fecha_fin      DATE,
+            orden          INTEGER     NOT NULL DEFAULT 0,
+            creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            actualizado_en TIMESTAMPTZ
         )
         """
     )
-    db.commit()
-
-    instructor_genero_columns = get_table_columns("instructor")
-    if "genero" not in instructor_genero_columns:
-        db.execute("ALTER TABLE instructor ADD COLUMN IF NOT EXISTS genero TEXT NOT NULL DEFAULT 'M'")
-        db.commit()
-
-    actividad_columns = get_table_columns("actividad_aprendizaje")
-    if "descripcion" not in actividad_columns:
-        db.execute("ALTER TABLE actividad_aprendizaje ADD COLUMN IF NOT EXISTS descripcion TEXT")
-        db.commit()
-    if "fecha_inicio" not in actividad_columns:
-        db.execute("ALTER TABLE actividad_aprendizaje ADD COLUMN IF NOT EXISTS fecha_inicio DATE")
-        db.commit()
-    if "fecha_fin" not in actividad_columns:
-        db.execute("ALTER TABLE actividad_aprendizaje ADD COLUMN IF NOT EXISTS fecha_fin DATE")
-        db.commit()
-
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS ficha_instructor_competencia (
-            id SERIAL PRIMARY KEY,
-            id_ficha INTEGER NOT NULL REFERENCES ficha_formacion(id) ON DELETE CASCADE,
-            id_instructor INTEGER NOT NULL REFERENCES instructor(id) ON DELETE CASCADE,
-            UNIQUE (id_ficha, id_instructor)
+            id             UUID        PRIMARY KEY,
+            ficha_id       UUID        NOT NULL REFERENCES ficha_formacion(id) ON DELETE CASCADE,
+            instructor_id  UUID        NOT NULL REFERENCES instructor(id) ON DELETE CASCADE,
+            creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            actualizado_en TIMESTAMPTZ,
+            UNIQUE (ficha_id, instructor_id)
         )
         """
     )
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS guia_actividad_proyecto (
-            id SERIAL PRIMARY KEY,
-            id_actividad_proyecto INTEGER NOT NULL,
-            nombre TEXT,
-            url TEXT NOT NULL,
-            subido_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (id_actividad_proyecto) REFERENCES actividad_proyecto(id) ON DELETE CASCADE
+            id                    UUID        PRIMARY KEY,
+            actividad_proyecto_id UUID        NOT NULL REFERENCES actividad_proyecto(id) ON DELETE CASCADE,
+            nombre                TEXT,
+            descripcion           TEXT,
+            url                   TEXT        NOT NULL,
+            orden                 INTEGER     NOT NULL DEFAULT 0,
+            subido_en             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            creado_en             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            actualizado_en        TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
         """
     )
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS asistencia_aprendiz (
-            id SERIAL PRIMARY KEY,
-            id_ficha INTEGER NOT NULL,
-            id_aprendiz INTEGER NOT NULL,
-            fecha DATE NOT NULL,
-            estado TEXT NOT NULL DEFAULT 'Presente',
-            FOREIGN KEY (id_ficha) REFERENCES ficha_formacion(id) ON DELETE CASCADE,
-            FOREIGN KEY (id_aprendiz) REFERENCES aprendiz(id) ON DELETE CASCADE,
-            UNIQUE(id_ficha, id_aprendiz, fecha)
+            id             UUID        PRIMARY KEY,
+            ficha_id       UUID        NOT NULL REFERENCES ficha_formacion(id) ON DELETE CASCADE,
+            aprendiz_id    UUID        NOT NULL REFERENCES aprendiz(id) ON DELETE CASCADE,
+            fecha          DATE        NOT NULL,
+            estado         TEXT        NOT NULL DEFAULT 'Presente',
+            creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            actualizado_en TIMESTAMPTZ,
+            UNIQUE (ficha_id, aprendiz_id, fecha)
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS fase (
+            id             UUID         PRIMARY KEY,
+            nombre         VARCHAR(150) NOT NULL,
+            orden          SMALLINT     NOT NULL DEFAULT 1,
+            descripcion    TEXT,
+            creado_en      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+            actualizado_en TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS notificacion (
+            id             UUID        PRIMARY KEY,
+            usuario_id     UUID        NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
+            mensaje        TEXT        NOT NULL,
+            tipo           VARCHAR(10) NOT NULL DEFAULT 'info'
+                               CHECK (tipo IN ('info', 'success', 'warning', 'danger')),
+            leida          BOOLEAN     NOT NULL DEFAULT FALSE,
+            url_destino    TEXT,
+            creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            actualizado_en TIMESTAMPTZ
         )
         """
     )
     db.commit()
-
-    # Columna orden en actividad_aprendizaje
-    act_apr_cols = get_table_columns("actividad_aprendizaje")
-    if "orden" not in act_apr_cols:
-        db.execute("ALTER TABLE actividad_aprendizaje ADD COLUMN IF NOT EXISTS orden INTEGER NOT NULL DEFAULT 0")
-        db.commit()
-
-    # Nuevas columnas en guia_actividad_proyecto
-    guia_ap_cols = get_table_columns("guia_actividad_proyecto")
-    if "descripcion" not in guia_ap_cols:
-        db.execute("ALTER TABLE guia_actividad_proyecto ADD COLUMN IF NOT EXISTS descripcion TEXT")
-        db.commit()
-    if "orden" not in guia_ap_cols:
-        db.execute("ALTER TABLE guia_actividad_proyecto ADD COLUMN IF NOT EXISTS orden INTEGER NOT NULL DEFAULT 0")
-        db.commit()
-
-    instructor_columns = get_table_columns("instructor")
-    if "id_centro" not in instructor_columns:
-        db.execute("ALTER TABLE instructor ADD COLUMN IF NOT EXISTS id_centro INTEGER")
-        db.commit()
-        instructor_columns.add("id_centro")
-    if "id_usuario" not in instructor_columns:
-        db.execute("ALTER TABLE instructor ADD COLUMN IF NOT EXISTS id_usuario INTEGER")
-        db.commit()
-        instructor_columns.add("id_usuario")
-    if "id_area" not in instructor_columns:
-        db.execute("ALTER TABLE instructor ADD COLUMN IF NOT EXISTS id_area INTEGER")
-        db.commit()
-        instructor_columns.add("id_area")
-    if "id_coordinacion" in instructor_columns:
-        db.execute(
-            """
-            UPDATE instructor i
-            SET id_centro = c.id_centro
-            FROM coordinacion c
-            WHERE (i.id_centro IS NULL OR i.id_centro = 0) AND i.id_coordinacion = c.id
-            """
-        )
-        db.commit()
-        db.execute("ALTER TABLE instructor DROP CONSTRAINT IF EXISTS instructor_id_coordinacion_fkey")
-        db.commit()
-        db.execute("ALTER TABLE instructor DROP COLUMN IF EXISTS id_coordinacion")
-        db.commit()
-    if not constraint_exists("instructor", "instructor_id_centro_fkey"):
-        db.execute(
-            """
-            ALTER TABLE instructor
-            ADD CONSTRAINT instructor_id_centro_fkey
-            FOREIGN KEY (id_centro) REFERENCES centro(id) ON DELETE CASCADE
-            """
-        )
-        db.commit()
-    db.execute("ALTER TABLE instructor ALTER COLUMN id_centro SET NOT NULL")
-    db.commit()
-
-    aprendiz_columns = get_table_columns("aprendiz")
-    if "id_regional" not in aprendiz_columns:
-        db.execute("ALTER TABLE aprendiz ADD COLUMN IF NOT EXISTS id_regional INTEGER")
-        db.commit()
-        aprendiz_columns.add("id_regional")
-    if "correo" not in aprendiz_columns:
-        db.execute("ALTER TABLE aprendiz ADD COLUMN IF NOT EXISTS correo TEXT")
-        db.commit()
-        aprendiz_columns.add("correo")
-    if "id_usuario" not in aprendiz_columns:
-        db.execute("ALTER TABLE aprendiz ADD COLUMN IF NOT EXISTS id_usuario INTEGER")
-        db.commit()
-        aprendiz_columns.add("id_usuario")
-    if "id_coordinacion" in aprendiz_columns:
-        db.execute(
-            """
-            UPDATE aprendiz a
-            SET id_regional = c.id_regional
-            FROM coordinacion co
-            JOIN centro c ON c.id = co.id_centro
-            WHERE a.id_regional IS NULL AND a.id_coordinacion = co.id
-            """
-        )
-        db.commit()
-        db.execute("ALTER TABLE aprendiz DROP CONSTRAINT IF EXISTS aprendiz_id_coordinacion_fkey")
-        db.commit()
-        db.execute("ALTER TABLE aprendiz DROP COLUMN IF EXISTS id_coordinacion")
-        db.commit()
-    if not constraint_exists("aprendiz", "aprendiz_id_regional_fkey"):
-        db.execute(
-            """
-            ALTER TABLE aprendiz
-            ADD CONSTRAINT aprendiz_id_regional_fkey
-            FOREIGN KEY (id_regional) REFERENCES regional(id) ON DELETE CASCADE
-            """
-        )
-        db.commit()
-    db.execute("ALTER TABLE aprendiz ALTER COLUMN id_regional SET NOT NULL")
-    db.commit()
-
-    ficha_columns = get_table_columns("ficha_formacion")
-    if "id_proyecto_formativo" not in ficha_columns:
-        db.execute("ALTER TABLE ficha_formacion ADD COLUMN IF NOT EXISTS id_proyecto_formativo INTEGER")
-        db.commit()
 
     user_count = db.execute("SELECT COUNT(*) AS total FROM usuario").fetchone()["total"]
     if user_count == 0:
@@ -966,12 +961,12 @@ def entity_select_clause(entity):
     for field in config["fields"]:
         alias = alias_map.get(field)
         fields.append(f"{field} AS {alias}" if alias else field)
-    if entity == "instructor" and "id_usuario AS user_id" not in fields:
-        fields.append("id_usuario AS user_id")
-    if entity == "instructor" and "id_area AS area_id" not in fields:
-        fields.append("id_area AS area_id")
-    if entity in {"aprendiz", "administrativo_persona"} and "id_usuario AS user_id" not in fields:
-        fields.append("id_usuario AS user_id")
+    if entity == "instructor" and "usuario_id AS user_id" not in fields:
+        fields.append("usuario_id AS user_id")
+    if entity == "instructor" and "area_id" not in fields:
+        fields.append("area_id")
+    if entity in {"aprendiz", "administrativo_persona"} and "usuario_id AS user_id" not in fields:
+        fields.append("usuario_id AS user_id")
     return ", ".join(fields)
 
 
@@ -1022,7 +1017,7 @@ def get_admin_dashboard_data():
 def get_people_redirect_args(form_data, overrides=None):
     args = {
         "edit_entity": form_data.get("edit_entity"),
-        "edit_id": parse_int(form_data.get("edit_id")),
+        "edit_id": parse_uuid(form_data.get("edit_id")),
     }
     args.update(overrides or {})
     return {key: value for key, value in args.items() if value not in (None, "")}
@@ -1030,7 +1025,7 @@ def get_people_redirect_args(form_data, overrides=None):
 
 def normalize_people_context(args):
     edit_entity = args.get("edit_entity")
-    edit_id = parse_int(args.get("edit_id"))
+    edit_id = parse_uuid(args.get("edit_id"))
     if edit_entity not in PEOPLE_ENTITIES:
         edit_entity = None
         edit_id = None
@@ -1053,12 +1048,12 @@ def normalize_people_context(args):
 
 
 def normalize_structure_context(args):
-    regional_id = parse_int(args.get("regional_id"))
-    centro_id = parse_int(args.get("centro_id"))
-    coordinacion_id = parse_int(args.get("coordinacion_id"))
-    sede_id = parse_int(args.get("sede_id"))
+    regional_id = parse_uuid(args.get("regional_id"))
+    centro_id = parse_uuid(args.get("centro_id"))
+    coordinacion_id = parse_uuid(args.get("coordinacion_id"))
+    sede_id = parse_uuid(args.get("sede_id"))
     edit_entity = args.get("edit_entity")
-    edit_id = parse_int(args.get("edit_id"))
+    edit_id = parse_uuid(args.get("edit_id"))
 
     regional = get_entity("regional", regional_id)
     if regional is None:
@@ -1112,10 +1107,10 @@ def normalize_structure_context(args):
         "selected_sede": sede,
         "areas_academicas": get_entities("area", order_by="nombre ASC"),
         "regionales": get_entities("regional", order_by="nombre ASC"),
-        "centros": get_entities("centro", "id_regional = ?", (regional_id,), "nombre ASC") if regional_id else [],
-        "coordinaciones": get_entities("coordinacion", "id_centro = ?", (centro_id,), "nombre ASC") if centro_id else [],
-        "sedes": get_entities("sede", "id_centro = ?", (centro_id,), "nombre ASC") if centro_id else [],
-        "ambientes": get_entities("ambiente", "id_sede = ?", (sede_id,), "nombre ASC") if sede_id else [],
+        "centros": get_entities("centro", "regional_id = ?", (regional_id,), "nombre ASC") if regional_id else [],
+        "coordinaciones": get_entities("coordinacion", "centro_id = ?", (centro_id,), "nombre ASC") if centro_id else [],
+        "sedes": get_entities("sede", "centro_id = ?", (centro_id,), "nombre ASC") if centro_id else [],
+        "ambientes": get_entities("ambiente", "sede_id = ?", (sede_id,), "nombre ASC") if sede_id else [],
         "edit_entity": edit_entity,
         "edit_id": edit_id,
         "editing_item": editing_item,
@@ -1128,10 +1123,10 @@ def normalize_structure_context(args):
 
 def structure_redirect_args(form_data, overrides=None):
     args = {
-        "regional_id": parse_int(form_data.get("regional_id")),
-        "centro_id": parse_int(form_data.get("centro_id")),
-        "coordinacion_id": parse_int(form_data.get("coordinacion_id")),
-        "sede_id": parse_int(form_data.get("sede_id")),
+        "regional_id": parse_uuid(form_data.get("regional_id")),
+        "centro_id": parse_uuid(form_data.get("centro_id")),
+        "coordinacion_id": parse_uuid(form_data.get("coordinacion_id")),
+        "sede_id": parse_uuid(form_data.get("sede_id")),
     }
     args.update(overrides or {})
     return {key: value for key, value in args.items() if value}
@@ -1139,28 +1134,28 @@ def structure_redirect_args(form_data, overrides=None):
 
 def academic_redirect_args(form_data, overrides=None):
     args = {
-        "red_id": parse_int(form_data.get("red_id")),
-        "area_id": parse_int(form_data.get("area_id")),
-        "programa_id": parse_int(form_data.get("programa_id")),
-        "nivel_id": parse_int(form_data.get("nivel_id")),
-        "proyecto_formativo_id": parse_int(form_data.get("proyecto_formativo_id")),
-        "fase_id": parse_int(form_data.get("fase_id")),
-        "actividad_proyecto_id": parse_int(form_data.get("actividad_proyecto_id")),
+        "red_id": parse_uuid(form_data.get("red_id")),
+        "area_id": parse_uuid(form_data.get("area_id")),
+        "programa_id": parse_uuid(form_data.get("programa_id")),
+        "nivel_id": parse_uuid(form_data.get("nivel_id")),
+        "proyecto_formativo_id": parse_uuid(form_data.get("proyecto_formativo_id")),
+        "fase_id": parse_uuid(form_data.get("fase_id")),
+        "actividad_proyecto_id": parse_uuid(form_data.get("actividad_proyecto_id")),
     }
     args.update(overrides or {})
     return {key: value for key, value in args.items() if value}
 
 
 def normalize_academic_context(args):
-    red_id = parse_int(args.get("red_id"))
-    area_id = parse_int(args.get("area_id"))
-    programa_id = parse_int(args.get("programa_id"))
-    nivel_id = parse_int(args.get("nivel_id"))
-    proyecto_formativo_id = parse_int(args.get("proyecto_formativo_id"))
-    fase_id = parse_int(args.get("fase_id"))
-    actividad_proyecto_id = parse_int(args.get("actividad_proyecto_id"))
+    red_id = parse_uuid(args.get("red_id"))
+    area_id = parse_uuid(args.get("area_id"))
+    programa_id = parse_uuid(args.get("programa_id"))
+    nivel_id = parse_uuid(args.get("nivel_id"))
+    proyecto_formativo_id = parse_uuid(args.get("proyecto_formativo_id"))
+    fase_id = parse_uuid(args.get("fase_id"))
+    actividad_proyecto_id = parse_uuid(args.get("actividad_proyecto_id"))
     edit_entity = args.get("edit_entity")
-    edit_id = parse_int(args.get("edit_id"))
+    edit_id = parse_uuid(args.get("edit_id"))
 
     red = get_entity("red", red_id)
     if red is None:
@@ -1222,17 +1217,17 @@ def normalize_academic_context(args):
     if programa_id:
         fichas = get_db().execute(
             """
-            SELECT f.id, f.numero, f.id_programa_formacion AS programa_id,
-                   f.id_proyecto_formativo AS proyecto_formativo_id,
-                   f.id_coordinacion AS coordinacion_id, f.id_instructor AS instructor_id,
+            SELECT f.id, f.numero, f.programa_formacion_id AS programa_id,
+                   f.proyecto_formativo_id,
+                   f.coordinacion_id, f.instructor_id,
                    pf.nombre AS proyecto_formativo_nombre,
                    c.nombre AS coordinacion_nombre,
                    i.nombres || ' ' || i.apellidos AS instructor_nombre
             FROM ficha_formacion f
-            LEFT JOIN proyecto_formativo pf ON pf.id = f.id_proyecto_formativo
-            JOIN coordinacion c ON c.id = f.id_coordinacion
-            LEFT JOIN instructor i ON i.id = f.id_instructor
-            WHERE f.id_programa_formacion = ?
+            LEFT JOIN proyecto_formativo pf ON pf.id = f.proyecto_formativo_id
+            JOIN coordinacion c ON c.id = f.coordinacion_id
+            LEFT JOIN instructor i ON i.id = f.instructor_id
+            WHERE f.programa_formacion_id = ?
             ORDER BY f.numero ASC
             """,
             (programa_id,),
@@ -1243,9 +1238,9 @@ def normalize_academic_context(args):
         instructores_area = get_db().execute(
             """
             SELECT id, documento, nombres, apellidos, correo AS email,
-                   id_area AS area_id, id_centro AS centro_id
+                   area_id, centro_id
             FROM instructor
-            WHERE id_area = ?
+            WHERE area_id = ?
             ORDER BY nombres ASC, apellidos ASC
             """,
             (programa["area_id"],),
@@ -1253,16 +1248,16 @@ def normalize_academic_context(args):
 
     return {
         "redes": get_entities("red", order_by="nombre ASC"),
-        "areas": get_entities("area", "id_red_conocimiento = ?", (red_id,), "nombre ASC") if red_id else [],
+        "areas": get_entities("area", "red_conocimiento_id = ?", (red_id,), "nombre ASC") if red_id else [],
         "niveles": get_entities("nivel", order_by="nombre ASC"),
-        "programas": get_entities("programa", "id_area = ?", (area_id,), "nombre ASC") if area_id else [],
+        "programas": get_entities("programa", "area_id = ?", (area_id,), "nombre ASC") if area_id else [],
         "fichas": fichas,
         "coordinaciones_disponibles": get_entities("coordinacion", order_by="nombre ASC"),
         "instructores_area": instructores_area,
         "proyectos_formativos": get_entities("proyecto_formativo", order_by="codigo ASC, nombre ASC"),
-        "fases_proyecto": get_entities("fase_proyecto", "id_proyecto_formativo = ?", (proyecto_formativo_id,), "nombre ASC") if proyecto_formativo_id else [],
-        "actividades_proyecto": get_entities("actividad_proyecto", "id_fase_proyecto = ?", (fase_id,), "nombre ASC") if fase_id else [],
-        "actividades_aprendizaje": get_entities("actividad_aprendizaje", "id_actividad_proyecto = ?", (actividad_proyecto_id,), "nombre ASC") if actividad_proyecto_id else [],
+        "fases_proyecto": get_entities("fase_proyecto", "proyecto_formativo_id = ?", (proyecto_formativo_id,), "nombre ASC") if proyecto_formativo_id else [],
+        "actividades_proyecto": get_entities("actividad_proyecto", "fase_proyecto_id = ?", (fase_id,), "nombre ASC") if fase_id else [],
+        "actividades_aprendizaje": get_entities("actividad_aprendizaje", "actividad_proyecto_id = ?", (actividad_proyecto_id,), "nombre ASC") if actividad_proyecto_id else [],
         "selected_red": red,
         "selected_area": area,
         "selected_programa": programa,
@@ -1290,8 +1285,8 @@ def entity_form_data(entity, form):
         form_field = next((name for name, db_name in form_to_db.items() if db_name == field), field)
         values = [value.strip() for value in form.getlist(form_field)]
         raw = next((value for value in reversed(values) if value != ""), "")
-        if field.endswith("_id") or field.startswith("id_"):
-            data[field] = parse_int(raw)
+        if field.endswith("_id"):
+            data[field] = raw or None
         elif field == "capacidad":
             data[field] = parse_int(raw) if raw else None
         else:
@@ -1306,14 +1301,14 @@ def validate_entity_payload(entity, data):
             return f"El campo {field.replace('_', ' ')} es obligatorio."
     if entity == "ambiente" and data["capacidad"] is not None and data["capacidad"] < 0:
         return "La capacidad no puede ser negativa."
-    if entity == "instructor" and get_entity("centro", data["id_centro"]) is None:
+    if entity == "instructor" and get_entity("centro", data["centro_id"]) is None:
         return "El centro de formación seleccionado no existe."
-    if entity == "instructor" and data.get("id_area") is not None and get_entity("area", data["id_area"]) is None:
+    if entity == "instructor" and data.get("area_id") is not None and get_entity("area", data["area_id"]) is None:
         return "El área académica seleccionada no existe."
-    if entity == "aprendiz" and get_entity("regional", data["id_regional"]) is None:
+    if entity == "aprendiz" and get_entity("regional", data["regional_id"]) is None:
         return "La regional seleccionada no existe."
-    if entity == "ficha" and data["id_instructor"] in ("", None):
-        data["id_instructor"] = None
+    if entity == "ficha" and data["instructor_id"] in ("", None):
+        data["instructor_id"] = None
     return None
 
 
@@ -1322,23 +1317,23 @@ def validate_academic_payload(entity, data):
     if validation_error:
         return validation_error
     if entity == "programa":
-        if data.get("id_area") is None or data.get("id_nivel_formacion") is None:
+        if data.get("area_id") is None or data.get("nivel_formacion_id") is None:
             return "El programa debe tener área y nivel de formación."
-        if get_entity("area", data["id_area"]) is None:
+        if get_entity("area", data["area_id"]) is None:
             return "El área seleccionada no existe."
-        if get_entity("nivel", data["id_nivel_formacion"]) is None:
+        if get_entity("nivel", data["nivel_formacion_id"]) is None:
             return "El nivel de formación seleccionado no existe."
     if entity == "ficha":
-        programa = get_entity("programa", data["id_programa_formacion"])
+        programa = get_entity("programa", data["programa_formacion_id"])
         if programa is None:
             return "El programa seleccionado no existe."
-        if get_entity("proyecto_formativo", data["id_proyecto_formativo"]) is None:
+        if get_entity("proyecto_formativo", data["proyecto_formativo_id"]) is None:
             return "El proyecto formativo seleccionado no existe."
-        coordinacion = get_entity("coordinacion", data["id_coordinacion"])
+        coordinacion = get_entity("coordinacion", data["coordinacion_id"])
         if coordinacion is None:
             return "La coordinación seleccionada no existe."
-        if data.get("id_instructor"):
-            instructor = get_entity("instructor", data["id_instructor"])
+        if data.get("instructor_id"):
+            instructor = get_entity("instructor", data["instructor_id"])
             if instructor is None:
                 return "El instructor seleccionado no existe."
             if not instructor.get("area_id") or instructor["area_id"] != programa["area_id"]:
@@ -1346,11 +1341,11 @@ def validate_academic_payload(entity, data):
             centro_coordinacion = get_entity("centro", coordinacion["centro_id"])
             if centro_coordinacion is None or instructor["centro_id"] != centro_coordinacion["id"]:
                 return "El instructor asignado debe pertenecer al centro de formación de la coordinación seleccionada."
-    if entity == "fase_proyecto" and get_entity("proyecto_formativo", data["id_proyecto_formativo"]) is None:
+    if entity == "fase_proyecto" and get_entity("proyecto_formativo", data["proyecto_formativo_id"]) is None:
         return "El proyecto formativo seleccionado no existe."
-    if entity == "actividad_proyecto" and get_entity("fase_proyecto", data["id_fase_proyecto"]) is None:
+    if entity == "actividad_proyecto" and get_entity("fase_proyecto", data["fase_proyecto_id"]) is None:
         return "La fase seleccionada no existe."
-    if entity == "actividad_aprendizaje" and get_entity("actividad_proyecto", data["id_actividad_proyecto"]) is None:
+    if entity == "actividad_aprendizaje" and get_entity("actividad_proyecto", data["actividad_proyecto_id"]) is None:
         return "La actividad de proyecto seleccionada no existe."
     return None
 
