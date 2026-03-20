@@ -24,6 +24,10 @@ def create_app():
     app.config["PGUSER"] = os.environ.get("PGUSER", "postgres")
     app.config["PGPASSWORD"] = os.environ.get("PGPASSWORD", "")
 
+    upload_folder = os.path.join(project_root, "static", "uploads", "guias")
+    os.makedirs(upload_folder, exist_ok=True)
+    app.config["UPLOAD_FOLDER_GUIAS"] = upload_folder
+
     app.teardown_appcontext(close_db)
     app.context_processor(session_context)
 

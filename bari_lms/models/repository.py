@@ -568,7 +568,86 @@ def initialize_database():
         )
         """
     )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS guia_aprendizaje (
+            id SERIAL PRIMARY KEY,
+            id_actividad_aprendizaje INTEGER NOT NULL UNIQUE,
+            url TEXT NOT NULL,
+            subido_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (id_actividad_aprendizaje) REFERENCES actividad_aprendizaje(id) ON DELETE CASCADE
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS evidencia_aprendizaje (
+            id SERIAL PRIMARY KEY,
+            id_actividad_aprendizaje INTEGER NOT NULL UNIQUE,
+            descripcion TEXT,
+            creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (id_actividad_aprendizaje) REFERENCES actividad_aprendizaje(id) ON DELETE CASCADE
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS entrega_evidencia (
+            id SERIAL PRIMARY KEY,
+            id_evidencia_aprendizaje INTEGER NOT NULL,
+            id_usuario INTEGER NOT NULL,
+            url TEXT,
+            calificacion NUMERIC(5,2),
+            observaciones TEXT,
+            entregado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (id_evidencia_aprendizaje) REFERENCES evidencia_aprendizaje(id) ON DELETE CASCADE
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS seccion_actividad (
+            id SERIAL PRIMARY KEY,
+            id_actividad_aprendizaje INTEGER NOT NULL,
+            nombre TEXT NOT NULL,
+            descripcion TEXT,
+            archivo_url TEXT,
+            archivo_tipo TEXT,
+            fecha_inicio DATE,
+            fecha_fin DATE,
+            orden INTEGER NOT NULL DEFAULT 0,
+            FOREIGN KEY (id_actividad_aprendizaje) REFERENCES actividad_aprendizaje(id) ON DELETE CASCADE
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS sub_seccion_actividad (
+            id SERIAL PRIMARY KEY,
+            id_seccion INTEGER NOT NULL,
+            nombre TEXT NOT NULL,
+            descripcion TEXT,
+            archivo_url TEXT,
+            archivo_tipo TEXT,
+            fecha_inicio DATE,
+            fecha_fin DATE,
+            orden INTEGER NOT NULL DEFAULT 0,
+            FOREIGN KEY (id_seccion) REFERENCES seccion_actividad(id) ON DELETE CASCADE
+        )
+        """
+    )
     db.commit()
+
+    actividad_columns = get_table_columns("actividad_aprendizaje")
+    if "descripcion" not in actividad_columns:
+        db.execute("ALTER TABLE actividad_aprendizaje ADD COLUMN IF NOT EXISTS descripcion TEXT")
+        db.commit()
+    if "fecha_inicio" not in actividad_columns:
+        db.execute("ALTER TABLE actividad_aprendizaje ADD COLUMN IF NOT EXISTS fecha_inicio DATE")
+        db.commit()
+    if "fecha_fin" not in actividad_columns:
+        db.execute("ALTER TABLE actividad_aprendizaje ADD COLUMN IF NOT EXISTS fecha_fin DATE")
+        db.commit()
 
     instructor_columns = get_table_columns("instructor")
     if "id_centro" not in instructor_columns:
