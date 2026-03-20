@@ -104,7 +104,7 @@ psql -U postgres -d bari_lms -f database/bari_lms_postgresql.sql
 Aplica los datos de catálogo (perfiles, tipos de documento, niveles, fases…):
 
 ```bash
-psql -U postgres -d bari_lms -f database/seed.sql
+python database/seed.py
 ```
 
 ### 6. Primer inicio — admin provisional
@@ -199,7 +199,7 @@ bariLMS/
     │
     └── database/
         ├── bari_lms_postgresql.sql     ← Schema completo (tablas, índices, constraints)
-        ├── seed.sql                    ← Datos de catálogo (perfiles, tipos, fases…)
+        ├── seed.py                     ← Datos de catálogo con UUIDs v7 (perfiles, tipos, fases…)
         └── setup_aprendiz.sql          ← Tablas adicionales de la vista aprendiz
 ```
 
