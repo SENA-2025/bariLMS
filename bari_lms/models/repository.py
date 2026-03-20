@@ -638,6 +638,11 @@ def initialize_database():
     )
     db.commit()
 
+    instructor_genero_columns = get_table_columns("instructor")
+    if "genero" not in instructor_genero_columns:
+        db.execute("ALTER TABLE instructor ADD COLUMN IF NOT EXISTS genero TEXT NOT NULL DEFAULT 'M'")
+        db.commit()
+
     actividad_columns = get_table_columns("actividad_aprendizaje")
     if "descripcion" not in actividad_columns:
         db.execute("ALTER TABLE actividad_aprendizaje ADD COLUMN IF NOT EXISTS descripcion TEXT")
@@ -647,6 +652,59 @@ def initialize_database():
         db.commit()
     if "fecha_fin" not in actividad_columns:
         db.execute("ALTER TABLE actividad_aprendizaje ADD COLUMN IF NOT EXISTS fecha_fin DATE")
+        db.commit()
+
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS ficha_instructor_competencia (
+            id SERIAL PRIMARY KEY,
+            id_ficha INTEGER NOT NULL REFERENCES ficha_formacion(id) ON DELETE CASCADE,
+            id_instructor INTEGER NOT NULL REFERENCES instructor(id) ON DELETE CASCADE,
+            UNIQUE (id_ficha, id_instructor)
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS guia_actividad_proyecto (
+            id SERIAL PRIMARY KEY,
+            id_actividad_proyecto INTEGER NOT NULL,
+            nombre TEXT,
+            url TEXT NOT NULL,
+            subido_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (id_actividad_proyecto) REFERENCES actividad_proyecto(id) ON DELETE CASCADE
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS asistencia_aprendiz (
+            id SERIAL PRIMARY KEY,
+            id_ficha INTEGER NOT NULL,
+            id_aprendiz INTEGER NOT NULL,
+            fecha DATE NOT NULL,
+            estado TEXT NOT NULL DEFAULT 'Presente',
+            FOREIGN KEY (id_ficha) REFERENCES ficha_formacion(id) ON DELETE CASCADE,
+            FOREIGN KEY (id_aprendiz) REFERENCES aprendiz(id) ON DELETE CASCADE,
+            UNIQUE(id_ficha, id_aprendiz, fecha)
+        )
+        """
+    )
+    db.commit()
+
+    # Columna orden en actividad_aprendizaje
+    act_apr_cols = get_table_columns("actividad_aprendizaje")
+    if "orden" not in act_apr_cols:
+        db.execute("ALTER TABLE actividad_aprendizaje ADD COLUMN IF NOT EXISTS orden INTEGER NOT NULL DEFAULT 0")
+        db.commit()
+
+    # Nuevas columnas en guia_actividad_proyecto
+    guia_ap_cols = get_table_columns("guia_actividad_proyecto")
+    if "descripcion" not in guia_ap_cols:
+        db.execute("ALTER TABLE guia_actividad_proyecto ADD COLUMN IF NOT EXISTS descripcion TEXT")
+        db.commit()
+    if "orden" not in guia_ap_cols:
+        db.execute("ALTER TABLE guia_actividad_proyecto ADD COLUMN IF NOT EXISTS orden INTEGER NOT NULL DEFAULT 0")
         db.commit()
 
     instructor_columns = get_table_columns("instructor")

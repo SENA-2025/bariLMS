@@ -151,6 +151,11 @@ def register_routes(app):
 
             fase_data = {"id": fase["id"], "nombre": fase["nombre"], "actividades_proyecto": []}
             for ap in acts_proy:
+                guias_count = db.execute(
+                    "SELECT COUNT(*) AS cnt FROM guia_actividad_proyecto WHERE id_actividad_proyecto = ?",
+                    (ap["id"],),
+                ).fetchone()["cnt"]
+
                 acts_apr = db.execute(
                     """
                     SELECT aa.id, aa.nombre,
@@ -168,6 +173,7 @@ def register_routes(app):
                 ap_data = {
                     "id": ap["id"],
                     "nombre": ap["nombre"],
+                    "guias_count": guias_count,
                     "actividades_aprendizaje": [
                         {
                             "id": aa["id"],
@@ -418,7 +424,7 @@ def register_routes(app):
             LEFT JOIN guia_aprendizaje      ga ON ga.id_actividad_aprendizaje = aa.id
             LEFT JOIN evidencia_aprendizaje ea ON ea.id_actividad_aprendizaje = aa.id
             WHERE aa.id_actividad_proyecto = ?
-            ORDER BY aa.id ASC
+            ORDER BY aa.orden ASC, aa.id ASC
             """,
             (ap_id,),
         ).fetchall()
@@ -466,7 +472,7 @@ def register_routes(app):
             FROM actividad_aprendizaje aa
             LEFT JOIN evidencia_aprendizaje ea ON ea.id_actividad_aprendizaje = aa.id
             WHERE aa.id_actividad_proyecto = ?
-            ORDER BY aa.id ASC
+            ORDER BY aa.orden ASC, aa.id ASC
             """,
             (ap_id,),
         ).fetchall()
@@ -509,6 +515,48 @@ def register_routes(app):
             "actividades": [{"id": a["id"], "nombre": a["nombre"], "evidencia_id": a["evidencia_id"]} for a in actividades],
             "aprendices": result_ap,
         })
+
+    @app.patch("/api/instructor/actividad-proyecto/<int:ap_id>/aprendizaje/orden")
+    @role_required("Instructor")
+    def api_instructor_actividades_aprendizaje_orden(ap_id):
+        data = request.get_json() or {}
+        orden = data.get("orden", [])
+        db = get_db()
+        for i, aa_id in enumerate(orden):
+            db.execute(
+                "UPDATE actividad_aprendizaje SET orden=? WHERE id=? AND id_actividad_proyecto=?",
+                (i, aa_id, ap_id),
+            )
+        db.commit()
+        return jsonify({"ok": True})
+
+    @app.patch("/api/instructor/actividad-aprendizaje/<int:aa_id>/secciones/orden")
+    @role_required("Instructor")
+    def api_instructor_secciones_orden(aa_id):
+        data = request.get_json() or {}
+        orden = data.get("orden", [])
+        db = get_db()
+        for i, sec_id in enumerate(orden):
+            db.execute(
+                "UPDATE seccion_actividad SET orden=? WHERE id=? AND id_actividad_aprendizaje=?",
+                (i, sec_id, aa_id),
+            )
+        db.commit()
+        return jsonify({"ok": True})
+
+    @app.patch("/api/instructor/seccion/<int:sec_id>/sub-secciones/orden")
+    @role_required("Instructor")
+    def api_instructor_sub_secciones_orden(sec_id):
+        data = request.get_json() or {}
+        orden = data.get("orden", [])
+        db = get_db()
+        for i, sub_id in enumerate(orden):
+            db.execute(
+                "UPDATE sub_seccion_actividad SET orden=? WHERE id=? AND id_seccion=?",
+                (i, sub_id, sec_id),
+            )
+        db.commit()
+        return jsonify({"ok": True})
 
     @app.patch("/api/instructor/actividad-aprendizaje/<int:aa_id>/fecha-fin")
     @role_required("Instructor")
@@ -581,14 +629,14 @@ def register_routes(app):
     @role_required("Instructor")
     def api_instructor_seccion_nueva(aa_id):
         data = request.get_json() or {}
-        nombre = data.get("nombre", "").strip()
+        nombre = (data.get("nombre") or "").strip()
         if not nombre:
             return jsonify({"ok": False, "error": "Nombre requerido"}), 400
-        descripcion = data.get("descripcion", "").strip() or None
-        archivo_url = data.get("archivo_url", "").strip() or None
-        archivo_tipo = data.get("archivo_tipo", "").strip() or None
-        fecha_inicio = data.get("fecha_inicio", "").strip() or None
-        fecha_fin = data.get("fecha_fin", "").strip() or None
+        descripcion = (data.get("descripcion") or "").strip() or None
+        archivo_url = (data.get("archivo_url") or "").strip() or None
+        archivo_tipo = (data.get("archivo_tipo") or "").strip() or None
+        fecha_inicio = (data.get("fecha_inicio") or "").strip() or None
+        fecha_fin    = (data.get("fecha_fin")    or "").strip() or None
         db = get_db()
         row = db.execute(
             """INSERT INTO seccion_actividad
@@ -603,14 +651,14 @@ def register_routes(app):
     @role_required("Instructor")
     def api_instructor_seccion_editar(sec_id):
         data = request.get_json() or {}
-        nombre = data.get("nombre", "").strip()
+        nombre = (data.get("nombre") or "").strip()
         if not nombre:
             return jsonify({"ok": False, "error": "Nombre requerido"}), 400
-        descripcion = data.get("descripcion", "").strip() or None
-        archivo_url = data.get("archivo_url", "").strip() or None
-        archivo_tipo = data.get("archivo_tipo", "").strip() or None
-        fecha_inicio = data.get("fecha_inicio", "").strip() or None
-        fecha_fin = data.get("fecha_fin", "").strip() or None
+        descripcion = (data.get("descripcion") or "").strip() or None
+        archivo_url = (data.get("archivo_url") or "").strip() or None
+        archivo_tipo = (data.get("archivo_tipo") or "").strip() or None
+        fecha_inicio = (data.get("fecha_inicio") or "").strip() or None
+        fecha_fin    = (data.get("fecha_fin")    or "").strip() or None
         db = get_db()
         db.execute(
             """UPDATE seccion_actividad
@@ -635,14 +683,14 @@ def register_routes(app):
     @role_required("Instructor")
     def api_instructor_sub_seccion_nueva(sec_id):
         data = request.get_json() or {}
-        nombre = data.get("nombre", "").strip()
+        nombre = (data.get("nombre") or "").strip()
         if not nombre:
             return jsonify({"ok": False, "error": "Nombre requerido"}), 400
-        descripcion = data.get("descripcion", "").strip() or None
-        archivo_url = data.get("archivo_url", "").strip() or None
-        archivo_tipo = data.get("archivo_tipo", "").strip() or None
-        fecha_inicio = data.get("fecha_inicio", "").strip() or None
-        fecha_fin = data.get("fecha_fin", "").strip() or None
+        descripcion = (data.get("descripcion") or "").strip() or None
+        archivo_url = (data.get("archivo_url") or "").strip() or None
+        archivo_tipo = (data.get("archivo_tipo") or "").strip() or None
+        fecha_inicio = (data.get("fecha_inicio") or "").strip() or None
+        fecha_fin    = (data.get("fecha_fin")    or "").strip() or None
         db = get_db()
         row = db.execute(
             """INSERT INTO sub_seccion_actividad
@@ -657,14 +705,14 @@ def register_routes(app):
     @role_required("Instructor")
     def api_instructor_sub_seccion_editar(sub_id):
         data = request.get_json() or {}
-        nombre = data.get("nombre", "").strip()
+        nombre = (data.get("nombre") or "").strip()
         if not nombre:
             return jsonify({"ok": False, "error": "Nombre requerido"}), 400
-        descripcion = data.get("descripcion", "").strip() or None
-        archivo_url = data.get("archivo_url", "").strip() or None
-        archivo_tipo = data.get("archivo_tipo", "").strip() or None
-        fecha_inicio = data.get("fecha_inicio", "").strip() or None
-        fecha_fin = data.get("fecha_fin", "").strip() or None
+        descripcion = (data.get("descripcion") or "").strip() or None
+        archivo_url = (data.get("archivo_url") or "").strip() or None
+        archivo_tipo = (data.get("archivo_tipo") or "").strip() or None
+        fecha_inicio = (data.get("fecha_inicio") or "").strip() or None
+        fecha_fin    = (data.get("fecha_fin")    or "").strip() or None
         db = get_db()
         db.execute(
             """UPDATE sub_seccion_actividad
@@ -680,5 +728,150 @@ def register_routes(app):
     def api_instructor_sub_seccion_eliminar(sub_id):
         db = get_db()
         db.execute("DELETE FROM sub_seccion_actividad WHERE id=?", (sub_id,))
+        db.commit()
+        return jsonify({"ok": True})
+
+    # ── Guías por Actividad de Proyecto ──
+
+    @app.get("/api/instructor/actividad-proyecto/<int:ap_id>/guias")
+    @role_required("Instructor")
+    def api_instructor_guias_ap(ap_id):
+        db = get_db()
+        rows = db.execute(
+            "SELECT id, nombre, url, descripcion, orden, subido_en FROM guia_actividad_proyecto WHERE id_actividad_proyecto = ? ORDER BY orden ASC, id ASC",
+            (ap_id,),
+        ).fetchall()
+        return jsonify({"guias": [dict(r) for r in rows]})
+
+    @app.post("/api/instructor/actividad-proyecto/<int:ap_id>/guias/nueva")
+    @role_required("Instructor")
+    def api_instructor_guia_ap_nueva(ap_id):
+        guia_url = None
+        nombre = (request.form.get("nombre") or "").strip() or None
+
+        if "guia_archivo" in request.files and request.files["guia_archivo"].filename:
+            file = request.files["guia_archivo"]
+            filename = secure_filename(file.filename)
+            unique_name = f"{uuid.uuid4().hex}_{filename}"
+            upload_folder = current_app.config["UPLOAD_FOLDER_GUIAS"]
+            file.save(os.path.join(upload_folder, unique_name))
+            guia_url = url_for("static", filename=f"uploads/guias/{unique_name}")
+            if not nombre:
+                nombre = file.filename
+        else:
+            guia_url = (request.form.get("guia_url") or "").strip() or None
+
+        if not guia_url:
+            return jsonify({"ok": False, "error": "Se requiere un archivo o URL"}), 400
+
+        db = get_db()
+        row = db.execute(
+            "INSERT INTO guia_actividad_proyecto (id_actividad_proyecto, nombre, url) VALUES (?, ?, ?) RETURNING id",
+            (ap_id, nombre, guia_url),
+        ).fetchone()
+        db.commit()
+        return jsonify({"ok": True, "id": row["id"], "nombre": nombre, "url": guia_url})
+
+    @app.patch("/api/instructor/guia-actividad-proyecto/<int:guia_id>/editar")
+    @role_required("Instructor")
+    def api_instructor_guia_ap_editar(guia_id):
+        data = request.get_json() or {}
+        nombre = data.get("nombre", "").strip() or None
+        url = data.get("url", "").strip() or None
+        descripcion = data.get("descripcion", "").strip() or None
+        db = get_db()
+        db.execute(
+            "UPDATE guia_actividad_proyecto SET nombre=?, url=COALESCE(?, url), descripcion=? WHERE id=?",
+            (nombre, url, descripcion, guia_id),
+        )
+        db.commit()
+        return jsonify({"ok": True})
+
+    @app.patch("/api/instructor/actividad-proyecto/<int:ap_id>/guias/orden")
+    @role_required("Instructor")
+    def api_instructor_guias_orden(ap_id):
+        data = request.get_json() or {}
+        orden = data.get("orden", [])
+        db = get_db()
+        for i, guia_id in enumerate(orden):
+            db.execute(
+                "UPDATE guia_actividad_proyecto SET orden=? WHERE id=? AND id_actividad_proyecto=?",
+                (i, guia_id, ap_id),
+            )
+        db.commit()
+        return jsonify({"ok": True})
+
+    @app.delete("/api/instructor/guia-actividad-proyecto/<int:guia_id>")
+    @role_required("Instructor")
+    def api_instructor_guia_ap_eliminar(guia_id):
+        db = get_db()
+        db.execute("DELETE FROM guia_actividad_proyecto WHERE id = ?", (guia_id,))
+        db.commit()
+        return jsonify({"ok": True})
+
+    # ── Asistencia de Aprendices ──
+
+    @app.get("/api/instructor/ficha/<int:ficha_id>/asistencia")
+    @role_required("Instructor")
+    def api_instructor_asistencia(ficha_id):
+        fecha = request.args.get("fecha", "").strip()
+        db = get_db()
+        ficha = db.execute("SELECT numero FROM ficha_formacion WHERE id = ?", (ficha_id,)).fetchone()
+        if ficha is None:
+            return jsonify({"aprendices": [], "fecha": fecha})
+
+        aprendices = db.execute(
+            """
+            SELECT a.id, a.nombres, a.apellidos, a.documento
+            FROM aprendiz a
+            WHERE a.ficha = ?
+            ORDER BY a.nombres ASC, a.apellidos ASC
+            """,
+            (ficha["numero"],),
+        ).fetchall()
+
+        result = []
+        for ap in aprendices:
+            estado = "Presente"
+            if fecha:
+                row = db.execute(
+                    "SELECT estado FROM asistencia_aprendiz WHERE id_ficha = ? AND id_aprendiz = ? AND fecha = ?",
+                    (ficha_id, ap["id"], fecha),
+                ).fetchone()
+                if row:
+                    estado = row["estado"]
+            result.append({
+                "id": ap["id"],
+                "nombre": f"{ap['nombres']} {ap['apellidos']}",
+                "documento": ap["documento"],
+                "estado": estado,
+            })
+
+        return jsonify({"aprendices": result, "fecha": fecha})
+
+    @app.post("/api/instructor/ficha/<int:ficha_id>/asistencia")
+    @role_required("Instructor")
+    def api_instructor_asistencia_guardar(ficha_id):
+        data = request.get_json() or {}
+        fecha = (data.get("fecha") or "").strip()
+        registros = data.get("registros", [])
+
+        if not fecha:
+            return jsonify({"ok": False, "error": "Fecha requerida"}), 400
+
+        db = get_db()
+        for reg in registros:
+            ap_id = reg.get("id_aprendiz")
+            estado = reg.get("estado", "Presente")
+            if estado not in ("Presente", "Ausente", "Excusa"):
+                estado = "Presente"
+            db.execute(
+                """
+                INSERT INTO asistencia_aprendiz (id_ficha, id_aprendiz, fecha, estado)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT (id_ficha, id_aprendiz, fecha) DO UPDATE SET estado = EXCLUDED.estado
+                """,
+                (ficha_id, ap_id, fecha, estado),
+            )
         db.commit()
         return jsonify({"ok": True})
