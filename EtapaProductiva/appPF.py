@@ -1,3 +1,8 @@
+import sys
+import os
+# Make shared_auth (project root) importable from EtapaProductiva
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from flask import Flask
 from flask_migrate import Migrate
 from dotenv import load_dotenv

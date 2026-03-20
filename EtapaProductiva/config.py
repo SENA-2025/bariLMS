@@ -13,7 +13,7 @@ class psqldb:
         
 
 class Config:
-    SECRET_KEY = os.getenv("SECRET_KEY", "etapa-productiva-dev-key")
+    SECRET_KEY = os.getenv("SECRET_KEY", "bari-lms-dev-key")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 

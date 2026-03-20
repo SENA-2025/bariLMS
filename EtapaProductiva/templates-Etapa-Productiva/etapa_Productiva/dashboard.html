@@ -14,7 +14,7 @@
             <div class="sidebar-brand-icon">
                 <img src="{{ url_for('static', filename='img/logo-sena-blanco.png') }}" class="sena-brand-logo">
             </div>
-            <div class="sidebar-brand-text mx-3">BARÍ LMS</div>
+            <div class="sidebar-brand-text mx-3">BARÍ LMS · EP</div>
         </a>
 
         <hr class="sidebar-divider my-0">
@@ -35,7 +35,7 @@
         {% if dashboard and dashboard.menu %}
             {% for item in dashboard.menu %}
                 <li class="nav-item">
-                    <a class="nav-link" href="#">
+                    <a class="nav-link" href="{{ item.href }}">
                         <i class="fas fa-fw {{ item.icon | default('fa-circle') }}"></i>
                         <span>{{ item.label | default('Item') }}</span>
                     </a>

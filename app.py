@@ -19,36 +19,7 @@ ROLE_TO_SLUG = {
 
 AVAILABLE_ROLES = list(ROLE_TO_SLUG.keys())
 
-DEFAULT_USERS = [
-    {
-        "email": "admin@senalearn.edu.co",
-        "password": "Admin123*",
-        "role": "Administrador",
-        "name": "Laura Moreno",
-        "active": 1,
-    },
-    {
-        "email": "administrativo@senalearn.edu.co",
-        "password": "Adminvo123*",
-        "role": "Administrativo",
-        "name": "Carlos Ruiz",
-        "active": 1,
-    },
-    {
-        "email": "instructor@senalearn.edu.co",
-        "password": "Instructor123*",
-        "role": "Instructor",
-        "name": "Diana Beltran",
-        "active": 1,
-    },
-    {
-        "email": "aprendiz@senalearn.edu.co",
-        "password": "Aprendiz123*",
-        "role": "Aprendiz",
-        "name": "Miguel Torres",
-        "active": 1,
-    },
-]
+from shared_auth.users import DEMO_USERS as DEFAULT_USERS
 
 DEFAULT_LEVELS = [
     "Técnico",
@@ -1225,6 +1196,15 @@ def login():
 def logout():
     session.clear()
     return redirect(url_for("login"))
+
+
+@app.get("/sso")
+def sso():
+    from shared_auth.sso import read_token
+    email = read_token(request.args.get("token", ""))
+    if email:
+        session["user_email"] = email
+    return redirect(request.args.get("next", "/"))
 
 
 @app.route("/dashboard/<role_slug>")
