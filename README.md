@@ -10,7 +10,6 @@
 - [Requisitos previos](#requisitos-previos)
 - [Instalación y ejecución](#instalación-y-ejecución)
 - [Estructura del proyecto](#estructura-del-proyecto)
-- [Usuarios de prueba](#usuarios-de-prueba)
 - [Roles y accesos](#roles-y-accesos)
 - [Módulos implementados](#módulos-implementados)
 - [Rutas disponibles](#rutas-disponibles)
@@ -24,11 +23,12 @@
 |---|---|
 | Backend | Python 3.11+ · Flask 3.x |
 | Base de datos | PostgreSQL 17+ |
-| Driver BD | `psycopg` 3.x (psycopg3) |
-| Seguridad | `werkzeug.security` — hashing scrypt |
+| Driver BD | `psycopg` 3.x (psycopg3) + `psycopg-pool` |
+| Seguridad | `argon2-cffi` — hashing Argon2 · `PyJWT` |
 | Frontend | Bootstrap 4 (SB Admin 2) · Jinja2 |
 | Íconos | Font Awesome 5 |
 | Tipografía | Google Fonts — Nunito |
+| Despliegue | `gunicorn` |
 
 ---
 
@@ -107,12 +107,21 @@ Aplica los datos de catálogo (perfiles, tipos de documento, niveles, fases…):
 psql -U postgres -d bari_lms -f database/seed.sql
 ```
 
-### 6. Ejecutar la aplicación — primer inicio
+### 6. Primer inicio — admin provisional
 
 Al arrancar sin usuarios administradores la app genera automáticamente
 un **admin provisional** con correo y contraseña aleatorios, imprimiéndolos
 una sola vez en la consola. Úsalos para el primer acceso y crea tu cuenta real
 desde el panel de administración.
+
+```
+[bariLMS] ⚠  No se encontró ningún administrador.
+[bariLMS]    Correo     : admin_x7k2p9@senalearn.edu.co
+[bariLMS]    Contraseña : Xq8#mL3vR2
+[bariLMS]    Úsalas para el primer acceso y crea tu cuenta real de inmediato.
+```
+
+> Esta cuenta es de un solo uso. Crea un administrador real desde el panel y desactívala.
 
 ### 7. Ejecutar la aplicación
 
@@ -128,72 +137,85 @@ Accede en el navegador: `http://127.0.0.1:5000`
 
 ```
 bariLMS/
-├── run.py                          ← Punto de entrada de la aplicación
-├── requirements.txt                ← Dependencias Python
-├── .env.example                    ← Plantilla de variables de entorno
+├── run.py                              ← Punto de entrada
+├── requirements.txt                    ← Dependencias Python
+├── .env.example                        ← Plantilla de variables de entorno
 │
 └── internal/
-    ├── bari_lms/                   ← Paquete principal (MVC)
-    │   ├── __init__.py             ← Factory create_app()
-    │   ├── config.py               ← Roles, dashboards y usuarios por defecto
-    │   ├── controllers/            ← Rutas por módulo (auth, admin, instructor, dashboard)
+    ├── bari_lms/                       ← Paquete principal
+    │   ├── __init__.py                 ← Factory create_app()
+    │   ├── config.py                   ← Roles, slugs y configuración de dashboards
+    │   │
+    │   ├── db/                         ← Pool de conexiones PostgreSQL
+    │   │   ├── __init__.py             ← get_db(), close_db(), create_pool()
+    │   │   └── bootstrap.py            ← Inicialización de la BD al arranque
+    │   │
+    │   ├── controllers/                ← Rutas organizadas por zona
+    │   │   ├── auth.py                 ← Login / logout
+    │   │   ├── dashboard.py            ← Dashboard por rol
+    │   │   ├── admin/                  ← Módulos del administrador
+    │   │   │   ├── usuarios.py         ← CRUD de usuarios
+    │   │   │   ├── personas.py         ← Instructores, aprendices, administrativos
+    │   │   │   ├── estructura.py       ← Regionales, centros, coordinaciones, etc.
+    │   │   │   └── academico.py        ← Programas, fichas, proyectos, fases
+    │   │   └── instructor/             ← Módulos del instructor
+    │   │       ├── fichas.py           ← Fichas asignadas y vista de fases
+    │   │       ├── actividades.py      ← API REST de actividades, secciones, etc.
+    │   │       └── perfil.py           ← Cambio de contraseña
+    │   │
+    │   ├── middleware/
+    │   │   └── auth.py                 ← current_user(), role_required()
+    │   │
+    │   ├── repositories/               ← Capa de acceso a datos
+    │   │   ├── _config.py              ← ENTITY_CONFIG y configuración de entidades
+    │   │   ├── academico.py            ← Contexto y consultas académicas
+    │   │   ├── entidad.py              ← CRUD genérico de entidades
+    │   │   ├── estructura.py           ← Contexto de estructura institucional
+    │   │   ├── personas.py             ← Vinculación persona ↔ usuario
+    │   │   └── usuario.py              ← Consultas de usuario
+    │   │
     │   ├── models/
-    │   │   ├── repository.py       ← Conexión PostgreSQL + inicialización de schema
-    │   │   └── instructor.py       ← Modelo instructor
-    │   └── services/               ← Lógica de negocio (auth, instructor)
+    │   │   ├── repository.py           ← Modelo de conexión (legacy)
+    │   │   └── instructor.py           ← Modelo instructor (legacy)
+    │   │
+    │   └── services/
+    │       └── security.py             ← hash_password() / verify_password() — Argon2
     │
-    ├── templates/                  ← Plantillas Jinja2
+    ├── templates/                      ← Plantillas Jinja2
     │   ├── login.html
     │   ├── dashboard.html
     │   ├── 404.html
-    │   ├── admin_*.html
-    │   ├── aprendiz/
-    │   ├── instructor/
-    │   └── components/
+    │   ├── admin/                      ← base.html + users, people, structure, academic
+    │   ├── instructor/                 ← base.html + fichas, fases, change_password
+    │   ├── aprendiz/                   ← Plantillas (vistas en desarrollo)
+    │   └── components/                 ← Fragmentos reutilizables (flash_messages, etc.)
     │
-    ├── static/                     ← Assets (CSS, JS, imágenes)
+    ├── static/
     │   ├── css/
     │   ├── js/
     │   ├── img/
-    │   └── uploads/                ← Archivos subidos por usuarios (ignorado en git)
+    │   ├── vendor/                     ← Bootstrap, DataTables, SortableJS, etc.
+    │   └── uploads/                    ← Archivos subidos (ignorado en git)
     │
     └── database/
-        ├── bari_lms_postgresql.sql ← Schema completo de referencia
-        ├── setup_aprendiz.sql      ← Tablas específicas de la vista aprendiz
-        ├── seed_pg.py              ← Seed principal (PostgreSQL)
-        └── seed_aprendices.py      ← Seed de aprendices de prueba (PostgreSQL)
+        ├── bari_lms_postgresql.sql     ← Schema completo (tablas, índices, constraints)
+        ├── seed.sql                    ← Datos de catálogo (perfiles, tipos, fases…)
+        └── setup_aprendiz.sql          ← Tablas adicionales de la vista aprendiz
 ```
 
-> **Nota:** Las tablas **no** se crean automáticamente. Es necesario ejecutar el schema antes del primer inicio de la app.
-
----
-
-## Admin provisional (primer inicio)
-
-Al arrancar sin ningún usuario con perfil **Administrador**, la app genera
-automáticamente una cuenta provisional con credenciales aleatorias:
-
-```
-[bariLMS] ⚠  No se encontró ningún administrador.
-[bariLMS]    Correo     : admin_x7k2p9@senalearn.edu.co
-[bariLMS]    Contraseña : Xq8#mL3vR2
-[bariLMS]    Úsalas para el primer acceso y crea tu cuenta real de inmediato.
-```
-
-> Esta cuenta es de un solo uso. Crea un administrador real desde el panel
-> y desactiva la provisional.
+> **Nota:** Las tablas **no** se crean automáticamente. Es necesario ejecutar el schema antes del primer inicio.
 
 ---
 
 ## Roles y accesos
 
-| Perfil | Ruta dashboard | Descripción |
+| Perfil | Slug | Estado |
 |---|---|---|
-| **Administrador** | `/dashboard/administrador` | Usuarios, estructura institucional y académica |
-| **Administrativo** | `/dashboard/administrativo` | Fichas, programas, ambientes y soporte documental |
-| **Instructor** | `/dashboard/instructor` | Fichas, fases, actividades y calificación de aprendices |
-| **Aprendiz** | `/dashboard/aprendiz` | Dashboard, fichas, fases, evidencias y calificaciones |
-| **Empresa** | `/dashboard/empresa` | Seguimiento de aprendices en etapa productiva |
+| **Administrador** | `administrador` | Implementado |
+| **Instructor** | `instructor` | Implementado |
+| **Aprendiz** | `aprendiz` | Dashboard placeholder — vistas en desarrollo |
+| **Administrativo** | `administrativo` | Dashboard placeholder — vistas en desarrollo |
+| **Empresa** | `empresa` | Dashboard placeholder — vistas en desarrollo |
 
 > Si un usuario tiene **un único perfil** se redirige directamente a su dashboard.
 > Si tiene **varios perfiles** la app muestra un selector para elegir.
@@ -202,35 +224,24 @@ automáticamente una cuenta provisional con credenciales aleatorias:
 
 ## Módulos implementados
 
-### Vista Aprendiz
+### Vista Administrador
 
 | Módulo | Ruta | Descripción |
 |---|---|---|
-| Dashboard | `/dashboard/aprendiz` | Panel con ficha, programa y accesos rápidos |
-| Mis Fichas | `/aprendiz/fichas` | Lista de fichas con búsqueda en tiempo real |
-| Detalle de Ficha | `/aprendiz/ficha/<id>` | Fases, actividades y barra de progreso |
-| Entrega de Evidencias | `POST /aprendiz/entregar-evidencia` | Envío de URL de evidencia por actividad |
-| Fases de Formación | `/aprendiz/fases` | Estructura de fases: Análisis, Planeación, Ejecución |
-| Calificaciones | `/aprendiz/calificaciones` | Historial de notas con resumen estadístico |
-| Cambiar Contraseña | `/aprendiz/cambiar-contrasena` | Actualización segura de credenciales |
-| Notificaciones | Campana en topbar | Alertas sin leer con marcado por AJAX |
+| Usuarios y roles | `/admin/users` | CRUD completo de usuarios con asignación de rol |
+| Gestionar personas | `/admin/people` | Instructores, aprendices y personal administrativo + importación CSV |
+| Estructura institucional | `/admin/structure` | Regionales, centros, coordinaciones, sedes y ambientes |
+| Gestión académica | `/admin/academic` | Redes, áreas, programas, fichas, proyectos, fases y actividades |
 
 ### Vista Instructor
 
 | Módulo | Ruta | Descripción |
 |---|---|---|
-| Fichas | `/instructor/fichas` | Fichas asignadas al instructor |
-| Fases y Actividades | `/instructor/ficha/<id>/fases` | Árbol dinámico de fases y actividades |
-| Calificación | Modal en fases | Calificación 0–100, aprueba con ≥ 75 |
-| Cambiar Contraseña | `/instructor/change-password` | Actualización de credenciales |
-
-### Vista Administrador
-
-| Módulo | Descripción |
-|---|---|
-| Gestión de usuarios | CRUD completo de usuarios por rol |
-| Estructura institucional | Regionales, centros, coordinaciones, sedes, ambientes |
-| Estructura académica | Programas, fichas, proyectos, fases y actividades |
+| Mis Fichas | `/instructor/fichas` | Fichas asignadas al instructor |
+| Fases y Actividades | `/instructor/ficha/<id>/fases` | Árbol dinámico de fases, actividades y secciones |
+| Calificación | API en fases | Calificación 0–100, aprueba con ≥ 75 |
+| Asistencia | API en fases | Registro de asistencia por ficha |
+| Cambiar Contraseña | `/instructor/password` | Actualización de credenciales |
 
 ---
 
@@ -240,30 +251,98 @@ automáticamente una cuenta provisional con credenciales aleatorias:
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| GET/POST | `/login` | Inicio de sesión |
-| GET/POST | `/logout` | Cierre de sesión |
+| GET | `/` | Redirige a `/login` |
+| GET / POST | `/login` | Inicio de sesión |
+| POST | `/logout` | Cierre de sesión |
+| GET | `/dashboard/<role_slug>` | Dashboard por rol |
 
-### Aprendiz
-
-| Método | Ruta | Descripción |
-|---|---|---|
-| GET | `/dashboard/aprendiz` | Panel principal |
-| GET | `/aprendiz/fichas` | Lista de fichas |
-| GET | `/aprendiz/ficha/<id>` | Detalle de ficha |
-| GET | `/aprendiz/fases` | Fases de formación |
-| GET | `/aprendiz/calificaciones` | Historial de calificaciones |
-| GET/POST | `/aprendiz/cambiar-contrasena` | Cambio de contraseña |
-| POST | `/aprendiz/entregar-evidencia` | Entregar evidencia (URL) |
-| POST | `/aprendiz/notificaciones/marcar-leida/<id>` | Marcar notificación leída |
-
-### Instructor
+### Administrador — Usuarios
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| GET | `/dashboard/instructor` | Panel principal |
+| GET | `/admin/users` | Listar usuarios |
+| POST | `/admin/users/create` | Crear usuario |
+| GET | `/admin/users/<id>/edit` | Cargar datos para edición |
+| POST | `/admin/users/<id>/update` | Actualizar usuario |
+| POST | `/admin/users/<id>/delete` | Eliminar usuario |
+
+### Administrador — Personas
+
+`<entity>` puede ser: `instructor`, `aprendiz`, `administrativo_persona`
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/admin/people` | Vista de gestión de personas |
+| POST | `/admin/people/<entity>/create` | Crear persona + usuario vinculado |
+| POST | `/admin/people/<entity>/import` | Importación masiva CSV |
+| GET | `/admin/people/<entity>/<id>/edit` | Cargar persona para edición |
+| POST | `/admin/people/<entity>/<id>/update` | Actualizar persona |
+| POST | `/admin/people/<entity>/<id>/delete` | Eliminar persona y usuario vinculado |
+
+### Administrador — Estructura institucional
+
+`<entity>` puede ser: `regional`, `centro`, `coordinacion`, `sede`, `ambiente`
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/admin/structure` | Vista jerárquica de estructura |
+| POST | `/admin/structure/<entity>/create` | Crear entidad |
+| GET | `/admin/structure/<entity>/<id>/edit` | Cargar entidad para edición |
+| POST | `/admin/structure/<entity>/<id>/update` | Actualizar entidad |
+| POST | `/admin/structure/<entity>/<id>/delete` | Eliminar entidad |
+
+### Administrador — Gestión académica
+
+`<entity>` puede ser: `nivel`, `red`, `area`, `programa`, `ficha`, `proyecto_formativo`, `fase_proyecto`, `actividad_proyecto`, `actividad_aprendizaje`
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/admin/academic` | Vista jerárquica académica |
+| POST | `/admin/academic/<entity>/create` | Crear entidad |
+| GET | `/admin/academic/<entity>/<id>/edit` | Cargar entidad para edición |
+| POST | `/admin/academic/<entity>/<id>/update` | Actualizar entidad |
+| POST | `/admin/academic/<entity>/<id>/delete` | Eliminar entidad |
+
+### Instructor — Vistas
+
+| Método | Ruta | Descripción |
+|---|---|---|
 | GET | `/instructor/fichas` | Fichas asignadas |
-| GET | `/instructor/ficha/<id>/fases` | Fases y actividades |
-| GET/POST | `/instructor/change-password` | Cambio de contraseña |
+| GET | `/instructor/ficha/<id>/fases` | Árbol de fases y actividades |
+| GET / POST | `/instructor/password` | Cambio de contraseña |
+
+### Instructor — API REST
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/api/instructor/ficha/<id>/tree` | Árbol completo de fases/actividades de una ficha |
+| POST | `/api/instructor/ficha/<id>/fase/nueva` | Crear fase en una ficha |
+| POST | `/api/instructor/fase/<id>/actividad/nueva` | Crear actividad de proyecto en una fase |
+| POST | `/api/instructor/actividad-proyecto/<id>/aprendizaje/nueva` | Crear actividad de aprendizaje |
+| GET | `/api/instructor/actividad-proyecto/<id>/actividades-aprendizaje` | Listar actividades de aprendizaje |
+| GET | `/api/instructor/actividad-proyecto/<id>/evidencias-matriz` | Matriz de evidencias |
+| GET | `/api/instructor/actividad-proyecto/<id>/guias` | Listar guías de actividad de proyecto |
+| POST | `/api/instructor/actividad-proyecto/<id>/guias/nueva` | Crear guía de actividad de proyecto |
+| PATCH | `/api/instructor/actividad-proyecto/<id>/guias/orden` | Reordenar guías |
+| PATCH | `/api/instructor/actividad-proyecto/<id>/aprendizaje/orden` | Reordenar actividades de aprendizaje |
+| PATCH | `/api/instructor/actividad-aprendizaje/<id>/editar` | Editar actividad de aprendizaje |
+| PATCH | `/api/instructor/actividad-aprendizaje/<id>/fecha-fin` | Actualizar fecha de cierre |
+| PATCH | `/api/instructor/actividad-aprendizaje/<id>/secciones/orden` | Reordenar secciones |
+| POST | `/api/instructor/actividad-aprendizaje/<id>/seccion/nueva` | Crear sección |
+| POST | `/api/instructor/actividad/<id>/guia` | Guardar guía de actividad de aprendizaje |
+| POST | `/api/instructor/actividad/<id>/evidencia` | Activar evidencia para una actividad |
+| GET | `/api/instructor/actividad/<id>/aprendices` | Aprendices y entregas de una actividad |
+| PATCH | `/api/instructor/guia-actividad-proyecto/<id>/editar` | Editar guía de actividad de proyecto |
+| DELETE | `/api/instructor/guia-actividad-proyecto/<id>` | Eliminar guía |
+| PATCH | `/api/instructor/seccion/<id>/editar` | Editar sección |
+| DELETE | `/api/instructor/seccion/<id>` | Eliminar sección |
+| PATCH | `/api/instructor/seccion/<id>/sub-secciones/orden` | Reordenar sub-secciones |
+| POST | `/api/instructor/seccion/<id>/sub-seccion/nueva` | Crear sub-sección |
+| PATCH | `/api/instructor/sub-seccion/<id>/editar` | Editar sub-sección |
+| DELETE | `/api/instructor/sub-seccion/<id>` | Eliminar sub-sección |
+| POST | `/api/instructor/entrega/<id>/calificar` | Calificar entrega de evidencia |
+| GET | `/api/instructor/ficha/<id>/asistencia` | Obtener asistencia de una ficha |
+| POST | `/api/instructor/ficha/<id>/asistencia` | Guardar registro de asistencia |
 
 ---
 
