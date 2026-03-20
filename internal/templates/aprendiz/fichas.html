@@ -1,0 +1,146 @@
+{% extends "aprendiz/base.html" %}
+
+{% block title %}Mis Fichas{% endblock %}
+{% block menu_fichas %}nav-active{% endblock %}
+
+{% block content %}
+<style>
+    /* Mantenemos tus estilos personalizados aquí */
+    .ficha-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,.08);
+        transition: transform .2s, box-shadow .2s;
+        overflow: hidden;
+        background-color: #fff;
+    }
+    .ficha-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,.12);
+    }
+    .ficha-card .card-header-sena {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        padding: 16px 20px;
+    }
+    .ficha-card .ficha-numero {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #fff;
+    }
+    .ficha-card .card-body {
+        padding: 20px;
+    }
+    .ficha-card .programa-nombre {
+        color: #5a5c69;
+        font-size: .95rem;
+        margin-bottom: 6px;
+    }
+    .ficha-card .proyecto-nombre {
+        color: #1cc88a;
+        font-weight: 600;
+        font-size: 1rem;
+        margin-bottom: 12px;
+    }
+    .ficha-card .btn-ver-proyecto {
+        background: #1cc88a;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-weight: 600;
+        width: 100%;
+        transition: background .15s;
+        text-align: center;
+        display: inline-block;
+        text-decoration: none;
+    }
+    .ficha-card .btn-ver-proyecto:hover {
+        background: #17a673;
+        color: #fff;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #858796;
+    }
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 16px;
+        opacity: .5;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h4 class="mb-0 text-gray-800 font-weight-bold">
+                <i class="fas fa-graduation-cap mr-2 text-sena"></i>
+                Mis Fichas de Formación
+            </h4>
+            <p class="text-muted mb-0 small">Selecciona una ficha para ver tu proyecto y entregar evidencias</p>
+        </div>
+    </div>
+
+    <!-- Buscador -->
+    <div class="mb-4">
+        <input type="text" id="buscador-fichas" class="form-control shadow-sm"
+               placeholder="&#xf002;  Buscar por número de ficha o programa..."
+               style="max-width:400px; font-family:'Nunito',sans-serif; border-radius:8px;">
+    </div>
+
+    {% if fichas %}
+    <div class="row" id="fichas-container">
+        {% for ficha in fichas %}
+        <div class="col-lg-6 col-md-6 mb-4 ficha-card-wrapper">
+            <div class="ficha-card">
+                <div class="card-header-sena">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <div class="small text-white opacity-75">Ficha</div>
+                            <div class="ficha-numero">{{ ficha.numero }}</div>
+                        </div>
+                        <i class="fas fa-id-card fa-2x text-white opacity-50"></i>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="programa-nombre">
+                        <i class="fas fa-book mr-1 text-sena"></i>
+                        {{ ficha.programa_nombre or 'Sin programa' }}
+                    </div>
+                    <div class="proyecto-nombre">
+                        <i class="fas fa-project-diagram mr-1 text-sena"></i>
+                        {{ ficha.proyecto_nombre or 'Sin proyecto formativo' }}
+                    </div>
+                    
+                    <a href="/aprendiz/ficha/{{ ficha.id }}" class="btn btn-ver-proyecto">
+                        <i class="fas fa-eye mr-2"></i>Ver Detalles
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div class="empty-state">
+                <i class="fas fa-folder-open text-sena"></i>
+                <h5>No tienes fichas asignadas</h5>
+                <p>Contacta a tu coordinación para que te asignen a una ficha de formación.</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% block extra_js %}
+<script>
+document.getElementById('buscador-fichas').addEventListener('input', function() {
+    var q = this.value.toLowerCase();
+    document.querySelectorAll('.ficha-card-wrapper').forEach(function(card) {
+        card.style.display = card.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

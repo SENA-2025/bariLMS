@@ -1,7 +1,68 @@
-.DS_Store
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.spec
+
+# Entornos virtuales
 .venv/
-env/
 venv/
+env/
+.env/
+ENV/
+
+# Variables de entorno y secretos
+.env
+.env.*
+!.env.example
+*.secret
+secrets.json
+
+# Base de datos local
+*.db
+*.sqlite3
 bari_lms.db
+
+# Uploads de usuario (archivos subidos por los usuarios del LMS)
+static/uploads/
+
+# Vendor / dependencias front-end (instalar por CDN o gestor de paquetes)
+static/vendor/
+
+# Archivos generados / mapas de fuente
+*.map
+
+# IDE y editores
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# Claude Code (solo configuración local del desarrollador)
+.claude/settings.local.json
+
+# Logs
+*.log
+logs/
+
+# Pytest / cobertura
+.pytest_cache/
+.coverage
+htmlcov/

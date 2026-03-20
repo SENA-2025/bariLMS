@@ -1,0 +1,156 @@
+{% extends "aprendiz/base.html" %}
+
+{% block title %}Mis Calificaciones{% endblock %}
+{% block menu_calificaciones %}nav-active{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h4 class="mb-0 text-gray-800 font-weight-bold">
+                <i class="fas fa-star mr-2 text-success"></i>Mis Calificaciones
+            </h4>
+            <p class="text-muted mb-0 small">Historial de entregas y notas</p>
+        </div>
+    </div>
+
+    <!-- Tarjetas resumen -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm p-3" style="border-radius:12px;">
+                <div class="d-flex align-items-center">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center mr-3"
+                         style="width:52px;height:52px;background:linear-gradient(135deg,#1a7a3c,#20c997);">
+                        <i class="fas fa-upload text-white"></i>
+                    </div>
+                    <div>
+                        <div class="small text-muted text-uppercase font-weight-bold">Entregas</div>
+                        <div class="h4 font-weight-bold mb-0">{{ resumen.total }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm p-3" style="border-radius:12px;">
+                <div class="d-flex align-items-center">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center mr-3"
+                         style="width:52px;height:52px;background:linear-gradient(135deg,#1cc88a,#17a673);">
+                        <i class="fas fa-check-circle text-white"></i>
+                    </div>
+                    <div>
+                        <div class="small text-muted text-uppercase font-weight-bold">Aprobadas</div>
+                        <div class="h4 font-weight-bold mb-0 text-success">{{ resumen.aprobadas }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm p-3" style="border-radius:12px;">
+                <div class="d-flex align-items-center">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center mr-3"
+                         style="width:52px;height:52px;background:linear-gradient(135deg,#f6c23e,#e0a800);">
+                        <i class="fas fa-clock text-white"></i>
+                    </div>
+                    <div>
+                        <div class="small text-muted text-uppercase font-weight-bold">Sin calificar</div>
+                        <div class="h4 font-weight-bold mb-0 text-warning">{{ resumen.pendientes }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm p-3" style="border-radius:12px;">
+                <div class="d-flex align-items-center">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center mr-3"
+                         style="width:52px;height:52px;background:linear-gradient(135deg,#4e73df,#36b9cc);">
+                        <i class="fas fa-chart-line text-white"></i>
+                    </div>
+                    <div>
+                        <div class="small text-muted text-uppercase font-weight-bold">Promedio</div>
+                        <div class="h4 font-weight-bold mb-0">{{ resumen.promedio }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de calificaciones -->
+    <div class="card border-0 shadow-sm" style="border-radius:12px; overflow:hidden;">
+        <div class="card-header bg-white py-3 border-bottom">
+            <h6 class="m-0 font-weight-bold text-gray-800">
+                <i class="fas fa-table mr-2 text-success"></i>Detalle de calificaciones
+            </h6>
+        </div>
+        <div class="card-body p-0">
+            {% if calificaciones %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" style="font-size:0.88rem;">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="px-4 py-3">Fase</th>
+                            <th class="py-3">Actividad</th>
+                            <th class="py-3">Ficha</th>
+                            <th class="py-3">Evidencia</th>
+                            <th class="py-3">Nota</th>
+                            <th class="py-3">Estado</th>
+                            <th class="py-3">Retroalimentación</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in calificaciones %}
+                        <tr>
+                            <td class="px-4 py-3">
+                                <span class="badge badge-secondary" style="border-radius:6px;">{{ c.fase_nombre }}</span>
+                            </td>
+                            <td class="py-3">
+                                <div class="font-weight-bold text-gray-800">{{ c.actividad_aprendizaje_nombre }}</div>
+                                <div class="small text-muted">{{ c.actividad_proyecto_nombre }}</div>
+                            </td>
+                            <td class="py-3">{{ c.ficha_numero }}</td>
+                            <td class="py-3">
+                                <a href="{{ c.url_evidencia }}" target="_blank" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-external-link-alt mr-1"></i>Ver
+                                </a>
+                            </td>
+                            <td class="py-3">
+                                {% if c.calificacion is not none %}
+                                    <span class="font-weight-bold" style="font-size:1rem;
+                                        color: {% if c.calificacion >= 75 %}#1a7a3c{% else %}#e74a3b{% endif %};">
+                                        {{ c.calificacion }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="py-3">
+                                {% if c.aprueba == 1 %}
+                                    <span class="badge badge-success px-2 py-1" style="border-radius:20px;">Aprueba</span>
+                                {% elif c.aprueba == 0 %}
+                                    <span class="badge badge-danger px-2 py-1" style="border-radius:20px;">No aprueba</span>
+                                {% else %}
+                                    <span class="badge badge-warning px-2 py-1" style="border-radius:20px; color:#333;">Pendiente</span>
+                                {% endif %}
+                            </td>
+                            <td class="py-3">
+                                <span class="text-muted small">{{ c.retroalimentacion or '—' }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-star fa-3x text-muted mb-3" style="opacity:0.25;"></i>
+                <h6 class="text-muted">Aún no tienes entregas</h6>
+                <p class="small text-muted mb-3">Cuando entregues evidencias y el instructor las califique, aparecerán aquí.</p>
+                <a href="/aprendiz/fichas" class="btn btn-success btn-sm">
+                    <i class="fas fa-id-card mr-1"></i>Ir a mis fichas
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
