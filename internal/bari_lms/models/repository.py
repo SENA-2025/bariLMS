@@ -439,14 +439,93 @@ def initialize_database():
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS usuario (
+            id              UUID        PRIMARY KEY,
+            correo          TEXT        UNIQUE NOT NULL,
+            contrasena_hash TEXT        NOT NULL,
+            rol             TEXT        NOT NULL,
+            nombre          TEXT        NOT NULL,
+            activo          BOOLEAN     NOT NULL DEFAULT TRUE,
+            creado_en       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            actualizado_en  TIMESTAMPTZ,
+            creado_por      UUID        REFERENCES usuario(id) ON DELETE SET NULL
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS perfil (
             id             UUID        PRIMARY KEY,
-            correo         TEXT        UNIQUE NOT NULL,
-            contrasena_hash TEXT       NOT NULL,
-            rol            TEXT        NOT NULL,
-            nombre         TEXT        NOT NULL,
-            activo         BOOLEAN     NOT NULL DEFAULT TRUE,
+            nombre         TEXT        NOT NULL UNIQUE,
+            descripcion    TEXT,
             creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-            actualizado_en TIMESTAMPTZ
+            actualizado_en TIMESTAMPTZ,
+            creado_por     UUID        REFERENCES usuario(id) ON DELETE SET NULL
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS rol (
+            id             UUID        PRIMARY KEY,
+            perfil_id      UUID        NOT NULL REFERENCES perfil(id) ON DELETE CASCADE,
+            nombre         TEXT        NOT NULL,
+            descripcion    TEXT,
+            creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            actualizado_en TIMESTAMPTZ,
+            creado_por     UUID        REFERENCES usuario(id) ON DELETE SET NULL,
+            UNIQUE (perfil_id, nombre)
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS permiso (
+            id             UUID        PRIMARY KEY,
+            codigo         TEXT        NOT NULL UNIQUE,
+            nombre         TEXT        NOT NULL,
+            descripcion    TEXT,
+            creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            actualizado_en TIMESTAMPTZ,
+            creado_por     UUID        REFERENCES usuario(id) ON DELETE SET NULL
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS rol_permiso (
+            id             UUID        PRIMARY KEY,
+            rol_id         UUID        NOT NULL REFERENCES rol(id) ON DELETE CASCADE,
+            permiso_id     UUID        NOT NULL REFERENCES permiso(id) ON DELETE CASCADE,
+            creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            actualizado_en TIMESTAMPTZ,
+            creado_por     UUID        REFERENCES usuario(id) ON DELETE SET NULL,
+            UNIQUE (rol_id, permiso_id)
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS usuario_perfil (
+            id             UUID        PRIMARY KEY,
+            usuario_id     UUID        NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
+            perfil_id      UUID        NOT NULL REFERENCES perfil(id) ON DELETE CASCADE,
+            creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            actualizado_en TIMESTAMPTZ,
+            creado_por     UUID        REFERENCES usuario(id) ON DELETE SET NULL,
+            UNIQUE (usuario_id, perfil_id)
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS usuario_rol (
+            id             UUID        PRIMARY KEY,
+            usuario_id     UUID        NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
+            rol_id         UUID        NOT NULL REFERENCES rol(id) ON DELETE CASCADE,
+            creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            actualizado_en TIMESTAMPTZ,
+            creado_por     UUID        REFERENCES usuario(id) ON DELETE SET NULL,
+            UNIQUE (usuario_id, rol_id)
         )
         """
     )
@@ -496,11 +575,11 @@ def initialize_database():
             id             UUID        PRIMARY KEY,
             centro_id      UUID        NOT NULL REFERENCES centro(id) ON DELETE RESTRICT,
             area_id        UUID        REFERENCES area(id) ON DELETE SET NULL,
+            usuario_id     UUID        REFERENCES usuario(id) ON DELETE SET NULL,
             documento      TEXT        NOT NULL,
             nombres        TEXT        NOT NULL,
             apellidos      TEXT        NOT NULL,
             correo         TEXT,
-            usuario_id     UUID        REFERENCES usuario(id) ON DELETE SET NULL,
             genero         TEXT        NOT NULL DEFAULT 'M',
             creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             actualizado_en TIMESTAMPTZ
@@ -512,11 +591,11 @@ def initialize_database():
         CREATE TABLE IF NOT EXISTS aprendiz (
             id             UUID        PRIMARY KEY,
             regional_id    UUID        NOT NULL REFERENCES regional(id) ON DELETE RESTRICT,
+            usuario_id     UUID        REFERENCES usuario(id) ON DELETE SET NULL,
             documento      TEXT        NOT NULL,
             nombres        TEXT        NOT NULL,
             apellidos      TEXT        NOT NULL,
             correo         TEXT,
-            usuario_id     UUID        REFERENCES usuario(id) ON DELETE SET NULL,
             ficha          TEXT,
             creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             actualizado_en TIMESTAMPTZ
@@ -528,12 +607,12 @@ def initialize_database():
         CREATE TABLE IF NOT EXISTS personal_administrativo (
             id             UUID        PRIMARY KEY,
             centro_id      UUID        NOT NULL REFERENCES centro(id) ON DELETE RESTRICT,
+            usuario_id     UUID        REFERENCES usuario(id) ON DELETE SET NULL,
             documento      TEXT        NOT NULL,
             nombres        TEXT        NOT NULL,
             apellidos      TEXT        NOT NULL,
             correo         TEXT,
             cargo          TEXT        NOT NULL,
-            usuario_id     UUID        REFERENCES usuario(id) ON DELETE SET NULL,
             creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             actualizado_en TIMESTAMPTZ
         )

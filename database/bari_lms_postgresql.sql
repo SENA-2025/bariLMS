@@ -48,18 +48,123 @@ BEGIN;
 
 -- Usuarios del sistema. Todos los roles (admin, instructor, aprendiz,
 -- administrativo) tienen una fila aquí para autenticación.
+-- usuario.rol NO es redundante con la tabla perfil. Almacena un rol
+-- específico adicional dentro de un perfil (ej: 'Instructor Titular').
+-- creado_por es NULL para los usuarios seed y para el primer administrador.
 CREATE TABLE IF NOT EXISTS usuario (
-    id                UUID        PRIMARY KEY,
-    correo            TEXT        UNIQUE NOT NULL,
-    contrasena_hash   TEXT        NOT NULL,
-    rol               TEXT        NOT NULL,
-    nombre            TEXT        NOT NULL,
-    activo            BOOLEAN     NOT NULL DEFAULT TRUE,
-    creado_en         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en    TIMESTAMPTZ
+    id              UUID        PRIMARY KEY,
+    creado_por      UUID        REFERENCES usuario(id) ON DELETE SET NULL,
+    correo          TEXT        UNIQUE NOT NULL,
+    contrasena_hash TEXT        NOT NULL,
+    nombre          TEXT        NOT NULL,
+    rol             TEXT        NOT NULL,
+    activo          BOOLEAN     NOT NULL DEFAULT TRUE,
+    creado_en       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    actualizado_en  TIMESTAMPTZ
 );
 
 CREATE INDEX IF NOT EXISTS idx_usuario_correo ON usuario (lower(correo));
+
+
+-- Perfiles del sistema. Define las categorías de acceso de alto nivel
+-- (Administrador, Administrativo, Instructor, Aprendiz).
+-- NOTA: usuario.rol NO es redundante con esta tabla. usuario.rol almacena
+-- un rol específico adicional que puede asignarse dentro de un perfil
+-- (ej: un Instructor puede tener rol 'Instructor Titular' o 'Instructor Apoyo').
+CREATE TABLE IF NOT EXISTS perfil (
+    id             UUID        PRIMARY KEY,
+    nombre         TEXT        NOT NULL UNIQUE,
+    descripcion    TEXT,
+    creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    actualizado_en TIMESTAMPTZ,
+    creado_por     UUID        REFERENCES usuario(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_perfil_creado_por ON perfil (creado_por);
+
+
+-- Roles específicos dentro de un perfil. Permiten granularidad adicional
+-- dentro de una misma categoría de perfil.
+-- Nota: 'role' es palabra reservada en PostgreSQL; se usa 'rol'.
+CREATE TABLE IF NOT EXISTS rol (
+    id             UUID        PRIMARY KEY,
+    perfil_id      UUID        NOT NULL REFERENCES perfil(id) ON DELETE CASCADE,
+    nombre         TEXT        NOT NULL,
+    descripcion    TEXT,
+    creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    actualizado_en TIMESTAMPTZ,
+    creado_por     UUID        REFERENCES usuario(id) ON DELETE SET NULL,
+    UNIQUE (perfil_id, nombre)
+);
+
+CREATE INDEX IF NOT EXISTS idx_rol_perfil_id   ON rol (perfil_id);
+CREATE INDEX IF NOT EXISTS idx_rol_creado_por  ON rol (creado_por);
+
+
+-- Permisos granulares del sistema.
+-- codigo: identificador técnico con convención recurso.accion (ej: fichas.ver).
+-- nombre: etiqueta legible para mostrar en la UI (ej: 'Ver fichas').
+-- descripcion: explicación detallada de lo que habilita el permiso.
+CREATE TABLE IF NOT EXISTS permiso (
+    id             UUID        PRIMARY KEY,
+    codigo         TEXT        NOT NULL UNIQUE,
+    nombre         TEXT        NOT NULL,
+    descripcion    TEXT,
+    creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    actualizado_en TIMESTAMPTZ,
+    creado_por     UUID        REFERENCES usuario(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_permiso_codigo     ON permiso (codigo);
+CREATE INDEX IF NOT EXISTS idx_permiso_creado_por ON permiso (creado_por);
+
+
+-- Permisos asignados a un rol específico (nivel granular).
+-- Al eliminar el rol o el permiso se elimina la asignación (CASCADE).
+CREATE TABLE IF NOT EXISTS rol_permiso (
+    id             UUID        PRIMARY KEY,
+    rol_id         UUID        NOT NULL REFERENCES rol(id) ON DELETE CASCADE,
+    permiso_id     UUID        NOT NULL REFERENCES permiso(id) ON DELETE CASCADE,
+    creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    actualizado_en TIMESTAMPTZ,
+    creado_por     UUID        REFERENCES usuario(id) ON DELETE SET NULL,
+    UNIQUE (rol_id, permiso_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_rol_permiso_rol_id     ON rol_permiso (rol_id);
+CREATE INDEX IF NOT EXISTS idx_rol_permiso_permiso_id ON rol_permiso (permiso_id);
+
+
+-- Perfiles asignados a un usuario. Un usuario puede tener varios perfiles.
+-- Al eliminar el usuario o el perfil se elimina la asignación (CASCADE).
+CREATE TABLE IF NOT EXISTS usuario_perfil (
+    id             UUID        PRIMARY KEY,
+    usuario_id     UUID        NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
+    perfil_id      UUID        NOT NULL REFERENCES perfil(id) ON DELETE CASCADE,
+    creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    actualizado_en TIMESTAMPTZ,
+    creado_por     UUID        REFERENCES usuario(id) ON DELETE SET NULL,
+    UNIQUE (usuario_id, perfil_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_usuario_perfil_usuario_id ON usuario_perfil (usuario_id);
+CREATE INDEX IF NOT EXISTS idx_usuario_perfil_perfil_id  ON usuario_perfil (perfil_id);
+
+
+-- Roles específicos asignados a un usuario.
+-- Al eliminar el usuario o el rol se elimina la asignación (CASCADE).
+CREATE TABLE IF NOT EXISTS usuario_rol (
+    id             UUID        PRIMARY KEY,
+    usuario_id     UUID        NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
+    rol_id         UUID        NOT NULL REFERENCES rol(id) ON DELETE CASCADE,
+    creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    actualizado_en TIMESTAMPTZ,
+    creado_por     UUID        REFERENCES usuario(id) ON DELETE SET NULL,
+    UNIQUE (usuario_id, rol_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_usuario_rol_usuario_id ON usuario_rol (usuario_id);
+CREATE INDEX IF NOT EXISTS idx_usuario_rol_rol_id     ON usuario_rol (rol_id);
 
 
 -- Regionales del SENA. Nivel más alto de la estructura institucional.
@@ -168,11 +273,11 @@ CREATE TABLE IF NOT EXISTS instructor (
     id             UUID        PRIMARY KEY,
     centro_id      UUID        NOT NULL REFERENCES centro(id) ON DELETE RESTRICT,
     area_id        UUID        REFERENCES area(id) ON DELETE SET NULL,
+    usuario_id     UUID        REFERENCES usuario(id) ON DELETE SET NULL,
     documento      TEXT        NOT NULL,
     nombres        TEXT        NOT NULL,
     apellidos      TEXT        NOT NULL,
     correo         TEXT,
-    usuario_id     UUID        REFERENCES usuario(id) ON DELETE SET NULL,
     genero         TEXT        NOT NULL DEFAULT 'M',
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     actualizado_en TIMESTAMPTZ
@@ -189,11 +294,11 @@ CREATE INDEX IF NOT EXISTS idx_instructor_usuario_id ON instructor (usuario_id);
 CREATE TABLE IF NOT EXISTS aprendiz (
     id             UUID        PRIMARY KEY,
     regional_id    UUID        NOT NULL REFERENCES regional(id) ON DELETE RESTRICT,
+    usuario_id     UUID        REFERENCES usuario(id) ON DELETE SET NULL,
     documento      TEXT        NOT NULL,
     nombres        TEXT        NOT NULL,
     apellidos      TEXT        NOT NULL,
     correo         TEXT,
-    usuario_id     UUID        REFERENCES usuario(id) ON DELETE SET NULL,
     ficha          TEXT,
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     actualizado_en TIMESTAMPTZ
@@ -208,12 +313,12 @@ CREATE INDEX IF NOT EXISTS idx_aprendiz_usuario_id  ON aprendiz (usuario_id);
 CREATE TABLE IF NOT EXISTS personal_administrativo (
     id             UUID        PRIMARY KEY,
     centro_id      UUID        NOT NULL REFERENCES centro(id) ON DELETE RESTRICT,
+    usuario_id     UUID        REFERENCES usuario(id) ON DELETE SET NULL,
     documento      TEXT        NOT NULL,
     nombres        TEXT        NOT NULL,
     apellidos      TEXT        NOT NULL,
     correo         TEXT,
     cargo          TEXT        NOT NULL,
-    usuario_id     UUID        REFERENCES usuario(id) ON DELETE SET NULL,
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     actualizado_en TIMESTAMPTZ
 );
@@ -481,6 +586,13 @@ CREATE INDEX IF NOT EXISTS idx_notificacion_usuario_id ON notificacion (usuario_
 -- ============================================================
 -- SEED DATA
 -- ============================================================
+
+INSERT INTO perfil (id, nombre, descripcion) VALUES
+    (gen_random_uuid(), 'Administrador',  'Gestión de usuarios, estructura institucional y académica.'),
+    (gen_random_uuid(), 'Administrativo', 'Apoyo académico y operativo: fichas, programas y ambientes.'),
+    (gen_random_uuid(), 'Instructor',     'Ejecución formativa: fichas, fases, actividades y calificaciones.'),
+    (gen_random_uuid(), 'Aprendiz',       'Ruta de aprendizaje: fichas, evidencias y calificaciones.')
+ON CONFLICT (nombre) DO NOTHING;
 
 INSERT INTO nivel_formacion (id, nombre) VALUES
     (gen_random_uuid(), 'Técnico'),
