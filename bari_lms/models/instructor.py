@@ -1,4 +1,4 @@
-"""Modelo de Instructor – acceso a datos con SQLite puro."""
+"""Modelo de Instructor – acceso a datos con PostgreSQL."""
 
 from __future__ import annotations
 
@@ -19,9 +19,9 @@ class Instructor:
     # ------------------------------------------------------------------
 
     def __init__(self, row):
-        """Inicializa desde una fila de sqlite3.Row o dict."""
+        """Inicializa desde una fila de psycopg o dict."""
         self._id: int = row["id"]
-        self._id_coordinacion: int = row["id_coordinacion"]
+        self._id_centro: int = row["id_centro"]
         self._documento: str = row["documento"]
         self._nombres: str = row["nombres"]
         self._apellidos: str = row["apellidos"]
@@ -36,8 +36,8 @@ class Instructor:
     def get_id(self) -> int:
         return self._id
 
-    def get_id_coordinacion(self) -> int:
-        return self._id_coordinacion
+    def get_id_centro(self) -> int:
+        return self._id_centro
 
     def get_documento(self) -> str:
         return self._documento
@@ -68,10 +68,10 @@ class Instructor:
     # Setters
     # ------------------------------------------------------------------
 
-    def set_id_coordinacion(self, valor: int) -> None:
+    def set_id_centro(self, valor: int) -> None:
         if not isinstance(valor, int) or valor <= 0:
-            raise ValueError("id_coordinacion debe ser un entero positivo.")
-        self._id_coordinacion = valor
+            raise ValueError("id_centro debe ser un entero positivo.")
+        self._id_centro = valor
 
     def set_documento(self, valor: str) -> None:
         valor = valor.strip()
@@ -159,7 +159,7 @@ class Instructor:
             WHERE f.id_instructor = ?
             ORDER BY f.numero ASC
             """,
-            (self.id,),
+            (self._id,),
         ).fetchall()
 
     def fichas_por_competencia(self, db) -> list:
@@ -179,14 +179,14 @@ class Instructor:
             WHERE fic.id_instructor = ?
             ORDER BY f.numero ASC
             """,
-            (self.id,),
+            (self._id,),
         ).fetchall()
 
     def tiene_acceso_ficha(self, db, id_ficha: int) -> bool:
         """Verifica si el instructor es líder de la ficha."""
         row = db.execute(
             "SELECT id FROM ficha_formacion WHERE id = ? AND id_instructor = ?",
-            (id_ficha, self.id),
+            (id_ficha, self._id),
         ).fetchone()
         return row is not None
 
@@ -221,12 +221,12 @@ class Instructor:
     @staticmethod
     def crear_evidencia(db, id_actividad_aprendizaje: int, descripcion: str) -> int:
         """Inserta una evidencia de aprendizaje y retorna su id."""
-        cursor = db.execute(
-            "INSERT INTO evidencia_aprendizaje (id_actividad_aprendizaje, descripcion) VALUES (?, ?)",
+        row = db.execute(
+            "INSERT INTO evidencia_aprendizaje (id_actividad_aprendizaje, descripcion) VALUES (?, ?) RETURNING id",
             (id_actividad_aprendizaje, descripcion),
-        )
+        ).fetchone()
         db.commit()
-        return cursor.lastrowid
+        return row["id"]
 
     @staticmethod
     def calificar_entrega(
@@ -261,14 +261,14 @@ class Instructor:
         proyecto_id = ficha["id_proyecto_formativo"]
         rows = db.execute(
             """
-            SELECT fp.id  AS fase_id,   fp.nombre  AS fase_nombre,
+            SELECT fp.id  AS fase_id,    fp.nombre  AS fase_nombre,
                    ap.id  AS act_proy_id, ap.nombre AS act_proy_nombre,
                    aa.id  AS act_apr_id,  aa.nombre AS act_apr_nombre,
                    ga.url AS guia_url,
                    ea.id  AS evidencia_id
             FROM fase_proyecto fp
-            LEFT JOIN actividad_proyecto   ap ON ap.id_fase_proyecto        = fp.id
-            LEFT JOIN actividad_aprendizaje aa ON aa.id_actividad_proyecto   = ap.id
+            LEFT JOIN actividad_proyecto    ap ON ap.id_fase_proyecto         = fp.id
+            LEFT JOIN actividad_aprendizaje aa ON aa.id_actividad_proyecto    = ap.id
             LEFT JOIN guia_aprendizaje      ga ON ga.id_actividad_aprendizaje = aa.id
             LEFT JOIN evidencia_aprendizaje ea ON ea.id_actividad_aprendizaje = aa.id
             WHERE fp.id_proyecto_formativo = ?

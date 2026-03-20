@@ -139,7 +139,15 @@ CREATE TABLE IF NOT EXISTS instructor (
     nombres TEXT NOT NULL,
     apellidos TEXT NOT NULL,
     correo TEXT,
-    id_usuario INTEGER
+    id_usuario INTEGER,
+    genero TEXT NOT NULL DEFAULT 'M'
+);
+
+CREATE TABLE IF NOT EXISTS ficha_instructor_competencia (
+    id SERIAL PRIMARY KEY,
+    id_ficha INTEGER NOT NULL REFERENCES ficha_formacion(id) ON DELETE CASCADE,
+    id_instructor INTEGER NOT NULL REFERENCES instructor(id) ON DELETE CASCADE,
+    UNIQUE (id_ficha, id_instructor)
 );
 
 CREATE TABLE IF NOT EXISTS aprendiz (
@@ -178,6 +186,23 @@ CREATE TABLE IF NOT EXISTS ficha_formacion (
     id_proyecto_formativo INTEGER REFERENCES proyecto_formativo(id) ON DELETE SET NULL,
     id_coordinacion INTEGER NOT NULL REFERENCES coordinacion(id) ON DELETE CASCADE,
     id_instructor INTEGER REFERENCES instructor(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS guia_actividad_proyecto (
+    id SERIAL PRIMARY KEY,
+    id_actividad_proyecto INTEGER NOT NULL REFERENCES actividad_proyecto(id) ON DELETE CASCADE,
+    nombre TEXT,
+    url TEXT NOT NULL,
+    subido_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS asistencia_aprendiz (
+    id SERIAL PRIMARY KEY,
+    id_ficha INTEGER NOT NULL REFERENCES ficha_formacion(id) ON DELETE CASCADE,
+    id_aprendiz INTEGER NOT NULL REFERENCES aprendiz(id) ON DELETE CASCADE,
+    fecha DATE NOT NULL,
+    estado TEXT NOT NULL DEFAULT 'Presente',
+    UNIQUE(id_ficha, id_aprendiz, fecha)
 );
 
 INSERT INTO nivel_formacion (nombre) VALUES

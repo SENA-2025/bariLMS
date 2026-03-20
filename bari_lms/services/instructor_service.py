@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from models.instructor import Instructor
+from bari_lms.models.instructor import Instructor
 
 
 class InstructorService:

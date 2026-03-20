@@ -139,10 +139,9 @@ DASHBOARDS = {
         "menu_heading": "Formación",
         "menu": [
             {
-                "icon": "fa-book-reader",
-                "label": "Planeación",
-                "endpoint": "dashboard",
-                "endpoint_kwargs": {"role_slug": "instructor"},
+                "icon": "fa-layer-group",
+                "label": "Mis Fichas",
+                "endpoint": "instructor_fichas",
             },
             {
                 "icon": "fa-clipboard-check",
