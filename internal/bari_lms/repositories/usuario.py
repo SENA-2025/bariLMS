@@ -11,12 +11,12 @@ def get_user_by_email(email):
     return db.execute("""
         SELECT
             id,
-            correo_institucional AS email,
+            correo AS email,
             contrasena_hash AS password_hash,
             nombre AS name,
             activo AS active
         FROM usuario
-        WHERE correo_institucional = ?
+        WHERE correo = ?
     """, (email,)).fetchone()   
 
 

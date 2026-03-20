@@ -20,7 +20,7 @@ Contenido:
 """
 
 import os
-import uuid_utils as uuid
+import uuid
 
 import psycopg
 from dotenv import load_dotenv

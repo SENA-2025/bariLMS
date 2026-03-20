@@ -2,7 +2,7 @@
 
 import secrets
 import string
-import uuid_utils as uuid
+import uuid
 
 from bari_lms.db import get_db
 from bari_lms.services.security import hash_password
@@ -137,42 +137,18 @@ def _provision_admin(db):
         """
     ).fetchone()
 
-    # ── SI YA EXISTE → RESETEA PASSWORD (DEV FRIENDLY) ─────────────
+    # ── SI YA EXISTE → no hacer nada ────────────────────────────────
     if row and row["total"] > 0:
-        print("[bariLMS] ⚠  Admin ya existe. Reseteando credenciales...")
-
-        temp_password = _generate_password()
-        hashed = hash_password(temp_password)
-
-        db.execute(
-            """
-            UPDATE usuario
-            SET contrasena_hash = ?
-            WHERE id IN (
-                SELECT up.usuario_id
-                FROM usuario_perfil up
-                JOIN perfil p ON p.id = up.perfil_id
-                WHERE p.nombre = 'Administrador'
-                LIMIT 1
-            )
-            """,
-            (hashed,),
-        )
-        db.commit()
-
-        print(f"[bariLMS]    Nueva contraseña: {temp_password}")
-        print()
-
         return
 
-    # ── SI NO EXISTE → CREA ADMIN NUEVO ────────────────────────────
+    # ── SI NO EXISTE → CREA ADMIN PROVISIONAL ───────────────────────
     temp_email = f"admin_{secrets.token_hex(4)}@senalearn.edu.co"
     temp_password = _generate_password()
     user_id = str(uuid.uuid7())
 
     db.execute(
         """
-        INSERT INTO usuario (id, correo_institucional, contrasena_hash, nombre, activo)
+        INSERT INTO usuario (id, correo, contrasena_hash, nombre, activo)
         VALUES (?, ?, ?, ?, TRUE)
         """,
         (user_id, temp_email, hash_password(temp_password), "Admin Provisional"),
