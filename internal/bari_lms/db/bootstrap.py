@@ -136,18 +136,24 @@ def _provision_admin(db):
         WHERE p.nombre = 'Administrador'
         """
     ).fetchone()
+
+    # ── SI YA EXISTE → no hacer nada ────────────────────────────────
     if row and row["total"] > 0:
         return
 
+    # ── SI NO EXISTE → CREA ADMIN PROVISIONAL ───────────────────────
     temp_email = f"admin_{secrets.token_hex(4)}@senalearn.edu.co"
     temp_password = _generate_password()
     user_id = str(uuid.uuid7())
 
     db.execute(
-        "INSERT INTO usuario (id, correo, contrasena_hash, nombre, activo) "
-        "VALUES (?, ?, ?, ?, TRUE)",
+        """
+        INSERT INTO usuario (id, correo, contrasena_hash, nombre, activo)
+        VALUES (?, ?, ?, ?, TRUE)
+        """,
         (user_id, temp_email, hash_password(temp_password), "Admin Provisional"),
     )
+
     db.execute(
         """
         INSERT INTO usuario_perfil (id, usuario_id, perfil_id)
@@ -155,6 +161,7 @@ def _provision_admin(db):
         """,
         (str(uuid.uuid7()), user_id),
     )
+
     db.commit()
 
     print()

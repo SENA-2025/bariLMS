@@ -53,8 +53,10 @@ def register_routes(app):
             session.clear()
             session["user_email"] = user["email"]
             session["user_profile"] = role
+
             return redirect(url_for("dashboard", role_slug=ROLE_TO_SLUG[role]))
 
+        # ── GET request ─────────────────────────
         if current_user():
             return redirect(url_for("home"))
 
