@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>BARÍ LMS | Página no encontrada</title>
+    <link href="{{ url_for('static', filename='vendor/fontawesome-free/css/all.min.css') }}" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Nunito:300,400,600,700,800" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/sb-admin-2.min.css') }}" rel="stylesheet">
+    <style>
+        body { background: #f8f9fc; }
+        .error-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .error-code { font-size: 8rem; font-weight: 900; color: #1a7a3c; line-height: 1; }
+        .error-divider { border-top: 3px solid #1a7a3c; width: 80px; margin: 1rem auto; }
+        .sena-logo { width: 70px; opacity: 0.85; }
+    </style>
+</head>
+<body>
+<div class="error-page">
+    <div class="text-center px-4">
+        <img src="{{ url_for('static', filename='img/logo-sena-blanco.png') }}"
+             class="sena-logo mb-3"
+             style="filter: invert(30%) sepia(80%) saturate(500%) hue-rotate(100deg);"
+             alt="SENA">
+        <div class="error-code">404</div>
+        <div class="error-divider"></div>
+        <h4 class="font-weight-bold text-gray-800 mb-2">Página no encontrada</h4>
+        <p class="text-muted mb-4">La página que buscas no existe o fue movida.</p>
+        <a href="/dashboard/aprendiz" class="btn btn-success px-4 mr-2">
+            <i class="fas fa-home mr-1"></i> Ir al inicio
+        </a>
+        <a href="javascript:history.back()" class="btn btn-outline-secondary px-4">
+            <i class="fas fa-arrow-left mr-1"></i> Volver
+        </a>
+        <div class="mt-5 text-muted small">BARÍ LMS &copy; SENA 2026</div>
+    </div>
+</div>
+</body>
+</html>
