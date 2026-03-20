@@ -4,7 +4,7 @@
 -- Description: Canonical PostgreSQL schema for bariLMS.
 --              Supersedes database/setup_aprendiz.sql (legacy).
 --
--- PostgreSQL : Requires PostgreSQL 15+
+-- PostgreSQL : Requires PostgreSQL 17+
 --
 -- How to apply:
 --   psql -U <user> -d <dbname> -f bari_lms_postgresql.sql
@@ -16,9 +16,31 @@
 -- actualizado_en: NULL until the first UPDATE. Set explicitly by the
 --              application in every UPDATE statement.
 --
+-- creado_por : NULL for seed rows and the first administrator.
+--              SET NULL when the creating user is deleted.
+--
+-- Authentication: login uses correo_institucional only.
+--              correo_personal is stored for informational purposes.
+--
+-- JWT sessions:
+--   - access_token  : 15 min, stateless JWT (not stored in DB).
+--   - refresh_token : 1 day, stored hashed in sesion.
+--   - On access_token expiry the app validates the refresh token,
+--     issues a new access_token, and rotates the refresh_token hash.
+--   - /dashboard is blocked without a valid access_token.
+--   - Each perfil has its own route: /dashboard/<slug>.
+--     Only users in usuario_perfil for that perfil may access it.
+--
 -- Tables (in dependency order):
+--   Auth & sessions:
+--     usuario, sesion, sesion_historial
+--
+--   Access control:
+--     perfil, rol, permiso, rol_permiso,
+--     usuario_perfil, usuario_rol
+--
 --   Institutional structure:
---     usuario, regional, centro, coordinacion, sede, ambiente
+--     regional, centro, coordinacion, sede, ambiente
 --
 --   Academic knowledge:
 --     red_conocimiento, area, nivel_formacion
@@ -43,35 +65,87 @@
 BEGIN;
 
 -- ============================================================
--- INSTITUTIONAL STRUCTURE
+-- AUTH & SESSIONS
 -- ============================================================
 
 -- Usuarios del sistema. Todos los perfiles (admin, instructor, aprendiz,
--- administrativo) tienen una fila aquí para autenticación.
+-- administrativo, empresa) tienen una fila aquí para autenticación.
 -- El perfil al que pertenece un usuario se almacena en usuario_perfil (pivote).
 -- Un usuario puede tener varios perfiles simultáneamente.
--- creado_por es NULL para los usuarios seed y para el primer administrador.
+-- correo_institucional : usado para iniciar sesión (UNIQUE NOT NULL).
+-- correo_personal      : solo informativo, no se usa en autenticación.
+-- creado_por           : NULL para usuarios seed y el primer administrador.
 CREATE TABLE IF NOT EXISTS usuario (
-    id              UUID        PRIMARY KEY,
-    creado_por      UUID        REFERENCES usuario(id) ON DELETE SET NULL,
-    correo          TEXT        UNIQUE NOT NULL,
-    contrasena_hash TEXT        NOT NULL,
-    nombre          TEXT        NOT NULL,
-    activo          BOOLEAN     NOT NULL DEFAULT TRUE,
-    creado_en       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en  TIMESTAMPTZ
+    id                   UUID        PRIMARY KEY,
+    creado_por           UUID        REFERENCES usuario(id) ON DELETE SET NULL,
+    correo_institucional TEXT        UNIQUE NOT NULL,
+    correo_personal      TEXT,
+    contrasena_hash      TEXT        NOT NULL,
+    nombre               TEXT        NOT NULL,
+    activo               BOOLEAN     NOT NULL DEFAULT TRUE,
+    creado_en            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    actualizado_en       TIMESTAMPTZ
 );
 
-CREATE INDEX IF NOT EXISTS idx_usuario_correo ON usuario (lower(correo));
+CREATE INDEX IF NOT EXISTS idx_usuario_correo_institucional ON usuario (lower(correo_institucional));
+CREATE INDEX IF NOT EXISTS idx_usuario_creado_por           ON usuario (creado_por);
 
 
--- Perfiles del sistema. Define las categorías de acceso de alto nivel
--- (Administrador, Administrativo, Instructor, Aprendiz).
--- Un usuario puede pertenecer a varios perfiles vía usuario_perfil.
+-- Sesiones activas de usuario. Almacena el refresh token hasheado (Argon2).
+-- El access token (JWT, 15 min) es stateless y no se guarda en la DB.
+-- El refresh token dura 1 día; al expirar se rechaza y se elimina la sesión.
+-- Cuando el access token expira, la app verifica refresh_token_hash,
+-- emite un nuevo access token y rota el refresh token (actualiza el hash).
+-- Al eliminar el usuario se eliminan todas sus sesiones (CASCADE).
+CREATE TABLE IF NOT EXISTS sesion (
+    id                  UUID        PRIMARY KEY,
+    usuario_id          UUID        NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
+    refresh_token_hash  TEXT        NOT NULL UNIQUE,
+    ip_address          TEXT,
+    user_agent          TEXT,
+    activo              BOOLEAN     NOT NULL DEFAULT TRUE,
+    expira_en           TIMESTAMPTZ NOT NULL,
+    creado_en           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    actualizado_en      TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_sesion_usuario_id         ON sesion (usuario_id);
+CREATE INDEX IF NOT EXISTS idx_sesion_refresh_token_hash ON sesion (refresh_token_hash);
+CREATE INDEX IF NOT EXISTS idx_sesion_activo_expira      ON sesion (activo, expira_en);
+
+
+-- Historial permanente de eventos de sesión.
+-- sesion_id se pone NULL si la sesión es eliminada (SET NULL); el registro
+-- histórico se conserva siempre para auditoría.
+-- evento: login | logout | token_refresh | token_expired | revoked
+CREATE TABLE IF NOT EXISTS sesion_historial (
+    id          UUID        PRIMARY KEY,
+    sesion_id   UUID        REFERENCES sesion(id) ON DELETE SET NULL,
+    usuario_id  UUID        NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
+    evento      TEXT        NOT NULL
+                    CHECK (evento IN ('login', 'logout', 'token_refresh', 'token_expired', 'revoked')),
+    ip_address  TEXT,
+    user_agent  TEXT,
+    creado_en   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_sesion_historial_sesion_id  ON sesion_historial (sesion_id);
+CREATE INDEX IF NOT EXISTS idx_sesion_historial_usuario_id ON sesion_historial (usuario_id);
+CREATE INDEX IF NOT EXISTS idx_sesion_historial_creado_en  ON sesion_historial (creado_en);
+
+-- ============================================================
+-- ACCESS CONTROL
+-- ============================================================
+
+-- Perfiles del sistema. Define las categorías de acceso de alto nivel.
+-- ruta_dashboard: ruta exclusiva de ese perfil (ej: /dashboard/administrador).
+--   Solo usuarios en usuario_perfil con ese perfil pueden acceder a esa ruta.
+-- Perfiles: Administrador, Administrativo, Instructor, Aprendiz, Empresa.
 CREATE TABLE IF NOT EXISTS perfil (
     id             UUID        PRIMARY KEY,
     nombre         TEXT        NOT NULL UNIQUE,
     descripcion    TEXT,
+    ruta_dashboard TEXT        NOT NULL,
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     actualizado_en TIMESTAMPTZ,
     creado_por     UUID        REFERENCES usuario(id) ON DELETE SET NULL
@@ -94,14 +168,13 @@ CREATE TABLE IF NOT EXISTS rol (
     UNIQUE (perfil_id, nombre)
 );
 
-CREATE INDEX IF NOT EXISTS idx_rol_perfil_id   ON rol (perfil_id);
-CREATE INDEX IF NOT EXISTS idx_rol_creado_por  ON rol (creado_por);
+CREATE INDEX IF NOT EXISTS idx_rol_perfil_id  ON rol (perfil_id);
+CREATE INDEX IF NOT EXISTS idx_rol_creado_por ON rol (creado_por);
 
 
 -- Permisos granulares del sistema.
 -- codigo: identificador técnico con convención recurso.accion (ej: fichas.ver).
 -- nombre: etiqueta legible para mostrar en la UI (ej: 'Ver fichas').
--- descripcion: explicación detallada de lo que habilita el permiso.
 CREATE TABLE IF NOT EXISTS permiso (
     id             UUID        PRIMARY KEY,
     codigo         TEXT        NOT NULL UNIQUE,
@@ -117,7 +190,6 @@ CREATE INDEX IF NOT EXISTS idx_permiso_creado_por ON permiso (creado_por);
 
 
 -- Permisos asignados a un rol específico (nivel granular).
--- Al eliminar el rol o el permiso se elimina la asignación (CASCADE).
 CREATE TABLE IF NOT EXISTS rol_permiso (
     id             UUID        PRIMARY KEY,
     rol_id         UUID        NOT NULL REFERENCES rol(id) ON DELETE CASCADE,
@@ -133,7 +205,6 @@ CREATE INDEX IF NOT EXISTS idx_rol_permiso_permiso_id ON rol_permiso (permiso_id
 
 
 -- Perfiles asignados a un usuario. Un usuario puede tener varios perfiles.
--- Al eliminar el usuario o el perfil se elimina la asignación (CASCADE).
 CREATE TABLE IF NOT EXISTS usuario_perfil (
     id             UUID        PRIMARY KEY,
     usuario_id     UUID        NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
@@ -149,7 +220,6 @@ CREATE INDEX IF NOT EXISTS idx_usuario_perfil_perfil_id  ON usuario_perfil (perf
 
 
 -- Roles específicos asignados a un usuario.
--- Al eliminar el usuario o el rol se elimina la asignación (CASCADE).
 CREATE TABLE IF NOT EXISTS usuario_rol (
     id             UUID        PRIMARY KEY,
     usuario_id     UUID        NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
@@ -163,14 +233,20 @@ CREATE TABLE IF NOT EXISTS usuario_rol (
 CREATE INDEX IF NOT EXISTS idx_usuario_rol_usuario_id ON usuario_rol (usuario_id);
 CREATE INDEX IF NOT EXISTS idx_usuario_rol_rol_id     ON usuario_rol (rol_id);
 
+-- ============================================================
+-- INSTITUTIONAL STRUCTURE
+-- ============================================================
 
 -- Regionales del SENA. Nivel más alto de la estructura institucional.
 CREATE TABLE IF NOT EXISTS regional (
     id             UUID        PRIMARY KEY,
     nombre         TEXT        NOT NULL UNIQUE,
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ
+    actualizado_en TIMESTAMPTZ,
+    creado_por     UUID        REFERENCES usuario(id) ON DELETE SET NULL
 );
+
+CREATE INDEX IF NOT EXISTS idx_regional_creado_por ON regional (creado_por);
 
 
 -- Centros de formación. Pertenecen a una regional.
@@ -180,10 +256,12 @@ CREATE TABLE IF NOT EXISTS centro (
     regional_id    UUID        NOT NULL REFERENCES regional(id) ON DELETE RESTRICT,
     nombre         TEXT        NOT NULL,
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ
+    actualizado_en TIMESTAMPTZ,
+    creado_por     UUID        REFERENCES usuario(id) ON DELETE SET NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_centro_regional_id ON centro (regional_id);
+CREATE INDEX IF NOT EXISTS idx_centro_creado_por  ON centro (creado_por);
 
 
 -- Coordinaciones académicas dentro de un centro.
@@ -193,10 +271,12 @@ CREATE TABLE IF NOT EXISTS coordinacion (
     centro_id      UUID        NOT NULL REFERENCES centro(id) ON DELETE RESTRICT,
     nombre         TEXT        NOT NULL,
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ
+    actualizado_en TIMESTAMPTZ,
+    creado_por     UUID        REFERENCES usuario(id) ON DELETE SET NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_coordinacion_centro_id ON coordinacion (centro_id);
+CREATE INDEX IF NOT EXISTS idx_coordinacion_centro_id  ON coordinacion (centro_id);
+CREATE INDEX IF NOT EXISTS idx_coordinacion_creado_por ON coordinacion (creado_por);
 
 
 -- Sedes físicas dentro de un centro.
@@ -206,10 +286,12 @@ CREATE TABLE IF NOT EXISTS sede (
     centro_id      UUID        NOT NULL REFERENCES centro(id) ON DELETE RESTRICT,
     nombre         TEXT        NOT NULL,
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ
+    actualizado_en TIMESTAMPTZ,
+    creado_por     UUID        REFERENCES usuario(id) ON DELETE SET NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_sede_centro_id ON sede (centro_id);
+CREATE INDEX IF NOT EXISTS idx_sede_centro_id  ON sede (centro_id);
+CREATE INDEX IF NOT EXISTS idx_sede_creado_por ON sede (creado_por);
 
 
 -- Ambientes o aulas dentro de una sede.
@@ -220,10 +302,12 @@ CREATE TABLE IF NOT EXISTS ambiente (
     nombre         TEXT        NOT NULL,
     capacidad      INTEGER,
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ
+    actualizado_en TIMESTAMPTZ,
+    creado_por     UUID        REFERENCES usuario(id) ON DELETE SET NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_ambiente_sede_id ON ambiente (sede_id);
+CREATE INDEX IF NOT EXISTS idx_ambiente_sede_id   ON ambiente (sede_id);
+CREATE INDEX IF NOT EXISTS idx_ambiente_creado_por ON ambiente (creado_por);
 
 -- ============================================================
 -- ACADEMIC KNOWLEDGE STRUCTURE
@@ -234,8 +318,11 @@ CREATE TABLE IF NOT EXISTS red_conocimiento (
     id             UUID        PRIMARY KEY,
     nombre         TEXT        NOT NULL UNIQUE,
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ
+    actualizado_en TIMESTAMPTZ,
+    creado_por     UUID        REFERENCES usuario(id) ON DELETE SET NULL
 );
+
+CREATE INDEX IF NOT EXISTS idx_red_conocimiento_creado_por ON red_conocimiento (creado_por);
 
 
 -- Áreas de desempeño dentro de una red de conocimiento.
@@ -245,10 +332,12 @@ CREATE TABLE IF NOT EXISTS area (
     red_conocimiento_id  UUID        NOT NULL REFERENCES red_conocimiento(id) ON DELETE RESTRICT,
     nombre               TEXT        NOT NULL,
     creado_en            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en       TIMESTAMPTZ
+    actualizado_en       TIMESTAMPTZ,
+    creado_por           UUID        REFERENCES usuario(id) ON DELETE SET NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_area_red_conocimiento_id ON area (red_conocimiento_id);
+CREATE INDEX IF NOT EXISTS idx_area_creado_por          ON area (creado_por);
 
 
 -- Niveles de formación (Técnico, Tecnólogo, Operario, etc.).
@@ -256,8 +345,11 @@ CREATE TABLE IF NOT EXISTS nivel_formacion (
     id             UUID        PRIMARY KEY,
     nombre         TEXT        NOT NULL UNIQUE,
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ
+    actualizado_en TIMESTAMPTZ,
+    creado_por     UUID        REFERENCES usuario(id) ON DELETE SET NULL
 );
+
+CREATE INDEX IF NOT EXISTS idx_nivel_formacion_creado_por ON nivel_formacion (creado_por);
 
 -- ============================================================
 -- PEOPLE
@@ -277,12 +369,14 @@ CREATE TABLE IF NOT EXISTS instructor (
     correo         TEXT,
     genero         TEXT        NOT NULL DEFAULT 'M',
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ
+    actualizado_en TIMESTAMPTZ,
+    creado_por     UUID        REFERENCES usuario(id) ON DELETE SET NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_instructor_centro_id  ON instructor (centro_id);
 CREATE INDEX IF NOT EXISTS idx_instructor_area_id    ON instructor (area_id);
 CREATE INDEX IF NOT EXISTS idx_instructor_usuario_id ON instructor (usuario_id);
+CREATE INDEX IF NOT EXISTS idx_instructor_creado_por ON instructor (creado_por);
 
 
 -- Aprendices vinculados a una regional.
@@ -298,11 +392,13 @@ CREATE TABLE IF NOT EXISTS aprendiz (
     correo         TEXT,
     ficha          TEXT,
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ
+    actualizado_en TIMESTAMPTZ,
+    creado_por     UUID        REFERENCES usuario(id) ON DELETE SET NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_aprendiz_regional_id ON aprendiz (regional_id);
 CREATE INDEX IF NOT EXISTS idx_aprendiz_usuario_id  ON aprendiz (usuario_id);
+CREATE INDEX IF NOT EXISTS idx_aprendiz_creado_por  ON aprendiz (creado_por);
 
 
 -- Personal administrativo vinculado a un centro.
@@ -317,11 +413,13 @@ CREATE TABLE IF NOT EXISTS personal_administrativo (
     correo         TEXT,
     cargo          TEXT        NOT NULL,
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ
+    actualizado_en TIMESTAMPTZ,
+    creado_por     UUID        REFERENCES usuario(id) ON DELETE SET NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_personal_administrativo_centro_id  ON personal_administrativo (centro_id);
 CREATE INDEX IF NOT EXISTS idx_personal_administrativo_usuario_id ON personal_administrativo (usuario_id);
+CREATE INDEX IF NOT EXISTS idx_personal_administrativo_creado_por ON personal_administrativo (creado_por);
 
 -- ============================================================
 -- ACADEMIC CONTENT CHAIN
@@ -333,8 +431,11 @@ CREATE TABLE IF NOT EXISTS proyecto_formativo (
     codigo         TEXT        NOT NULL UNIQUE,
     nombre         TEXT        NOT NULL,
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ
+    actualizado_en TIMESTAMPTZ,
+    creado_por     UUID        REFERENCES usuario(id) ON DELETE SET NULL
 );
+
+CREATE INDEX IF NOT EXISTS idx_proyecto_formativo_creado_por ON proyecto_formativo (creado_por);
 
 
 -- Fases del proyecto formativo (ej: Análisis, Planeación, Ejecución).
@@ -344,10 +445,12 @@ CREATE TABLE IF NOT EXISTS fase_proyecto (
     proyecto_formativo_id UUID        NOT NULL REFERENCES proyecto_formativo(id) ON DELETE CASCADE,
     nombre                TEXT        NOT NULL,
     creado_en             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en        TIMESTAMPTZ
+    actualizado_en        TIMESTAMPTZ,
+    creado_por            UUID        REFERENCES usuario(id) ON DELETE SET NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_fase_proyecto_proyecto_formativo_id ON fase_proyecto (proyecto_formativo_id);
+CREATE INDEX IF NOT EXISTS idx_fase_proyecto_creado_por            ON fase_proyecto (creado_por);
 
 
 -- Actividades del proyecto agrupadas por fase.
@@ -357,10 +460,12 @@ CREATE TABLE IF NOT EXISTS actividad_proyecto (
     fase_proyecto_id UUID        NOT NULL REFERENCES fase_proyecto(id) ON DELETE CASCADE,
     nombre           TEXT        NOT NULL,
     creado_en        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en   TIMESTAMPTZ
+    actualizado_en   TIMESTAMPTZ,
+    creado_por       UUID        REFERENCES usuario(id) ON DELETE SET NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_actividad_proyecto_fase_proyecto_id ON actividad_proyecto (fase_proyecto_id);
+CREATE INDEX IF NOT EXISTS idx_actividad_proyecto_creado_por       ON actividad_proyecto (creado_por);
 
 
 -- Actividades de aprendizaje dentro de una actividad de proyecto.
@@ -374,10 +479,12 @@ CREATE TABLE IF NOT EXISTS actividad_aprendizaje (
     fecha_fin             DATE,
     orden                 INTEGER     NOT NULL DEFAULT 0,
     creado_en             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en        TIMESTAMPTZ
+    actualizado_en        TIMESTAMPTZ,
+    creado_por            UUID        REFERENCES usuario(id) ON DELETE SET NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_actividad_aprendizaje_actividad_proyecto_id ON actividad_aprendizaje (actividad_proyecto_id);
+CREATE INDEX IF NOT EXISTS idx_actividad_aprendizaje_creado_por            ON actividad_aprendizaje (creado_por);
 
 
 -- Guía de aprendizaje adjunta a una actividad (1:1).
@@ -387,10 +494,12 @@ CREATE TABLE IF NOT EXISTS guia_aprendizaje (
     url                      TEXT        NOT NULL,
     subido_en                TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     creado_en                TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en           TIMESTAMPTZ
+    actualizado_en           TIMESTAMPTZ,
+    creado_por               UUID        REFERENCES usuario(id) ON DELETE SET NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_guia_aprendizaje_actividad_aprendizaje_id ON guia_aprendizaje (actividad_aprendizaje_id);
+CREATE INDEX IF NOT EXISTS idx_guia_aprendizaje_creado_por               ON guia_aprendizaje (creado_por);
 
 
 -- Evidencia de aprendizaje asociada a una actividad (1:1).
@@ -399,10 +508,12 @@ CREATE TABLE IF NOT EXISTS evidencia_aprendizaje (
     actividad_aprendizaje_id UUID        NOT NULL UNIQUE REFERENCES actividad_aprendizaje(id) ON DELETE CASCADE,
     descripcion              TEXT,
     creado_en                TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en           TIMESTAMPTZ
+    actualizado_en           TIMESTAMPTZ,
+    creado_por               UUID        REFERENCES usuario(id) ON DELETE SET NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_evidencia_aprendizaje_actividad_aprendizaje_id ON evidencia_aprendizaje (actividad_aprendizaje_id);
+CREATE INDEX IF NOT EXISTS idx_evidencia_aprendizaje_creado_por               ON evidencia_aprendizaje (creado_por);
 
 
 -- Entrega de evidencia por parte de un aprendiz, con calificación del instructor.
@@ -421,11 +532,13 @@ CREATE TABLE IF NOT EXISTS entrega_evidencia (
     entregado_en             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     creado_en                TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     actualizado_en           TIMESTAMPTZ,
+    creado_por               UUID        REFERENCES usuario(id) ON DELETE SET NULL,
     UNIQUE (evidencia_aprendizaje_id, usuario_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_entrega_evidencia_evidencia_aprendizaje_id ON entrega_evidencia (evidencia_aprendizaje_id);
 CREATE INDEX IF NOT EXISTS idx_entrega_evidencia_usuario_id               ON entrega_evidencia (usuario_id);
+CREATE INDEX IF NOT EXISTS idx_entrega_evidencia_creado_por               ON entrega_evidencia (creado_por);
 
 
 -- Secciones dentro de una actividad de aprendizaje.
@@ -440,10 +553,12 @@ CREATE TABLE IF NOT EXISTS seccion_actividad (
     fecha_fin                DATE,
     orden                    INTEGER     NOT NULL DEFAULT 0,
     creado_en                TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en           TIMESTAMPTZ
+    actualizado_en           TIMESTAMPTZ,
+    creado_por               UUID        REFERENCES usuario(id) ON DELETE SET NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_seccion_actividad_actividad_aprendizaje_id ON seccion_actividad (actividad_aprendizaje_id);
+CREATE INDEX IF NOT EXISTS idx_seccion_actividad_creado_por               ON seccion_actividad (creado_por);
 
 
 -- Subsecciones dentro de una sección de actividad.
@@ -458,10 +573,12 @@ CREATE TABLE IF NOT EXISTS sub_seccion_actividad (
     fecha_fin      DATE,
     orden          INTEGER     NOT NULL DEFAULT 0,
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ
+    actualizado_en TIMESTAMPTZ,
+    creado_por     UUID        REFERENCES usuario(id) ON DELETE SET NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_sub_seccion_actividad_seccion_id ON sub_seccion_actividad (seccion_id);
+CREATE INDEX IF NOT EXISTS idx_sub_seccion_actividad_seccion_id  ON sub_seccion_actividad (seccion_id);
+CREATE INDEX IF NOT EXISTS idx_sub_seccion_actividad_creado_por  ON sub_seccion_actividad (creado_por);
 
 
 -- Guías adjuntas directamente a una actividad de proyecto (para el instructor).
@@ -474,10 +591,12 @@ CREATE TABLE IF NOT EXISTS guia_actividad_proyecto (
     orden                 INTEGER     NOT NULL DEFAULT 0,
     subido_en             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     creado_en             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en        TIMESTAMPTZ
+    actualizado_en        TIMESTAMPTZ,
+    creado_por            UUID        REFERENCES usuario(id) ON DELETE SET NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_guia_actividad_proyecto_actividad_proyecto_id ON guia_actividad_proyecto (actividad_proyecto_id);
+CREATE INDEX IF NOT EXISTS idx_guia_actividad_proyecto_creado_por            ON guia_actividad_proyecto (creado_por);
 
 -- ============================================================
 -- PROGRAMS & FICHAS
@@ -491,11 +610,13 @@ CREATE TABLE IF NOT EXISTS programa_formacion (
     nivel_formacion_id  UUID        NOT NULL REFERENCES nivel_formacion(id) ON DELETE RESTRICT,
     nombre              TEXT        NOT NULL,
     creado_en           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en      TIMESTAMPTZ
+    actualizado_en      TIMESTAMPTZ,
+    creado_por          UUID        REFERENCES usuario(id) ON DELETE SET NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_programa_formacion_area_id            ON programa_formacion (area_id);
 CREATE INDEX IF NOT EXISTS idx_programa_formacion_nivel_formacion_id ON programa_formacion (nivel_formacion_id);
+CREATE INDEX IF NOT EXISTS idx_programa_formacion_creado_por         ON programa_formacion (creado_por);
 
 
 -- Ficha de formación: grupo de aprendices en un programa.
@@ -509,13 +630,15 @@ CREATE TABLE IF NOT EXISTS ficha_formacion (
     coordinacion_id       UUID        NOT NULL REFERENCES coordinacion(id) ON DELETE RESTRICT,
     instructor_id         UUID        REFERENCES instructor(id) ON DELETE SET NULL,
     creado_en             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en        TIMESTAMPTZ
+    actualizado_en        TIMESTAMPTZ,
+    creado_por            UUID        REFERENCES usuario(id) ON DELETE SET NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_ficha_formacion_programa_formacion_id ON ficha_formacion (programa_formacion_id);
 CREATE INDEX IF NOT EXISTS idx_ficha_formacion_proyecto_formativo_id ON ficha_formacion (proyecto_formativo_id);
 CREATE INDEX IF NOT EXISTS idx_ficha_formacion_coordinacion_id       ON ficha_formacion (coordinacion_id);
 CREATE INDEX IF NOT EXISTS idx_ficha_formacion_instructor_id         ON ficha_formacion (instructor_id);
+CREATE INDEX IF NOT EXISTS idx_ficha_formacion_creado_por            ON ficha_formacion (creado_por);
 
 
 -- Competencias asignadas: qué instructores dictan qué fichas.
@@ -526,11 +649,13 @@ CREATE TABLE IF NOT EXISTS ficha_instructor_competencia (
     instructor_id  UUID        NOT NULL REFERENCES instructor(id) ON DELETE CASCADE,
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     actualizado_en TIMESTAMPTZ,
+    creado_por     UUID        REFERENCES usuario(id) ON DELETE SET NULL,
     UNIQUE (ficha_id, instructor_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_ficha_instructor_competencia_ficha_id      ON ficha_instructor_competencia (ficha_id);
 CREATE INDEX IF NOT EXISTS idx_ficha_instructor_competencia_instructor_id ON ficha_instructor_competencia (instructor_id);
+CREATE INDEX IF NOT EXISTS idx_ficha_instructor_competencia_creado_por    ON ficha_instructor_competencia (creado_por);
 
 
 -- Registro de asistencia de aprendices por ficha y fecha.
@@ -542,11 +667,13 @@ CREATE TABLE IF NOT EXISTS asistencia_aprendiz (
     estado         TEXT        NOT NULL DEFAULT 'Presente',
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     actualizado_en TIMESTAMPTZ,
+    creado_por     UUID        REFERENCES usuario(id) ON DELETE SET NULL,
     UNIQUE (ficha_id, aprendiz_id, fecha)
 );
 
 CREATE INDEX IF NOT EXISTS idx_asistencia_aprendiz_ficha_id    ON asistencia_aprendiz (ficha_id);
 CREATE INDEX IF NOT EXISTS idx_asistencia_aprendiz_aprendiz_id ON asistencia_aprendiz (aprendiz_id);
+CREATE INDEX IF NOT EXISTS idx_asistencia_aprendiz_creado_por  ON asistencia_aprendiz (creado_por);
 
 -- ============================================================
 -- LEARNER-FACING EXTRAS
@@ -575,20 +702,23 @@ CREATE TABLE IF NOT EXISTS notificacion (
     leida          BOOLEAN     NOT NULL DEFAULT FALSE,
     url_destino    TEXT,
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ
+    actualizado_en TIMESTAMPTZ,
+    creado_por     UUID        REFERENCES usuario(id) ON DELETE SET NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_notificacion_usuario_id ON notificacion (usuario_id);
+CREATE INDEX IF NOT EXISTS idx_notificacion_creado_por ON notificacion (creado_por);
 
 -- ============================================================
 -- SEED DATA
 -- ============================================================
 
-INSERT INTO perfil (id, nombre, descripcion) VALUES
-    (gen_random_uuid(), 'Administrador',  'Gestión de usuarios, estructura institucional y académica.'),
-    (gen_random_uuid(), 'Administrativo', 'Apoyo académico y operativo: fichas, programas y ambientes.'),
-    (gen_random_uuid(), 'Instructor',     'Ejecución formativa: fichas, fases, actividades y calificaciones.'),
-    (gen_random_uuid(), 'Aprendiz',       'Ruta de aprendizaje: fichas, evidencias y calificaciones.')
+INSERT INTO perfil (id, nombre, descripcion, ruta_dashboard) VALUES
+    (gen_random_uuid(), 'Administrador',  'Gestión de usuarios, estructura institucional y académica.',              '/dashboard/administrador'),
+    (gen_random_uuid(), 'Administrativo', 'Apoyo académico y operativo: fichas, programas y ambientes.',             '/dashboard/administrativo'),
+    (gen_random_uuid(), 'Instructor',     'Ejecución formativa: fichas, fases, actividades y calificaciones.',       '/dashboard/instructor'),
+    (gen_random_uuid(), 'Aprendiz',       'Ruta de aprendizaje: fichas, evidencias y calificaciones.',               '/dashboard/aprendiz'),
+    (gen_random_uuid(), 'Empresa',        'Acceso empresarial: seguimiento de aprendices en etapa productiva.',      '/dashboard/empresa')
 ON CONFLICT (nombre) DO NOTHING;
 
 INSERT INTO nivel_formacion (id, nombre) VALUES
@@ -607,12 +737,12 @@ ON CONFLICT DO NOTHING;
 
 -- Seed users (argon2 hashes must be regenerated by running the app seed once).
 -- Passwords: Admin123* / Adminvo123* / Instructor123* / Aprendiz123*
-INSERT INTO usuario (id, correo, contrasena_hash, nombre, activo) VALUES
+INSERT INTO usuario (id, correo_institucional, contrasena_hash, nombre, activo) VALUES
     ('00000000-0000-0000-0000-000000000001', 'admin@senalearn.edu.co',          'REPLACE_WITH_ARGON2_HASH', 'Laura Moreno',  TRUE),
     ('00000000-0000-0000-0000-000000000002', 'administrativo@senalearn.edu.co', 'REPLACE_WITH_ARGON2_HASH', 'Carlos Ruiz',   TRUE),
     ('00000000-0000-0000-0000-000000000003', 'instructor@senalearn.edu.co',     'REPLACE_WITH_ARGON2_HASH', 'Diana Beltrán', TRUE),
     ('00000000-0000-0000-0000-000000000004', 'aprendiz@senalearn.edu.co',       'REPLACE_WITH_ARGON2_HASH', 'Miguel Torres', TRUE)
-ON CONFLICT (correo) DO NOTHING;
+ON CONFLICT (correo_institucional) DO NOTHING;
 
 -- Assign each seed user to its profile
 INSERT INTO usuario_perfil (id, usuario_id, perfil_id)
@@ -622,9 +752,9 @@ FROM (VALUES
     ('administrativo@senalearn.edu.co', 'Administrativo'),
     ('instructor@senalearn.edu.co',     'Instructor'),
     ('aprendiz@senalearn.edu.co',       'Aprendiz')
-) AS mapping(correo, perfil_nombre)
-JOIN usuario  u ON u.correo    = mapping.correo
-JOIN perfil   p ON p.nombre    = mapping.perfil_nombre
+) AS mapping(correo_institucional, perfil_nombre)
+JOIN usuario u ON u.correo_institucional = mapping.correo_institucional
+JOIN perfil  p ON p.nombre               = mapping.perfil_nombre
 ON CONFLICT (usuario_id, perfil_id) DO NOTHING;
 
 COMMIT;

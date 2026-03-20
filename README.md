@@ -23,7 +23,7 @@
 | Capa | Tecnología |
 |---|---|
 | Backend | Python 3.11+ · Flask 3.x |
-| Base de datos | PostgreSQL 15+ |
+| Base de datos | PostgreSQL 17+ |
 | Driver BD | `psycopg` 3.x (psycopg3) |
 | Seguridad | `werkzeug.security` — hashing scrypt |
 | Frontend | Bootstrap 4 (SB Admin 2) · Jinja2 |
@@ -35,7 +35,7 @@
 ## Requisitos previos
 
 - **Python 3.11** o superior
-- **PostgreSQL 15** o superior corriendo localmente (pgAdmin, DBngin, Postgres.app, etc.)
+- **PostgreSQL 17** o superior corriendo localmente (pgAdmin, DBngin, Postgres.app, etc.)
 - **pip**
 
 ---
