@@ -19,7 +19,8 @@
 --   row revokes both tokens simultaneously.
 --
 -- ── actualizado_en ──────────────────────────────────────────
---   NULL until the first UPDATE. Set by the app on every UPDATE.
+--   DEFAULT NULL — NULL until the app sets it on the first UPDATE.
+--   Explicit DEFAULT NULL makes the intent clear in every table.
 --
 -- ── creado_por ──────────────────────────────────────────────
 --   NULL for the provisional admin and catalog rows.
@@ -106,7 +107,7 @@ CREATE TABLE IF NOT EXISTS tipo_documento (
 
     -- timestamps
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ
+    actualizado_en TIMESTAMPTZ DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_tipo_documento_codigo ON tipo_documento (codigo);
@@ -124,7 +125,7 @@ CREATE TABLE IF NOT EXISTS tipo_invalidacion_sesion (
 
     -- timestamps
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ
+    actualizado_en TIMESTAMPTZ DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_tipo_invalidacion_sesion_codigo ON tipo_invalidacion_sesion (codigo);
@@ -142,7 +143,7 @@ CREATE TABLE IF NOT EXISTS usuario (
     -- audit
     creado_por           UUID        REFERENCES usuario(id) ON DELETE SET NULL,
 
-    -- credentials (login — correo_personal vive en persona)
+    -- credentials (correo_personal vive en persona)
     correo_institucional TEXT        COLLATE "C" UNIQUE NOT NULL,
     contrasena_hash      TEXT        NOT NULL,
 
@@ -154,7 +155,7 @@ CREATE TABLE IF NOT EXISTS usuario (
 
     -- timestamps
     creado_en            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en       TIMESTAMPTZ,
+    actualizado_en       TIMESTAMPTZ DEFAULT NULL,
 
     -- constraints
     CHECK (correo_institucional = lower(correo_institucional)),
@@ -166,9 +167,9 @@ CREATE INDEX IF NOT EXISTS idx_usuario_creado_por           ON usuario (creado_p
 
 
 -- Información personal de los usuarios reales del sistema.
--- usuario_id NOT NULL UNIQUE: relación 1:1 con usuario.
--- Apunta a usuario (no al revés) porque usuario puede existir sin persona
--- (admin provisional), pero persona siempre pertenece a un usuario.
+-- Apunta a usuario: persona siempre pertenece a un usuario, pero
+-- usuario puede existir sin persona (admin provisional).
+-- usuario_id NOT NULL UNIQUE: relación 1:1.
 CREATE TABLE IF NOT EXISTS persona (
     -- identity
     id                UUID        PRIMARY KEY,
@@ -194,7 +195,7 @@ CREATE TABLE IF NOT EXISTS persona (
 
     -- timestamps
     creado_en         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en    TIMESTAMPTZ,
+    actualizado_en    TIMESTAMPTZ DEFAULT NULL,
 
     -- constraints
     CHECK (nombres   = upper(nombres)),
@@ -217,7 +218,7 @@ CREATE TABLE IF NOT EXISTS sesion (
 
     -- invalidation (NULL mientras activo)
     tipo_invalidacion_id UUID        REFERENCES tipo_invalidacion_sesion(id) ON DELETE RESTRICT,
-    invalidado_en        TIMESTAMPTZ,
+    invalidado_en        TIMESTAMPTZ DEFAULT NULL,
 
     -- refresh token (Argon2 del valor real; COLLATE "C" para hash ASCII)
     refresh_token_hash   TEXT        COLLATE "C" NOT NULL UNIQUE,
@@ -232,7 +233,7 @@ CREATE TABLE IF NOT EXISTS sesion (
 
     -- timestamps
     creado_en            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en       TIMESTAMPTZ,
+    actualizado_en       TIMESTAMPTZ DEFAULT NULL,
 
     -- sesión inactiva debe tener siempre motivo y timestamp
     CHECK (
@@ -249,6 +250,7 @@ CREATE INDEX IF NOT EXISTS idx_sesion_tipo_invalidacion  ON sesion (tipo_invalid
 
 -- Log inmutable de eventos de sesión. Nunca se borra.
 -- sesion_id → SET NULL si la sesión es eliminada; el historial persiste.
+-- Sin actualizado_en: registro inmutable.
 CREATE TABLE IF NOT EXISTS sesion_historial (
     -- identity
     id         UUID        PRIMARY KEY,
@@ -300,7 +302,7 @@ CREATE TABLE IF NOT EXISTS perfil (
 
     -- timestamps
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ
+    actualizado_en TIMESTAMPTZ DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_perfil_creado_por ON perfil (creado_por);
@@ -323,7 +325,7 @@ CREATE TABLE IF NOT EXISTS rol (
 
     -- timestamps
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ,
+    actualizado_en TIMESTAMPTZ DEFAULT NULL,
 
     UNIQUE (perfil_id, nombre)
 );
@@ -347,7 +349,7 @@ CREATE TABLE IF NOT EXISTS permiso (
 
     -- timestamps
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ
+    actualizado_en TIMESTAMPTZ DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_permiso_codigo     ON permiso (codigo);
@@ -368,7 +370,7 @@ CREATE TABLE IF NOT EXISTS rol_permiso (
 
     -- timestamps
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ,
+    actualizado_en TIMESTAMPTZ DEFAULT NULL,
 
     UNIQUE (rol_id, permiso_id)
 );
@@ -391,7 +393,7 @@ CREATE TABLE IF NOT EXISTS usuario_perfil (
 
     -- timestamps
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ,
+    actualizado_en TIMESTAMPTZ DEFAULT NULL,
 
     UNIQUE (usuario_id, perfil_id)
 );
@@ -414,7 +416,7 @@ CREATE TABLE IF NOT EXISTS usuario_rol (
 
     -- timestamps
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ,
+    actualizado_en TIMESTAMPTZ DEFAULT NULL,
 
     UNIQUE (usuario_id, rol_id)
 );
@@ -439,7 +441,7 @@ CREATE TABLE IF NOT EXISTS regional (
 
     -- timestamps
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ
+    actualizado_en TIMESTAMPTZ DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_regional_creado_por ON regional (creado_por);
@@ -461,7 +463,7 @@ CREATE TABLE IF NOT EXISTS centro (
 
     -- timestamps
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ
+    actualizado_en TIMESTAMPTZ DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_centro_regional_id ON centro (regional_id);
@@ -484,7 +486,7 @@ CREATE TABLE IF NOT EXISTS coordinacion (
 
     -- timestamps
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ
+    actualizado_en TIMESTAMPTZ DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_coordinacion_centro_id  ON coordinacion (centro_id);
@@ -507,7 +509,7 @@ CREATE TABLE IF NOT EXISTS sede (
 
     -- timestamps
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ
+    actualizado_en TIMESTAMPTZ DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_sede_centro_id  ON sede (centro_id);
@@ -531,7 +533,7 @@ CREATE TABLE IF NOT EXISTS ambiente (
 
     -- timestamps
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ
+    actualizado_en TIMESTAMPTZ DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_ambiente_sede_id    ON ambiente (sede_id);
@@ -554,7 +556,7 @@ CREATE TABLE IF NOT EXISTS red_conocimiento (
 
     -- timestamps
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ
+    actualizado_en TIMESTAMPTZ DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_red_conocimiento_creado_por ON red_conocimiento (creado_por);
@@ -576,7 +578,7 @@ CREATE TABLE IF NOT EXISTS area (
 
     -- timestamps
     creado_en            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en       TIMESTAMPTZ
+    actualizado_en       TIMESTAMPTZ DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_area_red_conocimiento_id ON area (red_conocimiento_id);
@@ -596,7 +598,7 @@ CREATE TABLE IF NOT EXISTS nivel_formacion (
 
     -- timestamps
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ
+    actualizado_en TIMESTAMPTZ DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_nivel_formacion_creado_por ON nivel_formacion (creado_por);
@@ -604,18 +606,16 @@ CREATE INDEX IF NOT EXISTS idx_nivel_formacion_creado_por ON nivel_formacion (cr
 -- ============================================================
 -- PEOPLE
 -- ============================================================
--- Cada tabla de persona lleva persona_id NOT NULL UNIQUE.
--- persona.usuario_id lleva al usuario con las credenciales.
--- No se repite usuario_id aquí: se accede vía persona.
+-- Cada tabla lleva persona_id NOT NULL UNIQUE.
+-- El usuario con credenciales se alcanza vía persona.usuario_id.
 -- ============================================================
 
 -- Instructores vinculados a un centro y opcionalmente a un área.
--- No se puede eliminar un centro o área con instructores activos (RESTRICT).
 CREATE TABLE IF NOT EXISTS instructor (
     -- identity
     id          UUID        PRIMARY KEY,
 
-    -- person (1:1 — un instructor = una persona)
+    -- person (1:1)
     persona_id  UUID        NOT NULL UNIQUE REFERENCES persona(id) ON DELETE RESTRICT,
 
     -- institutional
@@ -627,7 +627,7 @@ CREATE TABLE IF NOT EXISTS instructor (
 
     -- timestamps
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ
+    actualizado_en TIMESTAMPTZ DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_instructor_persona_id ON instructor (persona_id);
@@ -637,7 +637,6 @@ CREATE INDEX IF NOT EXISTS idx_instructor_creado_por ON instructor (creado_por);
 
 
 -- Aprendices vinculados a una regional.
--- No se puede eliminar una regional con aprendices (RESTRICT).
 CREATE TABLE IF NOT EXISTS aprendiz (
     -- identity
     id          UUID        PRIMARY KEY,
@@ -656,7 +655,7 @@ CREATE TABLE IF NOT EXISTS aprendiz (
 
     -- timestamps
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ
+    actualizado_en TIMESTAMPTZ DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_aprendiz_persona_id  ON aprendiz (persona_id);
@@ -665,7 +664,6 @@ CREATE INDEX IF NOT EXISTS idx_aprendiz_creado_por  ON aprendiz (creado_por);
 
 
 -- Personal administrativo vinculado a un centro.
--- No se puede eliminar un centro con personal administrativo (RESTRICT).
 CREATE TABLE IF NOT EXISTS personal_administrativo (
     -- identity
     id          UUID        PRIMARY KEY,
@@ -684,7 +682,7 @@ CREATE TABLE IF NOT EXISTS personal_administrativo (
 
     -- timestamps
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ
+    actualizado_en TIMESTAMPTZ DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_personal_administrativo_persona_id ON personal_administrativo (persona_id);
@@ -709,7 +707,7 @@ CREATE TABLE IF NOT EXISTS proyecto_formativo (
 
     -- timestamps
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ
+    actualizado_en TIMESTAMPTZ DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_proyecto_formativo_creado_por ON proyecto_formativo (creado_por);
@@ -731,7 +729,7 @@ CREATE TABLE IF NOT EXISTS fase_proyecto (
 
     -- timestamps
     creado_en             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en        TIMESTAMPTZ
+    actualizado_en        TIMESTAMPTZ DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_fase_proyecto_proyecto_formativo_id ON fase_proyecto (proyecto_formativo_id);
@@ -754,7 +752,7 @@ CREATE TABLE IF NOT EXISTS actividad_proyecto (
 
     -- timestamps
     creado_en        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en   TIMESTAMPTZ
+    actualizado_en   TIMESTAMPTZ DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_actividad_proyecto_fase_proyecto_id ON actividad_proyecto (fase_proyecto_id);
@@ -783,7 +781,7 @@ CREATE TABLE IF NOT EXISTS actividad_aprendizaje (
 
     -- timestamps
     creado_en             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en        TIMESTAMPTZ
+    actualizado_en        TIMESTAMPTZ DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_actividad_aprendizaje_actividad_proyecto_id ON actividad_aprendizaje (actividad_proyecto_id);
@@ -808,7 +806,7 @@ CREATE TABLE IF NOT EXISTS guia_aprendizaje (
 
     -- timestamps
     creado_en                TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en           TIMESTAMPTZ
+    actualizado_en           TIMESTAMPTZ DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_guia_aprendizaje_actividad_aprendizaje_id ON guia_aprendizaje (actividad_aprendizaje_id);
@@ -832,7 +830,7 @@ CREATE TABLE IF NOT EXISTS evidencia_aprendizaje (
 
     -- timestamps
     creado_en                TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en           TIMESTAMPTZ
+    actualizado_en           TIMESTAMPTZ DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_evidencia_aprendizaje_actividad_aprendizaje_id ON evidencia_aprendizaje (actividad_aprendizaje_id);
@@ -859,14 +857,14 @@ CREATE TABLE IF NOT EXISTS entrega_evidencia (
     observaciones            TEXT,
     retroalimentacion        TEXT,
     aprueba                  BOOLEAN,
-    calificado_en            TIMESTAMPTZ,
+    calificado_en            TIMESTAMPTZ DEFAULT NULL,
 
     -- audit
     creado_por               UUID        REFERENCES usuario(id) ON DELETE SET NULL,
 
     -- timestamps
     creado_en                TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en           TIMESTAMPTZ,
+    actualizado_en           TIMESTAMPTZ DEFAULT NULL,
 
     UNIQUE (evidencia_aprendizaje_id, usuario_id)
 );
@@ -903,7 +901,7 @@ CREATE TABLE IF NOT EXISTS seccion_actividad (
 
     -- timestamps
     creado_en                TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en           TIMESTAMPTZ
+    actualizado_en           TIMESTAMPTZ DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_seccion_actividad_actividad_aprendizaje_id ON seccion_actividad (actividad_aprendizaje_id);
@@ -936,7 +934,7 @@ CREATE TABLE IF NOT EXISTS sub_seccion_actividad (
 
     -- timestamps
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ
+    actualizado_en TIMESTAMPTZ DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_sub_seccion_actividad_seccion_id ON sub_seccion_actividad (seccion_id);
@@ -964,7 +962,7 @@ CREATE TABLE IF NOT EXISTS guia_actividad_proyecto (
 
     -- timestamps
     creado_en             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en        TIMESTAMPTZ
+    actualizado_en        TIMESTAMPTZ DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_guia_actividad_proyecto_actividad_proyecto_id ON guia_actividad_proyecto (actividad_proyecto_id);
@@ -991,7 +989,7 @@ CREATE TABLE IF NOT EXISTS programa_formacion (
 
     -- timestamps
     creado_en           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en      TIMESTAMPTZ
+    actualizado_en      TIMESTAMPTZ DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_programa_formacion_area_id            ON programa_formacion (area_id);
@@ -1018,7 +1016,7 @@ CREATE TABLE IF NOT EXISTS ficha_formacion (
 
     -- timestamps
     creado_en             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en        TIMESTAMPTZ
+    actualizado_en        TIMESTAMPTZ DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_ficha_formacion_programa_formacion_id ON ficha_formacion (programa_formacion_id);
@@ -1042,7 +1040,7 @@ CREATE TABLE IF NOT EXISTS ficha_instructor_competencia (
 
     -- timestamps
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ,
+    actualizado_en TIMESTAMPTZ DEFAULT NULL,
 
     UNIQUE (ficha_id, instructor_id)
 );
@@ -1070,7 +1068,7 @@ CREATE TABLE IF NOT EXISTS asistencia_aprendiz (
 
     -- timestamps
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ,
+    actualizado_en TIMESTAMPTZ DEFAULT NULL,
 
     UNIQUE (ficha_id, aprendiz_id, fecha)
 );
@@ -1097,7 +1095,7 @@ CREATE TABLE IF NOT EXISTS fase (
 
     -- timestamps
     creado_en      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ
+    actualizado_en TIMESTAMPTZ  DEFAULT NULL
 );
 
 
@@ -1123,7 +1121,7 @@ CREATE TABLE IF NOT EXISTS notificacion (
 
     -- timestamps
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ
+    actualizado_en TIMESTAMPTZ DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_notificacion_usuario_id ON notificacion (usuario_id);
