@@ -60,6 +60,10 @@ FA4 = "c4000000-0000-0000-0000-000000000004"
 FA5 = "c4000000-0000-0000-0000-000000000005"
 FA6 = "c4000000-0000-0000-0000-000000000006"
 
+# Empresa IDs kept here so the seed creates the catalog entries.
+# The actual company ↔ aprendiz link lives in contrato_aprendizaje
+# (see database/seeds_etapa_productiva/01_contratos.py).
+
 PASSWORD = "Sena2024*"
 
 
@@ -173,15 +177,17 @@ def run(cur):
     emp2 = _resolve_id(cur, "empresa", "nit", "8002345678")
 
     # ── Inscripciones ficha_aprendiz ──────────────────────────────────────────
+    # Solo estado formativo. La vinculación empresa ↔ aprendiz vive en
+    # contrato_aprendizaje (seeds_etapa_productiva/01_contratos.py).
     print("  → ficha_aprendiz...")
     inscripciones = [
-        # (fa_id, ficha_id, apr_id, en_lectiva, lectiva_concluida, en_ep, empresa, inicio_ep, fin_ep)
-        (FA1, ficha1, apr[0], True,  False, False, None, None,         None),
-        (FA2, ficha1, apr[1], False, True,  True,  emp1, "2025-01-15", "2025-07-15"),
-        (FA3, ficha2, apr[2], True,  False, False, None, None,         None),
-        (FA4, ficha2, apr[3], False, True,  True,  emp2, "2025-02-01", "2025-08-01"),
-        (FA5, ficha3, apr[4], True,  False, False, None, None,         None),
-        (FA6, ficha3, apr[5], False, True,  False, None, None,         None),
+        # (fa_id, ficha_id, apr_id, en_lectiva, lectiva_concluida, en_ep)
+        (FA1, ficha1, apr[0], True,  False, False),
+        (FA2, ficha1, apr[1], False, True,  True),
+        (FA3, ficha2, apr[2], True,  False, False),
+        (FA4, ficha2, apr[3], False, True,  True),
+        (FA5, ficha3, apr[4], True,  False, False),
+        (FA6, ficha3, apr[5], False, True,  False),
     ]
     for row in inscripciones:
         cur.execute(
@@ -189,10 +195,9 @@ def run(cur):
             INSERT INTO ficha_aprendiz (
                 id, ficha_id, aprendiz_id,
                 en_etapa_lectiva, etapa_lectiva_concluida,
-                en_etapa_productiva, empresa_id,
-                fecha_inicio_ep, fecha_fin_ep
+                en_etapa_productiva
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s)
             ON CONFLICT DO NOTHING
             """,
             row,

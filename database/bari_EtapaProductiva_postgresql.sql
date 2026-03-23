@@ -13,23 +13,22 @@
 --     Lectiva    → formación presencial en el SENA.
 --     Productiva → práctica en empresa.
 --
---   El aprendiz es la MISMA entidad en ambas etapas. No se crea
---   una entidad separada para EP. El estado de cada etapa se
---   registra en ficha_aprendiz, que representa la inscripción
---   oficial del aprendiz en una ficha de formación.
+--   Separación de responsabilidades:
 --
---   Esto preserva la tabla aprendiz intacta (sin columnas nuevas)
---   y no rompe ninguna consulta existente.
+--   ficha_aprendiz     — Inscripción académica del aprendiz en una ficha.
+--                        Registra ÚNICAMENTE el estado formativo de cada etapa
+--                        (lectiva y productiva). No contiene datos de empresa.
 --
---   Tablas:
---     empresa        — Empresas que vinculan aprendices en EP.
---     ficha_aprendiz — Inscripción del aprendiz en una ficha.
---                      Registra el estado de la etapa lectiva y
---                      de la etapa productiva para ese aprendiz.
+--   empresa            — Catálogo de empresas que vinculan aprendices en EP.
+--
+--   contrato_aprendizaje — Vínculo productivo: relaciona al aprendiz
+--                          (dentro del contexto de su ficha) con una empresa.
+--                          Tiene vida propia: fechas, estado, observaciones.
+--                          Un aprendiz puede tener múltiples contratos a lo
+--                          largo de su etapa productiva (cambio de empresa,
+--                          cancelación, etc.).
 --
 -- Relación con tablas existentes:
---   asistencia_aprendiz → control de asistencia diaria (sin cambios).
---   ficha_aprendiz      → inscripción + estado de fase (este archivo).
 --   aprendiz.ficha TEXT → campo legado; la referencia canónica es
 --                         ficha_aprendiz.ficha_id.
 -- ============================================================
@@ -40,7 +39,7 @@ BEGIN;
 -- EMPRESA
 -- ============================================================
 
--- Empresa o entidad que vincula aprendices en etapa productiva.
+-- Catálogo de empresas o entidades que vinculan aprendices en EP.
 -- El NIT se almacena en minúsculas / sin separadores (COLLATE "C").
 CREATE TABLE IF NOT EXISTS empresa (
     -- identidad
@@ -80,8 +79,9 @@ CREATE INDEX IF NOT EXISTS idx_empresa_creado_por ON empresa (creado_por);
 -- INSCRIPCIÓN APRENDIZ ↔ FICHA  (reemplaza aprendiz.ficha TEXT)
 -- ============================================================
 
--- Inscripción oficial de un aprendiz en una ficha de formación.
--- Registra el estado de ambas etapas del proceso formativo SENA.
+-- Inscripción académica de un aprendiz en una ficha de formación.
+-- Registra ÚNICAMENTE el estado formativo de ambas etapas.
+-- La asignación de empresa vive en contrato_aprendizaje.
 --
 -- Etapa Lectiva:
 --   en_etapa_lectiva         TRUE  mientras el aprendiz cursa la formación presencial.
@@ -89,14 +89,12 @@ CREATE INDEX IF NOT EXISTS idx_empresa_creado_por ON empresa (creado_por);
 --                                  Requisito para habilitar la etapa productiva.
 --
 -- Etapa Productiva:
---   en_etapa_productiva         TRUE  una vez habilitado e iniciada la práctica en empresa.
---   etapa_productiva_concluida  TRUE  al finalizar el contrato de aprendizaje.
+--   en_etapa_productiva         TRUE  una vez que se habilita al aprendiz para EP.
+--   etapa_productiva_concluida  TRUE  al finalizar formalmente su etapa productiva.
 --
 -- Reglas de negocio (validadas en la capa de aplicación):
 --   • en_etapa_productiva solo puede ser TRUE si etapa_lectiva_concluida = TRUE.
 --   • etapa_productiva_concluida solo puede ser TRUE si en_etapa_productiva = TRUE.
---   • Un aprendiz aparece en el módulo EP del instructor únicamente si
---     en_etapa_productiva = TRUE para la ficha consultada.
 CREATE TABLE IF NOT EXISTS ficha_aprendiz (
     -- identidad
     id                          UUID        PRIMARY KEY,
@@ -112,13 +110,6 @@ CREATE TABLE IF NOT EXISTS ficha_aprendiz (
     -- ── Etapa Productiva ──────────────────────────────────────
     en_etapa_productiva         BOOLEAN     NOT NULL DEFAULT FALSE,
     etapa_productiva_concluida  BOOLEAN     NOT NULL DEFAULT FALSE,
-
-    -- empresa asignada (NULL hasta que se formalice el contrato)
-    empresa_id                  UUID        REFERENCES empresa(id) ON DELETE SET NULL,
-
-    -- fechas del contrato de aprendizaje (NULL mientras no haya contrato)
-    fecha_inicio_ep             DATE,
-    fecha_fin_ep                DATE,
 
     -- auditoría
     creado_por                  UUID        REFERENCES usuario(id) ON DELETE SET NULL,
@@ -144,12 +135,66 @@ CREATE TABLE IF NOT EXISTS ficha_aprendiz (
 
 CREATE INDEX IF NOT EXISTS idx_ficha_aprendiz_ficha_id    ON ficha_aprendiz (ficha_id);
 CREATE INDEX IF NOT EXISTS idx_ficha_aprendiz_aprendiz_id ON ficha_aprendiz (aprendiz_id);
-CREATE INDEX IF NOT EXISTS idx_ficha_aprendiz_empresa_id  ON ficha_aprendiz (empresa_id);
 CREATE INDEX IF NOT EXISTS idx_ficha_aprendiz_creado_por  ON ficha_aprendiz (creado_por);
 
--- Índice parcial: búsqueda rápida de aprendices activos en EP por ficha.
+-- Índice parcial: búsqueda rápida de aprendices habilitados en EP por ficha.
 CREATE INDEX IF NOT EXISTS idx_ficha_aprendiz_ep_activa
     ON ficha_aprendiz (ficha_id)
     WHERE en_etapa_productiva = TRUE;
+
+
+-- ============================================================
+-- CONTRATO DE APRENDIZAJE
+-- ============================================================
+
+-- Vínculo productivo entre un aprendiz (en el contexto de su ficha)
+-- y una empresa. Tiene vida propia: fechas, estado y observaciones.
+--
+-- Se usa ficha_aprendiz_id (no ficha_id + aprendiz_id por separado)
+-- porque la relación siempre ocurre dentro de una inscripción concreta:
+-- el mismo aprendiz en fichas distintas puede tener contratos distintos.
+--
+-- Un aprendiz puede acumular varios registros a lo largo de su EP:
+-- cambio de empresa, cancelación y reasignación, etc.
+-- El contrato vigente es el que tiene estado = 'activo'.
+CREATE TABLE IF NOT EXISTS contrato_aprendizaje (
+    -- identidad
+    id                  UUID        PRIMARY KEY,
+
+    -- contexto educativo
+    ficha_aprendiz_id   UUID        NOT NULL REFERENCES ficha_aprendiz(id) ON DELETE RESTRICT,
+
+    -- empresa vinculante
+    empresa_id          UUID        NOT NULL REFERENCES empresa(id)        ON DELETE RESTRICT,
+
+    -- vigencia
+    fecha_inicio        DATE,
+    fecha_fin           DATE,
+
+    -- estado del contrato
+    estado              TEXT        NOT NULL DEFAULT 'activo'
+                        CHECK (estado IN ('activo', 'terminado', 'cancelado')),
+
+    -- notas adicionales
+    observaciones       TEXT,
+
+    -- auditoría
+    creado_por          UUID        REFERENCES usuario(id) ON DELETE SET NULL,
+
+    -- marcas de tiempo
+    creado_en           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    actualizado_en      TIMESTAMPTZ DEFAULT NULL,
+
+    CHECK (fecha_fin IS NULL OR fecha_inicio IS NULL OR fecha_fin >= fecha_inicio)
+);
+
+CREATE INDEX IF NOT EXISTS idx_contrato_ficha_aprendiz ON contrato_aprendizaje (ficha_aprendiz_id);
+CREATE INDEX IF NOT EXISTS idx_contrato_empresa        ON contrato_aprendizaje (empresa_id);
+CREATE INDEX IF NOT EXISTS idx_contrato_estado         ON contrato_aprendizaje (estado);
+
+-- Índice parcial: contratos activos (consulta más frecuente).
+CREATE INDEX IF NOT EXISTS idx_contrato_activo
+    ON contrato_aprendizaje (ficha_aprendiz_id)
+    WHERE estado = 'activo';
 
 COMMIT;

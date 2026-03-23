@@ -62,6 +62,21 @@ Contraseña de todas: **`Sena2024*`**
 
 ---
 
+## Inspeccionar datos con el query runner
+
+Para verificar el estado de los datos despues de correr seeds:
+
+```bash
+python database/query.py "SELECT id, razon_social, nit FROM empresa"
+python database/query.py "SELECT id, ficha_id, en_etapa_productiva FROM ficha_aprendiz"
+python database/query.py "SELECT id, ficha_aprendiz_id, estado FROM contrato_aprendizaje"
+```
+
+> **Nota para IAs:** usa `database/query.py` via Bash para verificar datos.
+> Incluye siempre `LIMIT` y columnas especificas para no desperdiciar tokens.
+
+---
+
 ## Diagnóstico
 
 Si algo no funciona, ejecuta el script de diagnóstico para verificar la cadena de datos:
