@@ -97,11 +97,12 @@ def normalize_academic_context(args):  # noqa: C901
                    f.proyecto_formativo_id, f.coordinacion_id, f.instructor_id,
                    pf.nombre AS proyecto_formativo_nombre,
                    c.nombre  AS coordinacion_nombre,
-                   i.nombres || ' ' || i.apellidos AS instructor_nombre
+                   pi.nombres || ' ' || pi.apellidos AS instructor_nombre
             FROM ficha_formacion f
             LEFT JOIN proyecto_formativo pf ON pf.id = f.proyecto_formativo_id
             JOIN coordinacion c ON c.id = f.coordinacion_id
             LEFT JOIN instructor i ON i.id = f.instructor_id
+            LEFT JOIN persona pi ON pi.id = i.persona_id
             WHERE f.programa_formacion_id = ?
             ORDER BY f.numero ASC
             """,
@@ -113,10 +114,12 @@ def normalize_academic_context(args):  # noqa: C901
     if programa:
         instructores_area = get_db().execute(
             """
-            SELECT id, documento, nombres, apellidos, correo AS email, area_id, centro_id
-            FROM instructor
-            WHERE area_id = ?
-            ORDER BY nombres ASC, apellidos ASC
+            SELECT i.id, pe.numero_documento AS documento, pe.nombres, pe.apellidos,
+                   pe.correo_personal AS email, i.area_id, i.centro_id
+            FROM instructor i
+            JOIN persona pe ON pe.id = i.persona_id
+            WHERE i.area_id = ?
+            ORDER BY pe.nombres ASC, pe.apellidos ASC
             """,
             (programa["area_id"],),
         ).fetchall()

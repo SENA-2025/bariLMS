@@ -1,10 +1,25 @@
 """Gestión del pool de conexiones y acceso a la base de datos PostgreSQL."""
 
+import uuid as _uuid
+
 import psycopg
 import psycopg.conninfo
 from flask import current_app, g
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
+
+
+def _uuid_str_dict_row(cursor):
+    """Row factory igual a dict_row pero convierte uuid.UUID → str."""
+    make_row = dict_row(cursor)
+
+    def wrapper(values):
+        row = make_row(values)
+        if row is None:
+            return None
+        return {k: str(v) if isinstance(v, _uuid.UUID) else v for k, v in row.items()}
+
+    return wrapper
 
 
 class CursorWrapper:
@@ -39,7 +54,7 @@ class PostgresConnection:
         return query.replace("?", "%s")
 
     def execute(self, query, params=()):
-        cursor = self.connection.cursor(row_factory=dict_row)
+        cursor = self.connection.cursor(row_factory=_uuid_str_dict_row)
         cursor.execute(self._normalize_query(query), params)
         if cursor.description is None:
             cursor.close()
