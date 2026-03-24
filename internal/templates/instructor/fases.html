@@ -238,7 +238,7 @@
 {% block extra_js %}
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.3/Sortable.min.js"></script>
     <script>
-        const FICHA_ID = {{ ficha.id }};
+        const FICHA_ID = "{{ ficha.id }}";
 
         // ── Alertas inline en formularios ──
         function showFormAlert(alertId, type, message, autohide) {
@@ -317,7 +317,7 @@
                         : '';
                     html += `
             <button class="act-proy-btn" id="btn-ap-${ap.id}"
-                    onclick="seleccionarActProyById(${ap.id})">
+                    onclick=\"seleccionarActProyById('${ap.id}')\">
                 <span><i class="fas fa-folder mr-1" style="font-size:.8em;opacity:.8"></i>${escapar(ap.nombre)}${lockIcon}</span>
             </button>`;
                 });
@@ -423,10 +423,10 @@
                             <a href="${url}" target="_blank" class="text-sena font-weight-bold small">${nombre}</a>
                             ${g.descripcion ? `<div class="text-muted small mt-1" style="font-size:.78rem;">${desc}</div>` : ''}
                         </div>
-                        <button class="btn btn-sm btn-link text-warning p-0" title="Editar" onclick="abrirEditarGuia(${g.id})">
+                        <button class="btn btn-sm btn-link text-warning p-0" title="Editar" onclick=\"abrirEditarGuia('${g.id}')\">
                             <i class="fas fa-edit fa-sm"></i>
                         </button>
-                        <button class="btn btn-sm btn-link text-danger p-0 ml-1" title="Eliminar" onclick="eliminarGuia(${g.id})">
+                        <button class="btn btn-sm btn-link text-danger p-0 ml-1" title="Eliminar" onclick=\"eliminarGuia('${g.id}')\">
                             <i class="fas fa-trash fa-sm"></i>
                         </button>
                     </div>
@@ -448,10 +448,10 @@
                                 placeholder="Descripción opcional...">${desc}</textarea>
                         </div>
                         <div style="display:flex; gap:6px;">
-                            <button class="btn btn-success btn-sm py-1 px-3" onclick="guardarGuia(${g.id})">
+                            <button class="btn btn-success btn-sm py-1 px-3" onclick=\"guardarGuia('${g.id}')\">
                                 <i class="fas fa-save mr-1"></i>Guardar
                             </button>
-                            <button class="btn btn-outline-secondary btn-sm py-1 px-3" onclick="cancelarEditarGuia(${g.id})">
+                            <button class="btn btn-outline-secondary btn-sm py-1 px-3" onclick=\"cancelarEditarGuia('${g.id}')\">
                                 Cancelar
                             </button>
                         </div>
@@ -639,9 +639,9 @@
                                         ${finFmt
                                             ? `<span class="badge badge-light border" id="badge-fin-${act.id}">
                                                 <i class="fas fa-calendar-times mr-1 text-warning"></i>Fin: ${finFmt}
-                                                <button class="btn btn-sm btn-link p-0 ml-1" style="font-size:.9em;line-height:1;" onclick="editarFechaFin(${act.id}, '${act.fecha_fin || ''}')"><i class="fas fa-edit text-warning"></i></button>
+                                                <button class="btn btn-sm btn-link p-0 ml-1" style="font-size:.9em;line-height:1;" onclick="editarFechaFin('${act.id}', '${act.fecha_fin || ''}')"><i class="fas fa-edit text-warning"></i></button>
                                                </span>`
-                                            : `<button class="btn btn-sm btn-outline-warning py-0 px-2" style="font-size:.75rem;" onclick="editarFechaFin(${act.id}, '')"><i class="fas fa-calendar-plus mr-1"></i>Agregar fecha fin</button>`
+                                            : `<button class="btn btn-sm btn-outline-warning py-0 px-2" style="font-size:.75rem;" onclick=\"editarFechaFin('${act.id}', '')\"><i class="fas fa-calendar-plus mr-1"></i>Agregar fecha fin</button>`
                                         }
                                         ${act.guia_url ? `<a href="${act.guia_url}" target="_blank" class="badge badge-success border text-white"><i class="fas fa-link mr-1"></i>Guía / Recurso</a>` : ''}
                                     </div>
@@ -649,10 +649,10 @@
                                 <div style="flex-shrink:0; display:flex; gap:6px;">
                                     ${act.evidencia_id
                                         ? `<span class="badge badge-success py-1 px-2" style="font-size:.78rem;"><i class="fas fa-check-circle mr-1"></i>Evidencia activa</span>`
-                                        : `<button class="btn btn-outline-warning btn-sm border-0" style="font-size:.75rem;" onclick="activarEvidencia(${act.id})"><i class="fas fa-plus-circle mr-1"></i>Activar evidencia</button>`
+                                        : `<button class="btn btn-outline-warning btn-sm border-0" style="font-size:.75rem;" onclick=\"activarEvidencia('${act.id}')\"><i class="fas fa-plus-circle mr-1"></i>Activar evidencia</button>`
                                     }
-                                    <button class="btn btn-outline-secondary btn-sm border-0" style="font-size:.75rem;" onclick="editarActividad(${act.id})"><i class="fas fa-edit mr-1"></i>Editar</button>
-                                    <button class="btn btn-outline-primary btn-sm border-0" style="font-size:.75rem;" onclick="abrirCrearSeccion(${act.id})"><i class="fas fa-plus mr-1"></i>Nueva Sección</button>
+                                    <button class="btn btn-outline-secondary btn-sm border-0" style="font-size:.75rem;" onclick=\"editarActividad('${act.id}')\"><i class="fas fa-edit mr-1"></i>Editar</button>
+                                    <button class="btn btn-outline-primary btn-sm border-0" style="font-size:.75rem;" onclick=\"abrirCrearSeccion('${act.id}')\"><i class="fas fa-plus mr-1"></i>Nueva Sección</button>
                                 </div>
                             </div>
                             <div id="secciones-act-${act.id}">
@@ -753,9 +753,9 @@
                             <i class="fas fa-layer-group mr-2" style="font-size:0.8rem;"></i> ${escapar(sec.nombre)}
                         </button>
                         <div style="flex-shrink:0;">
-                            <button class="btn btn-sm btn-link text-secondary p-0 mx-1" onclick="abrirEditarSeccion(${sec.id})"><i class="fas fa-edit"></i></button>
-                            <button class="btn btn-sm btn-link text-danger p-0 mr-2" onclick="eliminarSeccion(${sec.id})"><i class="fas fa-trash"></i></button>
-                            <button class="btn btn-sm btn-outline-success border-0 py-0" style="font-size:0.75rem;" onclick="abrirCrearSubSeccion(${sec.id})"><i class="fas fa-plus"></i> Sub-sección</button>
+                            <button class="btn btn-sm btn-link text-secondary p-0 mx-1" onclick=\"abrirEditarSeccion('${sec.id}')\"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-sm btn-link text-danger p-0 mr-2" onclick=\"eliminarSeccion('${sec.id}')\"><i class="fas fa-trash"></i></button>
+                            <button class="btn btn-sm btn-outline-success border-0 py-0" style="font-size:0.75rem;" onclick=\"abrirCrearSubSeccion('${sec.id}')\"><i class="fas fa-plus"></i> Sub-sección</button>
                         </div>
                     </div>
                     <div id="${colId}" class="collapse" aria-labelledby="${headId}" data-parent="#accordionSec${actId}">
@@ -800,8 +800,8 @@
                             </div>
                         </div>
                         <div style="flex-shrink:0;">
-                            <button class="btn btn-sm btn-link text-info p-0 mx-1" onclick="abrirEditarSubSeccion(${sub.id})"><i class="fas fa-edit"></i></button>
-                            <button class="btn btn-sm btn-link text-danger p-0" onclick="eliminarSubSeccion(${sub.id})"><i class="fas fa-trash"></i></button>
+                            <button class="btn btn-sm btn-link text-info p-0 mx-1" onclick=\"abrirEditarSubSeccion('${sub.id}')\"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-sm btn-link text-danger p-0" onclick=\"eliminarSubSeccion('${sub.id}')\"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>
                 </li>`;
@@ -1160,7 +1160,7 @@
         }
 
         async function seleccionarCalAP() {
-            const apId = parseInt(document.getElementById('cal-ap-selector').value);
+            const apId = document.getElementById('cal-ap-selector').value;
             if (!apId) {
                 document.getElementById('cal-tabs').style.display = 'none';
                 document.getElementById('cal-flex-row').style.display = 'none';
@@ -1224,7 +1224,7 @@
                     html += `<td class="text-center align-middle">
                         ${tieneEntrega
                             ? `<button class="btn btn-sm btn-link p-0" ${colorCal}
-                                onclick="abrirEvidenciaCal(${apIdx}, ${e.actividad_id})">
+                                onclick="abrirEvidenciaCal(${apIdx}, '${e.actividad_id}')">
                                 <i class="fas fa-eye mr-1"></i><span>${cal !== null && cal !== undefined ? cal : '—'}</span>
                                </button>`
                             : `<span class="text-muted">—</span>`

@@ -347,7 +347,7 @@ def register_routes(app):
             FROM actividad_proyecto ap
             JOIN fase_proyecto fp ON fp.id = ap.fase_proyecto_id
             JOIN ficha_formacion f ON f.proyecto_formativo_id = fp.proyecto_formativo_id
-            WHERE ap.id = ?
+            WHERE ap.id = %s
             LIMIT 1
             """,
             (ap_id,),
@@ -360,7 +360,7 @@ def register_routes(app):
             SELECT aa.id, aa.nombre, ea.id AS evidencia_id
             FROM actividad_aprendizaje aa
             LEFT JOIN evidencia_aprendizaje ea ON ea.actividad_aprendizaje_id = aa.id
-            WHERE aa.actividad_proyecto_id = ?
+            WHERE aa.actividad_proyecto_id = %s
             ORDER BY aa.orden ASC, aa.id ASC
             """,
             (ap_id,),
@@ -378,7 +378,7 @@ def register_routes(app):
                                    JOIN perfil p ON p.id = up.perfil_id
                                    WHERE up.usuario_id = u.id AND p.nombre = 'Aprendiz'
                                )
-            WHERE a.ficha = ?
+            WHERE a.ficha = %s
             ORDER BY pe.nombres ASC, pe.apellidos ASC
             """,
             (ap_row["ficha_numero"],),
@@ -392,7 +392,7 @@ def register_routes(app):
                 if act["evidencia_id"] and apz["usuario_id"]:
                     row = db.execute(
                         "SELECT id, url, calificacion FROM entrega_evidencia "
-                        "WHERE evidencia_aprendizaje_id = ? AND usuario_id = ?",
+                        "WHERE evidencia_aprendizaje_id = %s AND usuario_id = %s",
                         (act["evidencia_id"], apz["usuario_id"]),
                     ).fetchone()
                     if row:
@@ -752,8 +752,8 @@ def register_routes(app):
                 estado = "Presente"
             db.execute(
                 """
-                INSERT INTO asistencia_aprendiz (ficha_id, aprendiz_id, fecha, estado)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO asistencia_aprendiz (id, ficha_id, aprendiz_id, fecha, estado)
+                VALUES (gen_random_uuid(), ?, ?, ?, ?)
                 ON CONFLICT (ficha_id, aprendiz_id, fecha) DO UPDATE SET estado = EXCLUDED.estado
                 """,
                 (ficha_id, ap_id, fecha, estado),
