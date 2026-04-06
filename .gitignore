@@ -69,3 +69,4 @@ htmlcov/
 # Base de datos
 database/seed_test_data.py
 
+internal/static/uploads/guias
