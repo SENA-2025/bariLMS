@@ -49,7 +49,7 @@ def run(cur):
 
     # ── Apprentices & Enrollments ──────────────────────────────────────────────
     print("  → aprendices...")
-    for correo, full_n, doc, tipo_doc_cod, nom, ape, sex_cod, f_num, lect, concl, prod in DATA_APRENDICES:
+    for correo, full_n, doc, tipo_doc_cod, nom, ape, sex_cod, f_num, estado in DATA_APRENDICES:
         print(f"    - {correo}")
 
         tipo_doc_id = resolve_id(cur, "tipo_documento", "codigo", tipo_doc_cod)
@@ -75,7 +75,7 @@ def run(cur):
         ficha_id = resolve_id(cur, "ficha_formacion", "numero", f_num)
         if ficha_id:
             SeedQueries.INSERT_FICHA_APRENDIZ.execute(cur, (
-                generate_id(), ficha_id, apr_id, lect, concl, prod,
+                generate_id(), ficha_id, apr_id, estado,
             ))
 
         print(f"      {'[NEW]' if is_new else '[EXISTING]'}")

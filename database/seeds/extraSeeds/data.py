@@ -152,27 +152,26 @@ DATA_EMPRESAS = [
 
 # ── Apprentices ────────────────────────────────────────────────────────────────
 # (correo, nombre_completo, numero_documento, tipo_doc_codigo,
-#  nombres, apellidos, sexo_codigo, ficha_numero,
-#  en_etapa_lectiva, etapa_lectiva_concluida, en_etapa_productiva)
+#  nombres, apellidos, sexo_codigo, ficha_numero, estado_formacion)
 DATA_APRENDICES = [
     # ── Ficha 2900001 (Juan Pérez) ────────────────────────────────────────────
-    ("ana.gomez@aprendiz.sena.edu.co",    "Ana Sofía Gómez Herrera",        "1090123456", "cc", "ANA SOFÍA",       "GÓMEZ HERRERA",    "f", "2900001", True,  False, False),
-    ("luis.torres@aprendiz.sena.edu.co",  "Luis Eduardo Torres Prado",      "1090234567", "cc", "LUIS EDUARDO",    "TORRES PRADO",     "m", "2900001", False, True,  True),
+    ("ana.gomez@aprendiz.sena.edu.co",    "Ana Sofía Gómez Herrera",        "1090123456", "cc", "ANA SOFÍA",       "GÓMEZ HERRERA",    "f", "2900001", "lectiva_en_curso"),
+    ("luis.torres@aprendiz.sena.edu.co",  "Luis Eduardo Torres Prado",      "1090234567", "cc", "LUIS EDUARDO",    "TORRES PRADO",     "m", "2900001", "productiva_en_curso"),
     # ── Ficha 2900002 (María López) ───────────────────────────────────────────
-    ("sofia.mendez@aprendiz.sena.edu.co", "Sofía Alejandra Méndez Ríos",    "1025345678", "ti", "SOFÍA ALEJANDRA", "MÉNDEZ RÍOS",      "f", "2900002", True,  False, False),
-    ("andres.ruiz@aprendiz.sena.edu.co",  "Andrés Felipe Ruiz Castillo",    "1025456789", "ti", "ANDRÉS FELIPE",   "RUIZ CASTILLO",    "m", "2900002", False, True,  True),
+    ("sofia.mendez@aprendiz.sena.edu.co", "Sofía Alejandra Méndez Ríos",    "1025345678", "ti", "SOFÍA ALEJANDRA", "MÉNDEZ RÍOS",      "f", "2900002", "lectiva_en_curso"),
+    ("andres.ruiz@aprendiz.sena.edu.co",  "Andrés Felipe Ruiz Castillo",    "1025456789", "ti", "ANDRÉS FELIPE",   "RUIZ CASTILLO",    "m", "2900002", "productiva_en_curso"),
     # ── Ficha 2900003 (Carlos Rodríguez) ──────────────────────────────────────
-    ("camila.vargas@aprendiz.sena.edu.co","Camila Andrea Vargas Soto",       "1090567890", "cc", "CAMILA ANDREA",   "VARGAS SOTO",      "f", "2900003", True,  False, False),
-    ("miguel.castro@aprendiz.sena.edu.co","Miguel Ángel Castro Jiménez",     "1090678901", "cc", "MIGUEL ÁNGEL",    "CASTRO JIMÉNEZ",   "m", "2900003", False, True,  False),
+    ("camila.vargas@aprendiz.sena.edu.co","Camila Andrea Vargas Soto",       "1090567890", "cc", "CAMILA ANDREA",   "VARGAS SOTO",      "f", "2900003", "lectiva_en_curso"),
+    ("miguel.castro@aprendiz.sena.edu.co","Miguel Ángel Castro Jiménez",     "1090678901", "cc", "MIGUEL ÁNGEL",    "CASTRO JIMÉNEZ",   "m", "2900003", "lectiva_concluida"),
     # ── Ficha 2900004 (Adriana Suárez) ────────────────────────────────────────
-    ("mario.duarte@aprendiz.sena.edu.co", "Mario Alberto Duarte Casadiego", "1090888777", "cc", "MARIO ALBERTO",   "DUARTE CASADIEGO", "m", "2900004", True,  False, False),
-    ("claudia.nieto@aprendiz.sena.edu.co","Claudia Marcela Nieto Rojas",     "1090999111", "cc", "CLAUDIA MARCELA", "NIETO ROJAS",      "f", "2900004", False, True,  True),
+    ("mario.duarte@aprendiz.sena.edu.co", "Mario Alberto Duarte Casadiego", "1090888777", "cc", "MARIO ALBERTO",   "DUARTE CASADIEGO", "m", "2900004", "lectiva_en_curso"),
+    ("claudia.nieto@aprendiz.sena.edu.co","Claudia Marcela Nieto Rojas",     "1090999111", "cc", "CLAUDIA MARCELA", "NIETO ROJAS",      "f", "2900004", "productiva_en_curso"),
     # ── Ficha 2900005 (Ricardo Mendoza) ───────────────────────────────────────
-    ("felipe.basto@aprendiz.sena.edu.co", "Felipe Andres Basto Leon",       "1025777888", "ti", "FELIPE ANDRES",   "BASTO LEON",       "m", "2900005", True,  False, False),
-    ("paola.ortiz@aprendiz.sena.edu.co",  "Paola Andrea Ortiz Guerrero",    "1025666555", "ti", "PAOLA ANDREA",    "ORTIZ GUERRERO",   "f", "2900005", False, True,  True),
+    ("felipe.basto@aprendiz.sena.edu.co", "Felipe Andres Basto Leon",       "1025777888", "ti", "FELIPE ANDRES",   "BASTO LEON",       "m", "2900005", "lectiva_en_curso"),
+    ("paola.ortiz@aprendiz.sena.edu.co",  "Paola Andrea Ortiz Guerrero",    "1025666555", "ti", "PAOLA ANDREA",    "ORTIZ GUERRERO",   "f", "2900005", "productiva_en_curso"),
     # ── Ficha 2900006 (Elena Beltrán) ─────────────────────────────────────────
-    ("jorge.vivas@aprendiz.sena.edu.co",  "Jorge Luis Vivas Mendez",        "1090444333", "cc", "JORGE LUIS",      "VIVAS MENDEZ",     "m", "2900006", True,  False, False),
-    ("diana.solano@aprendiz.sena.edu.co", "Diana Karime Solano Parra",      "1090222888", "cc", "DIANA KARIME",    "SOLANO PARRA",     "f", "2900006", False, True,  False),
+    ("jorge.vivas@aprendiz.sena.edu.co",  "Jorge Luis Vivas Mendez",        "1090444333", "cc", "JORGE LUIS",      "VIVAS MENDEZ",     "m", "2900006", "lectiva_en_curso"),
+    ("diana.solano@aprendiz.sena.edu.co", "Diana Karime Solano Parra",      "1090222888", "cc", "DIANA KARIME",    "SOLANO PARRA",     "f", "2900006", "lectiva_concluida"),
 ]
 
 # ── Actividades de Proyecto ────────────────────────────────────────────────────

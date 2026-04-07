@@ -50,7 +50,7 @@
                             </span>
                         </td>
                         <td class="text-center">
-                            {% if ap.etapa_productiva_concluida %}
+                            {% if ap.estado == 'productiva_concluida' %}
                                 <span class="badge badge-secondary">Finalizado</span>
                             {% elif ap.empresa_nombre %}
                                 <span class="badge badge-success">En práctica</span>

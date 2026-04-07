@@ -103,11 +103,8 @@ class SeedQueries(Enum):
     # --- Enrollment (Ficha-Aprendiz) ---
 
     INSERT_FICHA_APRENDIZ = """
-        INSERT INTO ficha_aprendiz (
-            id, ficha_id, aprendiz_id, 
-            en_etapa_lectiva, etapa_lectiva_concluida, en_etapa_productiva
-        )
-        VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT DO NOTHING
+        INSERT INTO ficha_aprendiz (id, ficha_id, aprendiz_id, estado)
+        VALUES (%s, %s, %s, %s) ON CONFLICT DO NOTHING
     """
     
     
