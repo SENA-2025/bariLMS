@@ -53,6 +53,7 @@ def register_routes(app):
             session.clear()
             session["user_email"] = user["email"]
             session["user_profile"] = role
+            session["nombre"] = user["name"]
 
             return redirect(url_for("dashboard", role_slug=ROLE_TO_SLUG[role]))
 

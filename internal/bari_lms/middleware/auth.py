@@ -61,7 +61,11 @@ def role_required(expected_role):
 
 
 def session_context():
+    user = current_user()
+    # Mantener session['nombre'] sincronizado para los templates que lo usan directamente
+    if user and not session.get("nombre"):
+        session["nombre"] = user["name"]
     return {
-        "session_user": current_user(),
+        "session_user": user,
         "session_user_email": session.get("user_email", ""),
     }
