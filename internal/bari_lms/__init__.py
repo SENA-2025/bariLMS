@@ -3,6 +3,7 @@ import os
 from flask import Flask
 
 from bari_lms.controllers.admin import register_routes as register_admin_routes
+from bari_lms.controllers.aprendiz import register_routes as register_aprendiz_routes
 from bari_lms.controllers.auth import register_routes as register_auth_routes
 from bari_lms.controllers.dashboard import register_routes as register_dashboard_routes
 from bari_lms.controllers.instructor import register_routes as register_instructor_routes
@@ -37,6 +38,7 @@ def create_app():
     register_dashboard_routes(app)
     register_admin_routes(app)
     register_instructor_routes(app)
+    register_aprendiz_routes(app)
 
     with app.app_context():
         initialize_database()
