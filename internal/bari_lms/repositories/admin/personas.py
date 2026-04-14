@@ -89,7 +89,7 @@ def create_linked_person_user(entity, data):
     persona_id = str(uuid.uuid7())
 
     db.execute(
-        "INSERT INTO usuario (id, correo_institucional, contrasena_hash, activo) "
+        "INSERT INTO usuario (id, correo, contrasena_hash, activo) "
         "VALUES (?, ?, ?, TRUE)",
         (persona_id, correo_institucional, hash_password(numero_documento)),
     )
@@ -150,7 +150,7 @@ def sync_linked_person_user(entity, item_id, data):
         (nombres, apellidos, numero_documento, correo_personal, persona_id),
     )
     db.execute(
-        "UPDATE usuario SET correo_institucional = ? WHERE id = ?",
+        "UPDATE usuario SET correo = ? WHERE id = ?",
         (correo_institucional, persona_id),
     )
     db.commit()

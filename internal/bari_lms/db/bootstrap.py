@@ -148,7 +148,7 @@ def _provision_admin(db):
     user_id = str(uuid.uuid7())
 
     db.execute(
-        "INSERT INTO usuario (id, correo_institucional, contrasena_hash, activo) "
+        "INSERT INTO usuario (id, correo, contrasena_hash, activo) "
         "VALUES (?, ?, ?, TRUE)",
         (user_id, temp_email, hash_password(temp_password)),
     )
