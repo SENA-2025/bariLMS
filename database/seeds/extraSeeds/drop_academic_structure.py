@@ -46,6 +46,19 @@ def cleanup():
             row = cur.fetchone()
             if row:
                 apr_id = str(row[0])
+                # Get ficha_aprendiz ids to cascade through contrato/proceso
+                cur.execute("SELECT id FROM ficha_aprendiz WHERE aprendiz_id = %s", (apr_id,))
+                fa_rows = cur.fetchall()
+                for (fa_id,) in fa_rows:
+                    fa_id = str(fa_id)
+                    # proceso_ep CASCADE-deletes ep_momento_1/2/3
+                    cur.execute("""
+                        DELETE FROM proceso_ep
+                        WHERE contrato_id IN (
+                            SELECT id FROM contrato_aprendizaje WHERE ficha_aprendiz_id = %s
+                        )
+                    """, (fa_id,))
+                    cur.execute("DELETE FROM contrato_aprendizaje WHERE ficha_aprendiz_id = %s", (fa_id,))
                 cur.execute("DELETE FROM ficha_aprendiz WHERE aprendiz_id = %s", (apr_id,))
                 cur.execute("DELETE FROM aprendiz WHERE id = %s", (apr_id,))
 
