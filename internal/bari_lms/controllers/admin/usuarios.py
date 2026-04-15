@@ -53,7 +53,7 @@ def register_routes(app):
         user_id = str(uuid.uuid7())
         try:
             db.execute(
-                "INSERT INTO usuario (id, correo_institucional, contrasena_hash, activo) VALUES (?, ?, ?, ?)",
+                "INSERT INTO usuario (id, correo, contrasena_hash, activo) VALUES (?, ?, ?, ?)",
                 (user_id, email, hash_password(password), active),
             )
             db.execute(
@@ -131,12 +131,12 @@ def register_routes(app):
         db = get_db()
         if password:
             db.execute(
-                "UPDATE usuario SET correo_institucional = ?, activo = ?, contrasena_hash = ? WHERE id = ?",
+                "UPDATE usuario SET correo = ?, activo = ?, contrasena_hash = ? WHERE id = ?",
                 (email, active, hash_password(password), user_id),
             )
         else:
             db.execute(
-                "UPDATE usuario SET correo_institucional = ?, activo = ? WHERE id = ?",
+                "UPDATE usuario SET correo = ?, activo = ? WHERE id = ?",
                 (email, active, user_id),
             )
         db.execute("DELETE FROM usuario_perfil WHERE usuario_id = ?", (user_id,))

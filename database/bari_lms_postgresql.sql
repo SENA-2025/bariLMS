@@ -33,7 +33,7 @@
 --   libre en español usan la collation por defecto de la DB.
 --
 -- ── Reglas de mayúsculas/minúsculas (CHECK) ──────────────────
---   correo_institucional, correo_personal → siempre lower().
+--   correo, correo_personal → siempre lower().
 --   persona.nombres, persona.apellidos    → siempre UPPER().
 --
 -- ── Personas y cuentas ───────────────────────────────────────
@@ -41,7 +41,7 @@
 --              El admin provisional vive aquí sin fila en persona.
 --              No tiene columna nombre: el nombre se obtiene de
 --              persona.nombres/apellidos; para el admin provisional
---              la app usa el correo_institucional como identificador.
+--              la app usa el correo como identificador.
 --   persona  — datos personales e identidad del usuario real.
 --              persona.id = usuario.id (PK compartida, relación 1:1).
 --              No existe columna usuario_id: persona.id ES la FK.
@@ -68,7 +68,7 @@
 --
 -- ── Admin provisional (capa de aplicación) ───────────────────
 --   Al arrancar sin ningún usuario Administrador: crear una fila
---   en usuario con correo_institucional y contraseña aleatorios,
+--   en usuario con correo y contraseña aleatorios,
 --   imprimir en stdout una sola vez. No se crea fila en persona.
 --
 -- ── Tablas (orden de dependencia) ────────────────────────────

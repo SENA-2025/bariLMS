@@ -61,7 +61,7 @@ def register_routes(app):
         aprendices_raw = db.execute(
             """
             SELECT a.id, pe.nombres, pe.apellidos, pe.numero_documento AS documento,
-                   u.id AS usuario_id, u.correo_institucional AS correo
+                   u.id AS usuario_id, u.correo AS correo
             FROM aprendiz a
             JOIN persona pe ON pe.id = a.persona_id
             LEFT JOIN usuario u ON u.id = a.persona_id

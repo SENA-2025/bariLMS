@@ -4,6 +4,7 @@ import uuid
 
 from bari_lms.db import get_db, parse_int
 from bari_lms.repositories._config import ENTITY_CONFIG
+from psycopg.errors import ForeignKeyViolation
 
 
 # ── Consultas ────────────────────────────────────────────────────────────────
@@ -71,10 +72,33 @@ def update_entity(entity, item_id, data):
 
 
 def delete_entity(entity, item_id):
-    get_db().execute(
-        f"DELETE FROM {ENTITY_CONFIG[entity]['table']} WHERE id = ?", (item_id,)
-    )
-    get_db().commit()
+    """
+    Recursively deletes an entity and its dependents based on ENTITY_CONFIG.
+    Designed to bypass SQL RESTRICT constraints by cleaning bottom-up.
+    """
+    if entity not in ENTITY_CONFIG or not item_id:
+        return
+
+    db = get_db()
+    config = ENTITY_CONFIG[entity]
+
+    # 1. Recursive Cascade - Dive into children first
+    cascades = config.get("cascades", [])
+    for child_key, fk_col in cascades:
+        child_config = ENTITY_CONFIG.get(child_key)
+        if child_config:
+            # Important: fetch the IDs first, then iterate
+            rows = db.execute(
+                f"SELECT id FROM {child_config['table']} WHERE {fk_col} = ?", (item_id,)
+            ).fetchall()
+            
+            for row in rows:
+                # Recurse: This will handle Ficha -> FichaAprendiz -> Contrato
+                delete_entity(child_key, row['id'])
+
+    # 2. Delete the record itself after its children are gone
+    db.execute(f"DELETE FROM {config['table']} WHERE id = ?", (item_id,))
+    db.commit()
 
 
 # ── Formularios ──────────────────────────────────────────────────────────────
