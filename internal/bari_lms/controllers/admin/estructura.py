@@ -18,7 +18,7 @@ from bari_lms.repositories.admin.estructura import normalize_structure_context, 
 
 
 def register_routes(app):
-    @app.route("/admin/structure")
+    @app.route("/dashboard/admin/structure")
     @role_required("Administrador")
     def admin_structure():
         return render_template(
@@ -27,7 +27,7 @@ def register_routes(app):
             **normalize_structure_context(request.args),
         )
 
-    @app.post("/admin/structure/<entity>/create")
+    @app.post("/dashboard/admin/structure/<entity>/create")
     @role_required("Administrador")
     def admin_structure_create(entity):
         if entity not in STRUCTURE_ENTITIES:
@@ -55,7 +55,7 @@ def register_routes(app):
             url_for("admin_structure", **structure_redirect_args(request.form, redirect_overrides))
         )
 
-    @app.get("/admin/structure/<entity>/<item_id>/edit")
+    @app.get("/dashboard/admin/structure/<entity>/<item_id>/edit")
     @role_required("Administrador")
     def admin_structure_edit(entity, item_id):
         if entity not in STRUCTURE_ENTITIES:
@@ -83,7 +83,7 @@ def register_routes(app):
             overrides["sede_id"] = sede["id"]
         return redirect(url_for("admin_structure", **overrides))
 
-    @app.post("/admin/structure/<entity>/<item_id>/update")
+    @app.post("/dashboard/admin/structure/<entity>/<item_id>/update")
     @role_required("Administrador")
     def admin_structure_update(entity, item_id):
         if entity not in STRUCTURE_ENTITIES:
@@ -124,7 +124,7 @@ def register_routes(app):
             )
         )
 
-    @app.post("/admin/structure/<entity>/<item_id>/delete")
+    @app.post("/dashboard/admin/structure/<entity>/<item_id>/delete")
     @role_required("Administrador")
     def admin_structure_delete(entity, item_id):
         if entity not in STRUCTURE_ENTITIES:

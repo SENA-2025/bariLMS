@@ -9,7 +9,7 @@ from bari_lms.services.security import hash_password, verify_password
 
 
 def register_routes(app):
-    @app.route("/instructor/password", methods=["GET", "POST"])
+    @app.route("/dashboard/instructor/password", methods=["GET", "POST"])
     @role_required("Instructor")
     def instructor_change_password():
         user = current_user()

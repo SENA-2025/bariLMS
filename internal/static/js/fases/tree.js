@@ -28,7 +28,7 @@ export function setMode(mode) {
 // ─── Carga y render del árbol ─────────────────────────────────────────────────
 
 export async function cargarArbol() {
-    const res  = await fetch(`/api/instructor/ficha/${window.FICHA_ID}/tree`);
+    const res  = await fetch(`/dashboard/instructor/api/ficha/${window.FICHA_ID}/tree`);
     const data = await res.json();
     state.treeData = data.fases || [];
     renderArbol(state.treeData);

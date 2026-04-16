@@ -13,7 +13,7 @@ from bari_lms.services.security import hash_password
 
 
 def register_routes(app):
-    @app.route("/admin/users")
+    @app.route("/dashboard/admin/users")
     @role_required("Administrador")
     def admin_users():
         return render_template(
@@ -25,7 +25,7 @@ def register_routes(app):
             editing_user=None,
         )
 
-    @app.post("/admin/users/create")
+    @app.post("/dashboard/admin/users/create")
     @role_required("Administrador")
     def admin_users_create():
         name = request.form.get("name", "").strip()
@@ -79,7 +79,7 @@ def register_routes(app):
         flash("Usuario creado correctamente.", "success")
         return redirect(url_for("admin_users"))
 
-    @app.get("/admin/users/<user_id>/edit")
+    @app.get("/dashboard/admin/users/<user_id>/edit")
     @role_required("Administrador")
     def admin_users_edit(user_id):
         editing_user = get_user_by_id(user_id)
@@ -100,7 +100,7 @@ def register_routes(app):
             editing_user=editing_user,
         )
 
-    @app.post("/admin/users/<user_id>/update")
+    @app.post("/dashboard/admin/users/<user_id>/update")
     @role_required("Administrador")
     def admin_users_update(user_id):
         editing_user = get_user_by_id(user_id)
@@ -152,7 +152,7 @@ def register_routes(app):
         flash("Usuario actualizado correctamente.", "success")
         return redirect(url_for("admin_users"))
 
-    @app.post("/admin/users/<user_id>/delete")
+    @app.post("/dashboard/admin/users/<user_id>/delete")
     @role_required("Administrador")
     def admin_users_delete(user_id):
         target_user = get_user_by_id(user_id)

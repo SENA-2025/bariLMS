@@ -12,7 +12,7 @@ def register_routes(app):
 
     # ── Orden ─────────────────────────────────────────────────────────────────
 
-    @app.patch("/api/instructor/actividad-aprendizaje/<aa_id>/secciones/orden")
+    @app.patch("/dashboard/instructor/api/actividad-aprendizaje/<aa_id>/secciones/orden")
     @role_required("Instructor")
     def api_instructor_secciones_orden(aa_id):
         data = request.get_json() or {}
@@ -25,7 +25,7 @@ def register_routes(app):
         db.commit()
         return jsonify({"ok": True})
 
-    @app.patch("/api/instructor/seccion/<sec_id>/sub-secciones/orden")
+    @app.patch("/dashboard/instructor/api/seccion/<sec_id>/sub-secciones/orden")
     @role_required("Instructor")
     def api_instructor_sub_secciones_orden(sec_id):
         data = request.get_json() or {}
@@ -40,7 +40,7 @@ def register_routes(app):
 
     # ── Secciones ─────────────────────────────────────────────────────────────
 
-    @app.post("/api/instructor/actividad-aprendizaje/<aa_id>/seccion/nueva")
+    @app.post("/dashboard/instructor/api/actividad-aprendizaje/<aa_id>/seccion/nueva")
     @role_required("Instructor")
     def api_instructor_seccion_nueva(aa_id):
         data = request.get_json() or {}
@@ -62,7 +62,7 @@ def register_routes(app):
         db.commit()
         return jsonify({"ok": True, "id": row["id"]})
 
-    @app.patch("/api/instructor/seccion/<sec_id>/editar")
+    @app.patch("/dashboard/instructor/api/seccion/<sec_id>/editar")
     @role_required("Instructor")
     def api_instructor_seccion_editar(sec_id):
         data = request.get_json() or {}
@@ -83,7 +83,7 @@ def register_routes(app):
         db.commit()
         return jsonify({"ok": True})
 
-    @app.delete("/api/instructor/seccion/<sec_id>")
+    @app.delete("/dashboard/instructor/api/seccion/<sec_id>")
     @role_required("Instructor")
     def api_instructor_seccion_eliminar(sec_id):
         db = get_db()
@@ -93,7 +93,7 @@ def register_routes(app):
 
     # ── Sub-secciones ─────────────────────────────────────────────────────────
 
-    @app.post("/api/instructor/seccion/<sec_id>/sub-seccion/nueva")
+    @app.post("/dashboard/instructor/api/seccion/<sec_id>/sub-seccion/nueva")
     @role_required("Instructor")
     def api_instructor_sub_seccion_nueva(sec_id):
         data = request.get_json() or {}
@@ -115,7 +115,7 @@ def register_routes(app):
         db.commit()
         return jsonify({"ok": True, "id": row["id"]})
 
-    @app.patch("/api/instructor/sub-seccion/<sub_id>/editar")
+    @app.patch("/dashboard/instructor/api/sub-seccion/<sub_id>/editar")
     @role_required("Instructor")
     def api_instructor_sub_seccion_editar(sub_id):
         data = request.get_json() or {}
@@ -136,7 +136,7 @@ def register_routes(app):
         db.commit()
         return jsonify({"ok": True})
 
-    @app.delete("/api/instructor/sub-seccion/<sub_id>")
+    @app.delete("/dashboard/instructor/api/sub-seccion/<sub_id>")
     @role_required("Instructor")
     def api_instructor_sub_seccion_eliminar(sub_id):
         db = get_db()

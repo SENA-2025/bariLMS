@@ -11,7 +11,7 @@ export async function cargarActividades() {
     document.getElementById('act-loading').style.display = 'block';
     document.getElementById('actividades-lista').innerHTML = '';
 
-    const res  = await fetch(`/api/instructor/actividad-proyecto/${state.selectedActProyId}/actividades-aprendizaje`);
+    const res  = await fetch(`/dashboard/instructor/api/actividad-proyecto/${state.selectedActProyId}/actividades-aprendizaje`);
     const data = await res.json();
 
     document.getElementById('act-loading').style.display = 'none';
@@ -123,7 +123,7 @@ export function renderActividades(actividades) {
             onEnd: async () => {
                 const orden = Array.from(acordeon.querySelectorAll('.actividad-card[data-id]'))
                     .map(c => parseInt(c.dataset.id));
-                await fetch(`/api/instructor/actividad-proyecto/${state.selectedActProyId}/aprendizaje/orden`, {
+                await fetch(`/dashboard/instructor/api/actividad-proyecto/${state.selectedActProyId}/aprendizaje/orden`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ orden }),
@@ -142,7 +142,7 @@ export function renderActividades(actividades) {
 // ─── Acciones de actividad ────────────────────────────────────────────────────
 
 export async function activarEvidencia(actId) {
-    const res  = await fetch(`/api/instructor/actividad/${actId}/evidencia`, {
+    const res  = await fetch(`/dashboard/instructor/api/actividad/${actId}/evidencia`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ descripcion: '' }),
@@ -159,7 +159,7 @@ export async function editarFechaFin(actId, fechaActual) {
         alert('Formato incorrecto. Usa AAAA-MM-DD');
         return;
     }
-    const res  = await fetch(`/api/instructor/actividad-aprendizaje/${actId}/fecha-fin`, {
+    const res  = await fetch(`/dashboard/instructor/api/actividad-aprendizaje/${actId}/fecha-fin`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fecha_fin: val || null }),
@@ -171,7 +171,7 @@ export async function editarFechaFin(actId, fechaActual) {
 export async function eliminarActividad(actId) {
     const ok = await confirmar('¿Eliminar esta actividad de aprendizaje y todo su contenido? Esta acción no se puede deshacer.');
     if (!ok) return;
-    const res  = await fetch(`/api/instructor/actividad-aprendizaje/${actId}`, { method: 'DELETE' });
+    const res  = await fetch(`/dashboard/instructor/api/actividad-aprendizaje/${actId}`, { method: 'DELETE' });
     const data = await res.json();
     if (data.ok) await cargarActividades();
     else alert(data.error || 'Error al eliminar la actividad');

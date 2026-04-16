@@ -93,7 +93,7 @@ export async function confirmarCrearActividad() {
     formData.append('fecha_fin',    document.getElementById('form-fin').value);
 
     try {
-        const res  = await fetch(`/api/instructor/actividad-proyecto/${state.selectedActProyId}/aprendizaje/nueva`, {
+        const res  = await fetch(`/dashboard/instructor/api/actividad-proyecto/${state.selectedActProyId}/aprendizaje/nueva`, {
             method: 'POST', body: formData,
         });
         const data = await res.json();
@@ -125,7 +125,7 @@ async function _confirmarEditarActividad() {
     formData.append('fecha_fin',    document.getElementById('form-fin').value);
 
     try {
-        const res  = await fetch(`/api/instructor/actividad-aprendizaje/${state.editingActId}/editar`, {
+        const res  = await fetch(`/dashboard/instructor/api/actividad-aprendizaje/${state.editingActId}/editar`, {
             method: 'PATCH', body: formData,
         });
         const data = await res.json();
@@ -180,8 +180,8 @@ export async function guardarSeccion() {
 
     try {
         const url = state.sidePanelMode === 'sec_crear'
-            ? `/api/instructor/actividad-aprendizaje/${state.editingActId}/seccion/nueva`
-            : `/api/instructor/seccion/${state.currentSecId}/editar`;
+            ? `/dashboard/instructor/api/actividad-aprendizaje/${state.editingActId}/seccion/nueva`
+            : `/dashboard/instructor/api/seccion/${state.currentSecId}/editar`;
         const method = state.sidePanelMode === 'sec_crear' ? 'POST' : 'PATCH';
 
         const res  = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -201,7 +201,7 @@ export async function guardarSeccion() {
 export async function eliminarSeccion(secId) {
     const ok = await confirmar('¿Eliminar esta sección y todo su contenido? Esta acción no se puede deshacer.');
     if (!ok) return;
-    const res  = await fetch(`/api/instructor/seccion/${secId}`, { method: 'DELETE' });
+    const res  = await fetch(`/dashboard/instructor/api/seccion/${secId}`, { method: 'DELETE' });
     const data = await res.json();
     if (data.ok) _dispatch('fases:actividades-refresh');
     else alert(data.error || 'Error al eliminar sección');
@@ -248,8 +248,8 @@ export async function guardarSubSeccion() {
 
     try {
         const url = state.sidePanelMode === 'sub_crear'
-            ? `/api/instructor/seccion/${state.currentSecId}/sub-seccion/nueva`
-            : `/api/instructor/sub-seccion/${state.currentSubId}/editar`;
+            ? `/dashboard/instructor/api/seccion/${state.currentSecId}/sub-seccion/nueva`
+            : `/dashboard/instructor/api/sub-seccion/${state.currentSubId}/editar`;
         const method = state.sidePanelMode === 'sub_crear' ? 'POST' : 'PATCH';
 
         const res  = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -269,7 +269,7 @@ export async function guardarSubSeccion() {
 export async function eliminarSubSeccion(subId) {
     const ok = await confirmar('¿Eliminar esta sub-sección? Esta acción no se puede deshacer.');
     if (!ok) return;
-    const res  = await fetch(`/api/instructor/sub-seccion/${subId}`, { method: 'DELETE' });
+    const res  = await fetch(`/dashboard/instructor/api/sub-seccion/${subId}`, { method: 'DELETE' });
     const data = await res.json();
     if (data.ok) _dispatch('fases:actividades-refresh');
     else alert(data.error || 'Error al eliminar sub-sección');

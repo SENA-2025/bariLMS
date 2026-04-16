@@ -97,7 +97,7 @@ def _import_people_csv(entity, storage):
 # ── Rutas ────────────────────────────────────────────────────────────────────
 
 def register_routes(app):
-    @app.route("/admin/people")
+    @app.route("/dashboard/admin/people")
     @role_required("Administrador")
     def admin_people():
         return render_template(
@@ -106,7 +106,7 @@ def register_routes(app):
             **normalize_people_context(request.args),
         )
 
-    @app.post("/admin/people/<entity>/create")
+    @app.post("/dashboard/admin/people/<entity>/create")
     @role_required("Administrador")
     def admin_people_create(entity):
         if entity not in PEOPLE_ENTITIES:
@@ -136,7 +136,7 @@ def register_routes(app):
         )
         return redirect(url_for("admin_people"))
 
-    @app.post("/admin/people/<entity>/import")
+    @app.post("/dashboard/admin/people/<entity>/import")
     @role_required("Administrador")
     def admin_people_import(entity):
         if entity not in PEOPLE_ENTITIES:
@@ -155,7 +155,7 @@ def register_routes(app):
             flash("El archivo no contenía registros para importar.", "warning")
         return redirect(url_for("admin_people"))
 
-    @app.get("/admin/people/<entity>/<item_id>/edit")
+    @app.get("/dashboard/admin/people/<entity>/<item_id>/edit")
     @role_required("Administrador")
     def admin_people_edit(entity, item_id):
         if entity not in PEOPLE_ENTITIES:
@@ -166,7 +166,7 @@ def register_routes(app):
             return redirect(url_for("admin_people"))
         return redirect(url_for("admin_people", edit_entity=entity, edit_id=item_id))
 
-    @app.post("/admin/people/<entity>/<item_id>/update")
+    @app.post("/dashboard/admin/people/<entity>/<item_id>/update")
     @role_required("Administrador")
     def admin_people_update(entity, item_id):
         if entity not in PEOPLE_ENTITIES:
@@ -203,7 +203,7 @@ def register_routes(app):
         flash(f"{ENTITY_CONFIG[entity]['label']} actualizada correctamente.", "success")
         return redirect(url_for("admin_people"))
 
-    @app.post("/admin/people/<entity>/<item_id>/delete")
+    @app.post("/dashboard/admin/people/<entity>/<item_id>/delete")
     @role_required("Administrador")
     def admin_people_delete(entity, item_id):
         if entity not in PEOPLE_ENTITIES:

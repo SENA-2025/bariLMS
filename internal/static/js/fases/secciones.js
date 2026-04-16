@@ -113,7 +113,7 @@ export function initSortableSecciones(actId) {
         onEnd: async () => {
             const orden = Array.from(el.querySelectorAll('.seccion-card[data-id]'))
                 .map(c => parseInt(c.dataset.id));
-            await fetch(`/api/instructor/actividad-aprendizaje/${actId}/secciones/orden`, {
+            await fetch(`/dashboard/instructor/api/actividad-aprendizaje/${actId}/secciones/orden`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ orden }),
@@ -134,7 +134,7 @@ export function initSortableSubSecciones(secId) {
         onEnd: async () => {
             const orden = Array.from(el.querySelectorAll('li[data-id]'))
                 .map(li => parseInt(li.dataset.id));
-            await fetch(`/api/instructor/seccion/${secId}/sub-secciones/orden`, {
+            await fetch(`/dashboard/instructor/api/seccion/${secId}/sub-secciones/orden`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ orden }),

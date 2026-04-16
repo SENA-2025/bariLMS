@@ -17,7 +17,7 @@ def register_routes(app):
     # ------------------------------------------------------------------
 
     @app.route(
-        "/etapa-productiva/instructor/ficha/<ficha_id>/aprendiz/<aprendiz_id>/gestionar"
+        "/dashboard/instructor/etapa-productiva/ficha/<ficha_id>/aprendiz/<aprendiz_id>/gestionar"
     )
     @role_required("Instructor")
     def ep_gestionar_proceso(ficha_id, aprendiz_id):
@@ -73,7 +73,7 @@ def register_routes(app):
     # CU-G02 — Iniciar proceso EP (POST)
     # ------------------------------------------------------------------
     # @app.route(
-    #     "/etapa-productiva/instructor/ficha/<ficha_id>/aprendiz/<aprendiz_id>/gestionar/iniciar",
+    #     "/dashboard/instructor/etapa-productiva/ficha/<ficha_id>/aprendiz/<aprendiz_id>/gestionar/iniciar",
     #     methods=["POST"],
     # )
     # @role_required("Instructor")
@@ -83,7 +83,7 @@ def register_routes(app):
     #     )
         
     @app.route(
-        "/etapa-productiva/instructor/ficha/<ficha_id>/aprendiz/<aprendiz_id>/gestionar/iniciar",
+        "/dashboard/instructor/etapa-productiva/ficha/<ficha_id>/aprendiz/<aprendiz_id>/gestionar/iniciar",
         methods=["POST"],
     )
     @role_required("Instructor")
@@ -111,7 +111,7 @@ def register_routes(app):
     # CU-G03 — Editar / Guardar Momento 1
     # ------------------------------------------------------------------
 
-    @app.route("/etapa-productiva/instructor/proceso/<proceso_id>/momento-1/editar")
+    @app.route("/dashboard/instructor/etapa-productiva/proceso/<proceso_id>/momento-1/editar")
     @role_required("Instructor")
     def ep_editar_momento1(proceso_id):
         user = current_user()
@@ -130,7 +130,7 @@ def register_routes(app):
         )
 
     @app.route(
-        "/etapa-productiva/instructor/proceso/<proceso_id>/momento-1/guardar",
+        "/dashboard/instructor/etapa-productiva/proceso/<proceso_id>/momento-1/guardar",
         methods=["POST"],
     )
     @role_required("Instructor")
@@ -155,7 +155,7 @@ def register_routes(app):
     # CU-G04 — Editar / Guardar Momento 2
     # ------------------------------------------------------------------
 
-    @app.route("/etapa-productiva/instructor/proceso/<proceso_id>/momento-2/editar")
+    @app.route("/dashboard/instructor/etapa-productiva/proceso/<proceso_id>/momento-2/editar")
     @role_required("Instructor")
     def ep_editar_momento2(proceso_id):
         user = current_user()
@@ -180,7 +180,7 @@ def register_routes(app):
         )
 
     @app.route(
-        "/etapa-productiva/instructor/proceso/<proceso_id>/momento-2/guardar",
+        "/dashboard/instructor/etapa-productiva/proceso/<proceso_id>/momento-2/guardar",
         methods=["POST"],
     )
     @role_required("Instructor")
@@ -208,7 +208,7 @@ def register_routes(app):
     # CU-G05 — Editar / Guardar Momento 3
     # ------------------------------------------------------------------
 
-    @app.route("/etapa-productiva/instructor/proceso/<proceso_id>/momento-3/editar")
+    @app.route("/dashboard/instructor/etapa-productiva/proceso/<proceso_id>/momento-3/editar")
     @role_required("Instructor")
     def ep_editar_momento3(proceso_id):
         user = current_user()
@@ -233,7 +233,7 @@ def register_routes(app):
         )
 
     @app.route(
-        "/etapa-productiva/instructor/proceso/<proceso_id>/momento-3/guardar",
+        "/dashboard/instructor/etapa-productiva/proceso/<proceso_id>/momento-3/guardar",
         methods=["POST"],
     )
     @role_required("Instructor")

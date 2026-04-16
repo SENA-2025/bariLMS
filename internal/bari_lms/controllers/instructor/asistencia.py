@@ -8,7 +8,7 @@ from bari_lms.middleware.auth import role_required
 
 def register_routes(app):
 
-    @app.get("/api/instructor/ficha/<ficha_id>/asistencia")
+    @app.get("/dashboard/instructor/api/ficha/<ficha_id>/asistencia")
     @role_required("Instructor")
     def api_instructor_asistencia(ficha_id):
         fecha = request.args.get("fecha", "").strip()
@@ -43,7 +43,7 @@ def register_routes(app):
 
         return jsonify({"aprendices": result, "fecha": fecha})
 
-    @app.post("/api/instructor/ficha/<ficha_id>/asistencia")
+    @app.post("/dashboard/instructor/api/ficha/<ficha_id>/asistencia")
     @role_required("Instructor")
     def api_instructor_asistencia_guardar(ficha_id):
         data = request.get_json() or {}

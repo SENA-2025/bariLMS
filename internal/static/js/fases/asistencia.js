@@ -22,7 +22,7 @@ export async function cargarAsistencia() {
     document.getElementById('asistencia-loading').style.display = 'block';
     document.getElementById('asistencia-content').style.display = 'none';
 
-    const res  = await fetch(`/api/instructor/ficha/${window.FICHA_ID}/asistencia?fecha=${fecha}`);
+    const res  = await fetch(`/dashboard/instructor/api/ficha/${window.FICHA_ID}/asistencia?fecha=${fecha}`);
     const data = await res.json();
 
     document.getElementById('asistencia-loading').style.display = 'none';
@@ -99,7 +99,7 @@ export async function guardarAsistencia() {
         estado:      ap.estado || 'Presente',
     }));
 
-    const res  = await fetch(`/api/instructor/ficha/${window.FICHA_ID}/asistencia`, {
+    const res  = await fetch(`/dashboard/instructor/api/ficha/${window.FICHA_ID}/asistencia`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fecha, registros }),

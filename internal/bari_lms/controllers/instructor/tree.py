@@ -8,7 +8,7 @@ from bari_lms.middleware.auth import role_required
 
 def register_routes(app):
 
-    @app.route("/api/instructor/ficha/<ficha_id>/tree")
+    @app.route("/dashboard/instructor/api/ficha/<ficha_id>/tree")
     @role_required("Instructor")
     def api_instructor_ficha_tree(ficha_id):
         db = get_db()

@@ -14,7 +14,7 @@ def register_routes(app):
 
     # ── Fases ─────────────────────────────────────────────────────────────────
 
-    @app.post("/api/instructor/ficha/<ficha_id>/fase/nueva")
+    @app.post("/dashboard/instructor/api/ficha/<ficha_id>/fase/nueva")
     @role_required("Instructor")
     def api_instructor_fase_nueva(ficha_id):
         data = request.get_json() or {}
@@ -36,7 +36,7 @@ def register_routes(app):
 
     # ── Actividades de proyecto ───────────────────────────────────────────────
 
-    @app.post("/api/instructor/fase/<fase_id>/actividad/nueva")
+    @app.post("/dashboard/instructor/api/fase/<fase_id>/actividad/nueva")
     @role_required("Instructor")
     def api_instructor_actividad_nueva(fase_id):
         data = request.get_json() or {}
@@ -53,7 +53,7 @@ def register_routes(app):
 
     # ── Actividades de aprendizaje ────────────────────────────────────────────
 
-    @app.post("/api/instructor/actividad-proyecto/<act_proy_id>/aprendizaje/nueva")
+    @app.post("/dashboard/instructor/api/actividad-proyecto/<act_proy_id>/aprendizaje/nueva")
     @role_required("Instructor")
     def api_instructor_act_aprendizaje_nueva(act_proy_id):
         if request.is_json:
@@ -93,7 +93,7 @@ def register_routes(app):
         db.commit()
         return jsonify({"ok": True, "id": aa_id, "nombre": nombre})
 
-    @app.get("/api/instructor/actividad-proyecto/<ap_id>/actividades-aprendizaje")
+    @app.get("/dashboard/instructor/api/actividad-proyecto/<ap_id>/actividades-aprendizaje")
     @role_required("Instructor")
     def api_instructor_actividades_aprendizaje(ap_id):
         db = get_db()
@@ -132,7 +132,7 @@ def register_routes(app):
 
         return jsonify({"actividades": result})
 
-    @app.delete("/api/instructor/actividad-aprendizaje/<aa_id>")
+    @app.delete("/dashboard/instructor/api/actividad-aprendizaje/<aa_id>")
     @role_required("Instructor")
     def api_instructor_act_aprendizaje_eliminar(aa_id):
         db = get_db()
@@ -140,7 +140,7 @@ def register_routes(app):
         db.commit()
         return jsonify({"ok": True})
 
-    @app.patch("/api/instructor/actividad-proyecto/<ap_id>/aprendizaje/orden")
+    @app.patch("/dashboard/instructor/api/actividad-proyecto/<ap_id>/aprendizaje/orden")
     @role_required("Instructor")
     def api_instructor_actividades_aprendizaje_orden(ap_id):
         data = request.get_json() or {}
@@ -153,7 +153,7 @@ def register_routes(app):
         db.commit()
         return jsonify({"ok": True})
 
-    @app.patch("/api/instructor/actividad-aprendizaje/<aa_id>/fecha-fin")
+    @app.patch("/dashboard/instructor/api/actividad-aprendizaje/<aa_id>/fecha-fin")
     @role_required("Instructor")
     def api_instructor_act_apr_update_fecha_fin(aa_id):
         data = request.get_json() or {}
@@ -163,7 +163,7 @@ def register_routes(app):
         db.commit()
         return jsonify({"ok": True})
 
-    @app.patch("/api/instructor/actividad-aprendizaje/<aa_id>/editar")
+    @app.patch("/dashboard/instructor/api/actividad-aprendizaje/<aa_id>/editar")
     @role_required("Instructor")
     def api_instructor_act_aprendizaje_editar(aa_id):
         if request.is_json:

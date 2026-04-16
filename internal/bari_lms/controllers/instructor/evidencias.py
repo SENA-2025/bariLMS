@@ -12,7 +12,7 @@ def register_routes(app):
 
     # ── Crear evidencia ───────────────────────────────────────────────────────
 
-    @app.post("/api/instructor/actividad/<act_id>/evidencia")
+    @app.post("/dashboard/instructor/api/actividad/<act_id>/evidencia")
     @role_required("Instructor")
     def api_instructor_evidencia_crear(act_id):
         data = request.get_json() or {}
@@ -34,7 +34,7 @@ def register_routes(app):
 
     # ── Aprendices y entregas ─────────────────────────────────────────────────
 
-    @app.route("/api/instructor/actividad/<act_id>/aprendices")
+    @app.route("/dashboard/instructor/api/actividad/<act_id>/aprendices")
     @role_required("Instructor")
     def api_instructor_aprendices(act_id):
         db = get_db()
@@ -109,7 +109,7 @@ def register_routes(app):
 
     # ── Calificar entrega ─────────────────────────────────────────────────────
 
-    @app.post("/api/instructor/entrega/<entrega_id>/calificar")
+    @app.post("/dashboard/instructor/api/entrega/<entrega_id>/calificar")
     @role_required("Instructor")
     def api_instructor_calificar(entrega_id):
         data = request.get_json() or {}
@@ -135,7 +135,7 @@ def register_routes(app):
 
     # ── Matriz de evidencias por actividad de proyecto ────────────────────────
 
-    @app.get("/api/instructor/actividad-proyecto/<ap_id>/evidencias-matriz")
+    @app.get("/dashboard/instructor/api/actividad-proyecto/<ap_id>/evidencias-matriz")
     @role_required("Instructor")
     def api_instructor_evidencias_matriz(ap_id):
         db = get_db()

@@ -19,7 +19,7 @@ _ROLE_BASE = {
 
 
 def register_routes(app):
-    @app.route("/etapa-productiva")
+    @app.route("/dashboard/etapa-productiva")
     @login_required
     def ep_index():
         user = current_user()

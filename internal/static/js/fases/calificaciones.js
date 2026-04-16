@@ -57,7 +57,7 @@ export async function setCalTab(tab) {
     document.getElementById('cal-tab-2-content').style.display = tab === 2 ? 'block' : 'none';
 
     if (!state.matrizData) {
-        const res      = await fetch(`/api/instructor/actividad-proyecto/${state.calActProyId}/evidencias-matriz`);
+        const res      = await fetch(`/dashboard/instructor/api/actividad-proyecto/${state.calActProyId}/evidencias-matriz`);
         state.matrizData = await res.json();
     }
     if (tab === 1) _renderMatriz(state.matrizData);
@@ -207,7 +207,7 @@ export async function guardarCalificacion() {
     hideFormAlert('form-evidencia-alert');
 
     try {
-        const res  = await fetch(`/api/instructor/entrega/${state.currentEntregaId}/calificar`, {
+        const res  = await fetch(`/dashboard/instructor/api/entrega/${state.currentEntregaId}/calificar`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ calificacion: cal, observaciones: document.getElementById('ev-observaciones').value.trim() }),

@@ -9,7 +9,7 @@ let _sortableGuiasAprendizaje = null;
 // ─── Carga y render ───────────────────────────────────────────────────────────
 
 export async function cargarGuiasAprendizaje(apId) {
-    const res  = await fetch(`/api/instructor/actividad-proyecto/${apId}/guias-aprendizaje`);
+    const res  = await fetch(`/dashboard/instructor/api/actividad-proyecto/${apId}/guias-aprendizaje`);
     const data = await res.json();
     state.guiasAprendizajeCache = data.guias || [];
     renderGuiasAprendizaje(state.guiasAprendizajeCache);
@@ -94,7 +94,7 @@ function _initSortableGuias() {
         onEnd: async () => {
             const orden = Array.from(ul.querySelectorAll('li[data-id]'))
                 .map(li => parseInt(li.dataset.id));
-            await fetch(`/api/instructor/actividad-proyecto/${state.selectedActProyId}/guias/orden`, {
+            await fetch(`/dashboard/instructor/api/actividad-proyecto/${state.selectedActProyId}/guias/orden`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ orden }),
@@ -133,7 +133,7 @@ export async function subirGuiaAprendizaje() {
     if (fileInput.files.length > 0) formData.append('guia_archivo', fileInput.files[0]);
 
     try {
-        const res  = await fetch(`/api/instructor/actividad-proyecto/${state.selectedActProyId}/guias-aprendizaje/nueva`, {
+        const res  = await fetch(`/dashboard/instructor/api/actividad-proyecto/${state.selectedActProyId}/guias-aprendizaje/nueva`, {
             method: 'POST', body: formData,
         });
         const data = await res.json();
@@ -156,7 +156,7 @@ export async function subirGuiaAprendizaje() {
 async function _eliminarGuiasAprendizaje(guiaId) {
     const ok = await confirmar('¿Eliminar esta guía? Esta acción no se puede deshacer.');
     if (!ok) return;
-    const res  = await fetch(`/api/instructor/guia-actividad-proyecto/${guiaId}`, { method: 'DELETE' });
+    const res  = await fetch(`/dashboard/instructor/api/guia-actividad-proyecto/${guiaId}`, { method: 'DELETE' });
     const data = await res.json();
     if (data.ok) {
         await cargarGuiasAprendizaje(state.selectedActProyId);
@@ -176,7 +176,7 @@ async function _guardarGuiasAprendizaje(guiaId) {
     hideFormAlert(`guia-edit-alert-${guiaId}`);
 
     try {
-        const res  = await fetch(`/api/instructor/guia-actividad-proyecto/${guiaId}/editar`, {
+        const res  = await fetch(`/dashboard/instructor/api/guia-actividad-proyecto/${guiaId}/editar`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ nombre, url, descripcion }),

@@ -11,7 +11,7 @@ from bari_lms.services.instructor_ep_service import InstructorEtapaProductivaSer
 def register_routes(app):
 
     # CU003 — Listar fichas del instructor en EP
-    @app.route("/etapa-productiva/instructor/fichas")
+    @app.route("/dashboard/instructor/etapa-productiva/fichas")
     @role_required("Instructor")
     def ep_instructor_fichas():
         user = current_user()
@@ -26,7 +26,7 @@ def register_routes(app):
         return render_template(PlantillasEPInstructor.FICHAS, user=user, fichas=fichas)
 
     # CU004 — Seleccionar ficha y ver sus aprendices en EP
-    @app.route("/etapa-productiva/instructor/ficha/<ficha_id>")
+    @app.route("/dashboard/instructor/etapa-productiva/ficha/<ficha_id>")
     @role_required("Instructor")
     def ep_instructor_ficha(ficha_id):
         user = current_user()
@@ -65,7 +65,7 @@ def register_routes(app):
 
     # Contrato de aprendizaje — crear (aprendiz sin contrato)
     @app.route(
-        "/etapa-productiva/instructor/ficha/<ficha_id>/aprendiz/<aprendiz_id>/contrato/nuevo",
+        "/dashboard/instructor/etapa-productiva/ficha/<ficha_id>/aprendiz/<aprendiz_id>/contrato/nuevo",
         methods=["GET", "POST"],
     )
     @role_required("Instructor")
@@ -127,7 +127,7 @@ def register_routes(app):
 
     # Contrato de aprendizaje — editar (aprendiz con contrato activo)
     @app.route(
-        "/etapa-productiva/instructor/ficha/<ficha_id>/aprendiz/<aprendiz_id>/contrato/editar",
+        "/dashboard/instructor/etapa-productiva/ficha/<ficha_id>/aprendiz/<aprendiz_id>/contrato/editar",
         methods=["GET", "POST"],
     )
     @role_required("Instructor")

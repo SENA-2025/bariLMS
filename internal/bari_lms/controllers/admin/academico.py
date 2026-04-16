@@ -18,7 +18,7 @@ from bari_lms.repositories.entidad import (
 
 
 def register_routes(app):
-    @app.route("/admin/academic")
+    @app.route("/dashboard/admin/academic")
     @role_required("Administrador")
     def admin_academic():
         return render_template(
@@ -27,7 +27,7 @@ def register_routes(app):
             **normalize_academic_context(request.args),
         )
 
-    @app.post("/admin/academic/<entity>/create")
+    @app.post("/dashboard/admin/academic/<entity>/create")
     @role_required("Administrador")
     def admin_academic_create(entity):
         if entity not in ACADEMIC_ENTITIES:
@@ -54,7 +54,7 @@ def register_routes(app):
         flash(f"{ENTITY_CONFIG[entity]['label']} creada correctamente.", "success")
         return redirect(url_for("admin_academic", **redirect_args))
 
-    @app.get("/admin/academic/<entity>/<item_id>/edit")
+    @app.get("/dashboard/admin/academic/<entity>/<item_id>/edit")
     @role_required("Administrador")
     def admin_academic_edit(entity, item_id):
         if entity not in ACADEMIC_ENTITIES:
@@ -101,7 +101,7 @@ def register_routes(app):
             overrides["actividad_proyecto_id"] = ap["id"]
         return redirect(url_for("admin_academic", **overrides))
 
-    @app.post("/admin/academic/<entity>/<item_id>/update")
+    @app.post("/dashboard/admin/academic/<entity>/<item_id>/update")
     @role_required("Administrador")
     def admin_academic_update(entity, item_id):
         if entity not in ACADEMIC_ENTITIES:
@@ -137,7 +137,7 @@ def register_routes(app):
         flash(f"{ENTITY_CONFIG[entity]['label']} actualizada correctamente.", "success")
         return redirect(url_for("admin_academic", **academic_redirect_args(request.form)))
 
-    @app.post("/admin/academic/ficha/<ficha_id>/competencia/add")
+    @app.post("/dashboard/admin/academic/ficha/<ficha_id>/competencia/add")
     @role_required("Administrador")
     def admin_ficha_competencia_add(ficha_id):
         ficha = get_entity("ficha", ficha_id)
@@ -164,7 +164,7 @@ def register_routes(app):
         flash("Instructor agregado a competencias correctamente.", "success")
         return redirect(url_for("admin_academic", **academic_redirect_args(request.form)))
 
-    @app.post("/admin/academic/ficha/<ficha_id>/competencia/<instructor_id>/remove")
+    @app.post("/dashboard/admin/academic/ficha/<ficha_id>/competencia/<instructor_id>/remove")
     @role_required("Administrador")
     def admin_ficha_competencia_remove(ficha_id, instructor_id):
         db = get_db()
@@ -176,7 +176,7 @@ def register_routes(app):
         flash("Instructor removido de competencias.", "success")
         return redirect(url_for("admin_academic", **academic_redirect_args(request.form)))
 
-    @app.post("/admin/academic/<entity>/<item_id>/delete")
+    @app.post("/dashboard/admin/academic/<entity>/<item_id>/delete")
     @role_required("Administrador")
     def admin_academic_delete(entity, item_id):
         if entity not in ACADEMIC_ENTITIES:

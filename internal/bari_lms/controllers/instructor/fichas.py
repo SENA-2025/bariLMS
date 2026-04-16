@@ -7,7 +7,7 @@ from bari_lms.middleware.auth import current_user, role_required
 
 
 def register_routes(app):
-    @app.route("/instructor/fichas")
+    @app.route("/dashboard/instructor/fichas")
     @role_required("Instructor")
     def instructor_fichas():
         user = current_user()
@@ -37,7 +37,7 @@ def register_routes(app):
 
         return render_template("instructor/fichas.html", user=user, fichas=fichas)
 
-    @app.route("/instructor/ficha/<ficha_id>/fases")
+    @app.route("/dashboard/instructor/ficha/<ficha_id>/fases")
     @role_required("Instructor")
     def instructor_fases(ficha_id):
         user = current_user()
