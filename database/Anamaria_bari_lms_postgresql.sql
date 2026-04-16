@@ -33,7 +33,7 @@
 --   libre en español usan la collation por defecto de la DB.
 --
 -- ── Reglas de mayúsculas/minúsculas (CHECK) ──────────────────
---   correo_institucional, correo_personal → siempre lower().
+--   correo, correo_personal → siempre lower().
 --   persona.nombres, persona.apellidos    → siempre UPPER().
 --
 -- ── Personas y cuentas ───────────────────────────────────────
@@ -41,7 +41,7 @@
 --              El admin provisional vive aquí sin fila en persona.
 --              No tiene columna nombre: el nombre se obtiene de
 --              persona.nombres/apellidos; para el admin provisional
---              la app usa el correo_institucional como identificador.
+--              la app usa el correo como identificador.
 --   persona  — datos personales e identidad del usuario real.
 --              persona.id = usuario.id (PK compartida, relación 1:1).
 --              No existe columna usuario_id: persona.id ES la FK.
@@ -68,7 +68,7 @@
 --
 -- ── Admin provisional (capa de aplicación) ───────────────────
 --   Al arrancar sin ningún usuario Administrador: crear una fila
---   en usuario con correo_institucional y contraseña aleatorios,
+--   en usuario con correo y contraseña aleatorios,
 --   imprimir en stdout una sola vez. No se crea fila en persona.
 --
 -- ── Tablas (orden de dependencia) ────────────────────────────
@@ -158,7 +158,7 @@ CREATE INDEX IF NOT EXISTS idx_sexo_codigo ON sexo (codigo);
 -- Entidad de autenticación. Todos los perfiles tienen una fila aquí.
 -- Sin columna nombre: el nombre se deriva de persona.nombres/apellidos.
 -- El admin provisional vive aquí sin fila en persona; la app usa
--- correo_institucional como identificador de visualización.
+-- correo como identificador de visualización.
 CREATE TABLE IF NOT EXISTS usuario (
     -- identidad
     id                   UUID        PRIMARY KEY,
@@ -167,7 +167,7 @@ CREATE TABLE IF NOT EXISTS usuario (
     creado_por           UUID        REFERENCES usuario(id) ON DELETE SET NULL,
 
     -- credenciales (correo_personal vive en persona, no aquí)
-    correo_institucional TEXT        COLLATE "C" UNIQUE NOT NULL,
+    correo TEXT        COLLATE "C" UNIQUE NOT NULL,
     contrasena_hash      TEXT        NOT NULL,
 
     -- estado
@@ -178,10 +178,10 @@ CREATE TABLE IF NOT EXISTS usuario (
     actualizado_en       TIMESTAMPTZ DEFAULT NULL,
 
     -- restricciones
-    CHECK (correo_institucional = lower(correo_institucional))
+    CHECK (correo = lower(correo))
 );
 
-CREATE INDEX IF NOT EXISTS idx_usuario_correo_institucional ON usuario (correo_institucional);
+CREATE INDEX IF NOT EXISTS idx_usuario_correo ON usuario (correo);
 CREATE INDEX IF NOT EXISTS idx_usuario_creado_por           ON usuario (creado_por);
 
 

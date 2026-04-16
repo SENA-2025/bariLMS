@@ -29,7 +29,7 @@ Total de tablas: 40
 5. ANÁLISIS A NIVEL DE COLUMNAS ENTRE Anamaria y bari_lms:
 
    Diferencias en la tabla 'usuario':
-      + Columna añadida en Anamaria: correo_institucional
+      + Columna añadida en Anamaria: correo
       - Columna eliminada en Anamaria (presente en bari_lms): correo
       - Columna eliminada en Anamaria (presente en bari_lms): nombre
 

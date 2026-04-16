@@ -77,10 +77,10 @@ def create_linked_person_user(entity, data):
     numero_documento = (data.get("documento") or "").strip()
     correo_personal = (data.get("correo") or "").strip().lower() or None
 
-    correo_institucional = generate_person_email(
+    correo = generate_person_email(
         config["email_prefix"], numero_documento, correo_personal
     )
-    if get_user_by_email(correo_institucional) is not None:
+    if get_user_by_email(correo) is not None:
         raise ValueError(
             "Ya existe un usuario con el correo que se intenta asignar a la persona."
         )
@@ -89,9 +89,9 @@ def create_linked_person_user(entity, data):
     persona_id = str(uuid.uuid7())
 
     db.execute(
-        "INSERT INTO usuario (id, correo_institucional, contrasena_hash, activo) "
+        "INSERT INTO usuario (id, correo, contrasena_hash, activo) "
         "VALUES (?, ?, ?, TRUE)",
-        (persona_id, correo_institucional, hash_password(numero_documento)),
+        (persona_id, correo, hash_password(numero_documento)),
     )
     db.execute(
         "INSERT INTO persona (id, nombres, apellidos, numero_documento, correo_personal) "
@@ -134,10 +134,10 @@ def sync_linked_person_user(entity, item_id, data):
     numero_documento = (data.get("documento") or "").strip()
     correo_personal = (data.get("correo") or "").strip().lower() or None
 
-    correo_institucional = generate_person_email(
+    correo = generate_person_email(
         config["email_prefix"], numero_documento, correo_personal
     )
-    existing = get_user_by_email(correo_institucional)
+    existing = get_user_by_email(correo)
     if existing is not None and existing["id"] != persona_id:
         raise ValueError(
             "Ya existe un usuario con el correo que se intenta asignar a la persona."
@@ -150,8 +150,8 @@ def sync_linked_person_user(entity, item_id, data):
         (nombres, apellidos, numero_documento, correo_personal, persona_id),
     )
     db.execute(
-        "UPDATE usuario SET correo_institucional = ? WHERE id = ?",
-        (correo_institucional, persona_id),
+        "UPDATE usuario SET correo = ? WHERE id = ?",
+        (correo, persona_id),
     )
     db.commit()
 

@@ -207,3 +207,4 @@ def register_routes(app):
         delete_entity(entity, item_id)
         flash(f"{ENTITY_CONFIG[entity]['label']} eliminada correctamente.", "success")
         return redirect(url_for("admin_academic", **redirect_args))
+        

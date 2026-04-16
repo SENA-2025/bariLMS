@@ -23,7 +23,7 @@ INFORMACION_GENERAL: list[FormSection] = [
         FormField("telefono",              "Contacto telefónico",                    "tel"),
         FormField("direccion",             "Dirección",                              "text"),
         FormField("correo_personal",       "Correo electrónico personal",            "email"),
-        FormField("correo_institucional",  "Correo electrónico institucional",       "email"),
+        FormField("correo",  "Correo electrónico institucional",       "email"),
         FormField("alternativa_ep",        "Alternativa de EP registrada",           "text"),
         FormField("fecha_sofia",           "Fecha de registro en SofiaPlus",         "date"),
     ]),
