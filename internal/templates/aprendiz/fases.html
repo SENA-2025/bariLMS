@@ -1,121 +1,725 @@
 {% extends "aprendiz/base.html" %}
 
-{% block title %}Fases de Formación{% endblock %}
-{% block menu_fases %}nav-active{% endblock %}
+{% block title %}Ruta de Aprendizaje - {{ ficha.numero }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/fase.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/form.css') }}">
+<style>
+    .panel-actividad { animation: fadeIn 0.25s ease-in-out; }
+    #panel-calificaciones { animation: fadeIn 0.25s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .act-aprendizaje-card { border-left: 4px solid #39A900; }
+
+    /* Botón activo en árbol */
+    .act-proy-btn.active { background-color: #b8860b !important; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+    .btn-cal-active { background-color: #157347 !important; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+
+    /* Calificaciones — resumen cards */
+    .cal-stat-card { border-radius: 10px; border: none; }
+    .cal-stat-icon { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+
+    /* Fase accordion en calificaciones */
+    .cal-fase-header {
+        background: linear-gradient(90deg, #20b2aa, #178a82);
+        color: white; border-radius: 6px;
+        padding: 8px 14px; cursor: pointer;
+        display: flex; align-items: center; justify-content: space-between;
+    }
+    .cal-fase-header:hover { filter: brightness(1.1); }
+    .cal-ap-header {
+        background-color: #dfb11e; color: white; border-radius: 5px;
+        padding: 6px 12px; cursor: pointer;
+        display: flex; align-items: center; justify-content: space-between;
+        font-size: 0.9rem;
+    }
+    .cal-ap-header:hover { filter: brightness(1.08); }
+
+    /* Badge nota */
+    .nota-badge {
+        font-size: 1.1rem; font-weight: 700;
+        padding: 2px 10px; border-radius: 20px;
+    }
+
+    /* Mobile tree panel */
+    @media (max-width: 767px) {
+        #tree-col { display: none; }
+        #tree-col.show-mobile { display: block !important; }
+        #panel-right { padding-top: 0; }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="container-fluid px-4">
-
-    <div class="d-flex align-items-center justify-content-between mb-4">
-        <div>
-            <h4 class="mb-0 text-gray-800 font-weight-bold">
-                <i class="fas fa-layer-group mr-2 text-success"></i>Fases de Formación
-            </h4>
-            <p class="text-muted mb-0 small">Estructura del proceso formativo SENA</p>
+<!-- ── Encabezado de ficha ── -->
+<div class="d-flex align-items-start justify-content-between mb-3 flex-wrap" style="gap:10px;">
+    <div>
+        <div class="text-muted small mb-1">
+            {% if ficha.nivel_nombre %}{{ ficha.nivel_nombre }} &rsaquo; {% endif %}
+            {{ ficha.programa_nombre }}
         </div>
-        <a href="/aprendiz/fichas" class="btn btn-outline-secondary btn-sm">
-            <i class="fas fa-arrow-left mr-1"></i> Volver a Fichas
+        <h4 class="mb-0 text-gray-800 font-weight-bold">
+            {{ ficha.programa_nombre }}
+            <span class="text-muted font-weight-normal" style="font-size:1rem;">
+                &nbsp; Ficha: {{ ficha.numero }}
+            </span>
+        </h4>
+        <div class="text-muted small mt-1">
+            "{{ ficha.proyecto_nombre or 'Sin proyecto formativo' }}"
+        </div>
+    </div>
+    <div class="d-flex align-items-center flex-wrap" style="gap:8px;">
+        <!-- Toggle árbol en móvil -->
+        <button class="btn btn-outline-secondary btn-sm d-md-none" id="btn-toggle-tree"
+            onclick="toggleTree()">
+            <i class="fas fa-sitemap mr-1"></i> Ver ruta
+        </button>
+        <a href="{{ url_for('aprendiz_cursos') }}" class="btn btn-outline-success btn-sm shadow-sm">
+            <i class="fas fa-arrow-left mr-1"></i> Volver
         </a>
     </div>
+</div>
 
-    {% if ficha %}
-    <!-- Info de la ficha -->
-    <div class="card border-0 shadow-sm mb-4" style="border-radius:12px; border-left: 4px solid #1a7a3c !important;">
-        <div class="card-body py-3 px-4">
-            <div class="d-flex align-items-center">
-                <i class="fas fa-id-card fa-2x text-success mr-3"></i>
-                <div>
-                    <div class="small text-muted">Ficha activa</div>
-                    <div class="font-weight-bold text-gray-800" style="font-size:1.1rem;">
-                        {{ ficha.numero }} — {{ ficha.programa_nombre or 'Sin programa' }}
+<!-- ── Layout principal ── -->
+<div class="row" style="min-height:500px;">
+
+    <!-- ── Árbol de fases (izquierda) ── -->
+    <div class="col-md-4 col-lg-3 mb-4" id="tree-col">
+        <div class="card shadow border-0" style="display:flex; flex-direction:column; min-height:400px;">
+            <div class="card-header py-2 border-bottom-sena">
+                <span class="font-weight-bold text-sena small">
+                    <i class="fas fa-sitemap mr-1"></i> Ruta de Aprendizaje
+                </span>
+            </div>
+            <div class="card-body p-2" style="flex:1; overflow-y:auto; max-height:60vh;">
+                <div id="fase-tree">
+                    {% if not arbol %}
+                    <div class="empty-state small p-2 text-center text-muted">
+                        <i class="fas fa-info-circle mb-1"></i>
+                        <p class="mb-0">Sin competencias asignadas para esta ficha.</p>
+                    </div>
+                    {% else %}
+                    {% for comp in arbol %}
+                    <div class="mb-3">
+                        <div class="collapse {% if loop.index == 1 %}show{% endif %} mt-1 pr-1 pl-2"
+                            id="comp-{{ loop.index }}">
+                            {% for fase in comp.fases %}
+                            <div class="mb-2">
+                                <button
+                                    class="fase-btn w-100 border-0 text-left d-flex justify-content-between align-items-center {% if not loop.first %}collapsed{% endif %}"
+                                    data-toggle="collapse" data-target="#fase-{{ comp.id }}-{{ loop.index }}"
+                                    style="background-color:#20b2aa; color:white; border-radius:5px; padding:6px 12px; font-size:0.9rem;">
+                                    <span>
+                                        <i class="fas fa-circle mr-1" style="font-size:0.55em;"></i>
+                                        {{ fase.nombre }}
+                                    </span>
+                                    <i class="fas fa-chevron-down chevron" style="font-size:0.7em;"></i>
+                                </button>
+                                <div class="collapse tree-indent-1 {% if loop.first %}show{% endif %} mt-1"
+                                    id="fase-{{ comp.id }}-{{ loop.index }}">
+                                    {% if not fase.actividades_proyecto %}
+                                    <p class="text-muted small px-2 py-1 mb-1">Sin actividades de proyecto.</p>
+                                    {% endif %}
+                                    {% for act_proy in fase.actividades_proyecto %}
+                                    <button class="act-proy-btn w-100 border-0 text-left mb-1"
+                                        onclick="mostrarPanel('panel-ap-{{ act_proy.id }}', this)"
+                                        style="background-color:#dfb11e; color:white; border-radius:5px; padding:6px 12px; font-size:0.85rem;">
+                                        <span>
+                                            <i class="fas fa-folder mr-1" style="font-size:0.75em;"></i>
+                                            {{ act_proy.nombre }}
+                                        </span>
+                                    </button>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-footer bg-white p-2">
+                <button class="btn btn-success btn-sm btn-block" id="btn-cal"
+                    onclick="mostrarCalificaciones()">
+                    <i class="fas fa-chart-bar mr-1"></i> Mis Calificaciones
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Panel derecho ── -->
+    <div class="col-md-8 col-lg-9" id="panel-right">
+
+        <!-- Estado inicial -->
+        <div id="panel-vacio" class="card shadow border-0" style="min-height:300px;">
+            <div class="card-body d-flex align-items-center justify-content-center empty-state">
+                <div class="text-center">
+                    <i class="fas fa-hand-point-left fa-2x mb-2 text-muted d-none d-md-block"></i>
+                    <i class="fas fa-hand-point-up fa-2x mb-2 text-muted d-md-none"></i>
+                    <p class="mb-1 text-gray-700">Selecciona una <strong>Actividad de Proyecto</strong> del árbol.</p>
+                    <p class="small text-muted mb-0">O pulsa <strong>Mis Calificaciones</strong> para ver tus notas.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Paneles de actividades de proyecto ── -->
+        {% for comp in arbol %}
+        {% for fase in comp.fases %}
+        {% for act_proy in fase.actividades_proyecto %}
+        <div id="panel-ap-{{ act_proy.id }}" class="panel-actividad" style="display:none;">
+
+            <div class="d-flex align-items-center mb-3 flex-wrap" style="gap:8px;">
+                <span class="badge" style="background-color:#dfb11e; color:white; font-size:0.8rem; padding:4px 10px; border-radius:12px;">
+                    <i class="fas fa-folder mr-1"></i> Actividad de Proyecto
+                </span>
+                <span class="font-weight-bold text-gray-800">{{ act_proy.nombre }}</span>
+            </div>
+
+            <!-- Guías de trabajo concertado -->
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-header py-2 d-flex align-items-center justify-content-between">
+                    <span class="font-weight-bold text-sena small">
+                        <i class="fas fa-book-open mr-1"></i> Guías de trabajo concertado
+                    </span>
+                </div>
+                <div class="card-body p-3">
+                    {% if act_proy.guias_concertado %}
+                    {% for guia in act_proy.guias_concertado %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="small">
+                            <i class="fas fa-file-alt text-sena mr-2"></i>
+                            {{ guia.nombre or 'Guía de trabajo concertado' }}
+                        </span>
+                        <a href="{{ guia.url }}" target="_blank" class="btn btn-sm btn-outline-success border-0 shadow-sm">
+                            <i class="fas fa-download mr-1"></i> Descargar
+                        </a>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="text-muted small"><i class="fas fa-info-circle mr-1"></i> No hay guías de trabajo concertado.</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Guías de actividades de aprendizaje -->
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-header py-2 d-flex align-items-center justify-content-between">
+                    <span class="font-weight-bold text-sena small">
+                        <i class="fas fa-graduation-cap mr-1"></i> Guías de actividades de aprendizaje
+                    </span>
+                </div>
+                <div class="card-body p-3">
+                    {% if act_proy.guias_aprendizaje %}
+                    {% for guia in act_proy.guias_aprendizaje %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="small">
+                            <i class="fas fa-file-alt text-primary mr-2"></i>
+                            {{ guia.nombre or 'Guía de actividades de aprendizaje' }}
+                        </span>
+                        <a href="{{ guia.url }}" target="_blank" class="btn btn-sm btn-outline-primary border-0 shadow-sm">
+                            <i class="fas fa-download mr-1"></i> Descargar
+                        </a>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="text-muted small"><i class="fas fa-info-circle mr-1"></i> No hay guías de actividades de aprendizaje.</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Actividades de Aprendizaje -->
+            <div class="d-flex align-items-center mb-2 mt-4 flex-wrap" style="gap:8px;">
+                <span class="font-weight-bold text-gray-700">
+                    <i class="fas fa-tasks mr-1 text-sena"></i> Actividades de Aprendizaje
+                </span>
+            </div>
+
+            {% if not act_proy.actividades_aprendizaje %}
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-body py-3 text-muted small">No hay actividades de aprendizaje configuradas.</div>
+            </div>
+            {% endif %}
+
+            {% for act_apr in act_proy.actividades_aprendizaje %}
+            <div class="card act-aprendizaje-card shadow-sm border-top-0 border-right-0 border-bottom-0 mb-3">
+                <div class="card-body py-3">
+                    <div class="d-flex justify-content-between align-items-start mb-2 flex-wrap" style="gap:6px;">
+                        <h6 class="font-weight-bold mb-0 text-gray-800">
+                            <i class="fas fa-list-ul mr-1 text-muted"></i> {{ act_apr.nombre }}
+                        </h6>
+                        {% if act_apr.entrega_id %}
+                        <span class="badge badge-success"><i class="fas fa-check-circle mr-1"></i>Entregado</span>
+                        {% else %}
+                        <span class="badge badge-warning"><i class="fas fa-clock mr-1"></i>Pendiente</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="text-muted small mb-3">
+                        <i class="fas fa-calendar-alt mr-1"></i> <strong>Fecha Límite:</strong>
+                        {% if act_apr.fecha_fin %}{{ act_apr.fecha_fin }}{% else %}No definida{% endif %}
+                    </div>
+
+                    {% if act_apr.guia_url %}
+                    <div class="d-flex flex-wrap mb-3" style="gap:8px;">
+                        <a href="{{ act_apr.guia_url }}" target="_blank"
+                            class="btn btn-sm btn-outline-primary shadow-sm bg-white">
+                            <i class="fas fa-file-pdf mr-1"></i> Ver Guía de Aprendizaje
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    {% if act_apr.descripcion %}
+                    <div class="p-2 bg-light rounded text-gray-700 small mb-3">
+                        <strong>Descripción:</strong><br />{{ act_apr.descripcion }}
+                    </div>
+                    {% endif %}
+
+                    {% if act_apr.evidencia_descripcion %}
+                    <div class="p-2 bg-light rounded text-gray-700 small mb-3">
+                        <strong>Evidencia requerida:</strong><br />{{ act_apr.evidencia_descripcion }}
+                    </div>
+                    {% endif %}
+
+                    {% if act_apr.secciones %}
+                    <div class="mb-3">
+                        <div class="font-weight-bold small text-muted mb-1">
+                            <i class="fas fa-list-alt mr-1"></i> Secciones
+                        </div>
+                        {% for sec in act_apr.secciones %}
+                        <div class="card border-0 shadow-sm mb-2">
+                            <div class="card-header py-2 d-flex align-items-center justify-content-between"
+                                style="cursor:pointer; background-color:#f8f9fa;"
+                                data-toggle="collapse" data-target="#sec-{{ sec.id }}">
+                                <span class="font-weight-bold small text-gray-800">
+                                    <i class="fas fa-chevron-right mr-1" style="font-size:0.7em;"></i>{{ sec.nombre }}
+                                </span>
+                                {% if sec.fecha_fin %}
+                                <small class="text-muted"><i class="fas fa-calendar-alt mr-1"></i>Límite: {{ sec.fecha_fin }}</small>
+                                {% endif %}
+                            </div>
+                            <div class="collapse" id="sec-{{ sec.id }}">
+                                <div class="card-body py-2 px-3">
+                                    {% if sec.descripcion %}
+                                    <p class="small text-gray-700 mb-2">{{ sec.descripcion }}</p>
+                                    {% endif %}
+                                    {% for sub in sec.sub_secciones %}
+                                    <div class="pl-3 border-left border-success mb-2 py-1">
+                                        <div class="font-weight-bold small text-gray-800">{{ sub.nombre }}</div>
+                                        {% if sub.descripcion %}
+                                        <p class="small text-muted mb-1">{{ sub.descripcion }}</p>
+                                        {% endif %}
+                                        {% if sub.fecha_fin %}
+                                        <small class="text-muted"><i class="fas fa-calendar-alt mr-1"></i>Límite: {{ sub.fecha_fin }}</small>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <hr class="mt-0 mb-2">
+
+                    {% set past_deadline = act_apr.fecha_fin and today and today > act_apr.fecha_fin %}
+                    <div class="d-flex justify-content-between align-items-center mt-2 flex-wrap" style="gap:8px;">
+                        {% if act_apr.calificacion %}
+                        <div>
+                            <div class="small text-muted mb-0">Calificación:</div>
+                            <h5 class="mb-0 text-success font-weight-bold">{{ act_apr.calificacion }} / 5.0</h5>
+                        </div>
+                        <div class="text-right">
+                            <p class="small text-muted mb-0">Comentarios:</p>
+                            <span class="small font-italic">{{ act_apr.observaciones or "Ninguno" }}</span>
+                        </div>
+                        {% else %}
+                        {% if act_apr.entrega_id %}
+                        <div class="small text-muted"><i class="fas fa-hourglass-half mr-1"></i>Revisión pendiente</div>
+                        {% else %}
+                        <div class="small text-muted">No has enviado la evidencia.</div>
+                        {% endif %}
+
+                        {% if act_apr.evidencia_id %}
+                        {% if past_deadline %}
+                        <div class="d-flex align-items-center flex-wrap" style="gap:6px;">
+                            <span class="btn btn-sm btn-secondary disabled">
+                                <i class="fas fa-lock mr-1"></i>
+                                {% if act_apr.entrega_id %}Reenviar Evidencia{% else %}Entregar Evidencia{% endif %}
+                            </span>
+                            <small class="text-danger"><i class="fas fa-exclamation-circle mr-1"></i>Fecha límite vencida</small>
+                        </div>
+                        {% else %}
+                        <button class="btn btn-sm btn-success" data-toggle="modal" data-target="#modalEntrega"
+                            data-evidencia-id="{{ act_apr.evidencia_id }}">
+                            <i class="fas fa-upload mr-1"></i>
+                            {% if act_apr.entrega_id %}Reenviar Evidencia{% else %}Entregar Evidencia{% endif %}
+                        </button>
+                        {% endif %}
+                        {% endif %}
+                        {% endif %}
+                    </div>
+
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+        {% endfor %}
+        {% endfor %}
+
+        <!-- ── Panel: Mis Calificaciones ── -->
+        <div id="panel-calificaciones" style="display:none;">
+
+            <div class="d-flex align-items-center mb-3">
+                <i class="fas fa-chart-bar text-success mr-2 fa-lg"></i>
+                <h5 class="mb-0 font-weight-bold text-gray-800">Mis Calificaciones</h5>
+            </div>
+
+            <!-- Resumen stats -->
+            <div class="row mb-3">
+                <div class="col-6 col-md-3 mb-2">
+                    <div class="card cal-stat-card shadow-sm p-3">
+                        <div class="d-flex align-items-center">
+                            <div class="cal-stat-icon mr-3" style="background:linear-gradient(135deg,#1a7a3c,#20c997);">
+                                <i class="fas fa-upload text-white" style="font-size:0.85rem;"></i>
+                            </div>
+                            <div>
+                                <div class="small text-muted font-weight-bold text-uppercase" style="font-size:0.68rem;">Entregas</div>
+                                <div class="h5 font-weight-bold mb-0">{{ resumen.total }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3 mb-2">
+                    <div class="card cal-stat-card shadow-sm p-3">
+                        <div class="d-flex align-items-center">
+                            <div class="cal-stat-icon mr-3" style="background:linear-gradient(135deg,#1cc88a,#17a673);">
+                                <i class="fas fa-check-circle text-white" style="font-size:0.85rem;"></i>
+                            </div>
+                            <div>
+                                <div class="small text-muted font-weight-bold text-uppercase" style="font-size:0.68rem;">Aprobadas</div>
+                                <div class="h5 font-weight-bold mb-0 text-success">{{ resumen.aprobadas }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3 mb-2">
+                    <div class="card cal-stat-card shadow-sm p-3">
+                        <div class="d-flex align-items-center">
+                            <div class="cal-stat-icon mr-3" style="background:linear-gradient(135deg,#f6c23e,#e0a800);">
+                                <i class="fas fa-clock text-white" style="font-size:0.85rem;"></i>
+                            </div>
+                            <div>
+                                <div class="small text-muted font-weight-bold text-uppercase" style="font-size:0.68rem;">Sin calificar</div>
+                                <div class="h5 font-weight-bold mb-0 text-warning">{{ resumen.pendientes }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3 mb-2">
+                    <div class="card cal-stat-card shadow-sm p-3">
+                        <div class="d-flex align-items-center">
+                            <div class="cal-stat-icon mr-3" style="background:linear-gradient(135deg,#4e73df,#36b9cc);">
+                                <i class="fas fa-chart-line text-white" style="font-size:0.85rem;"></i>
+                            </div>
+                            <div>
+                                <div class="small text-muted font-weight-bold text-uppercase" style="font-size:0.68rem;">Promedio</div>
+                                <div class="h5 font-weight-bold mb-0">{{ resumen.promedio }}</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-    {% endif %}
 
-    <!-- Fases estándar SENA -->
-    <div class="row">
-
-        <div class="col-lg-4 mb-4">
-            <div class="card border-0 shadow-sm h-100" style="border-radius:12px; overflow:hidden;">
-                <div class="card-header py-3" style="background: linear-gradient(135deg,#1a7a3c,#20c997); border:none;">
-                    <h6 class="m-0 font-weight-bold text-white">
-                        <i class="fas fa-seedling mr-2"></i>Fase 1 — Análisis
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <p class="text-muted small mb-3">Identificación del proyecto formativo y reconocimiento del entorno productivo.</p>
-                    <ul class="list-unstyled mb-0">
-                        <li class="mb-2"><i class="fas fa-check-circle text-success mr-2"></i><span class="small">Reconocimiento del programa</span></li>
-                        <li class="mb-2"><i class="fas fa-check-circle text-success mr-2"></i><span class="small">Identificación del proyecto</span></li>
-                        <li class="mb-2"><i class="fas fa-clock text-warning mr-2"></i><span class="small">Diagnóstico del entorno</span></li>
-                    </ul>
-                </div>
-                <div class="card-footer bg-light border-0">
-                    <span class="badge badge-success px-3 py-1" style="border-radius:20px;">En curso</span>
+            <!-- Selector Actividad de Proyecto -->
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-body p-3">
+                    <label class="font-weight-bold small text-muted mb-1">
+                        Selecciona una Actividad de Proyecto:
+                    </label>
+                    <select id="cal-ap-selector" class="form-control form-control-sm"
+                        onchange="seleccionarCalAPAprendiz()">
+                        <option value="">-- Seleccionar --</option>
+                    </select>
                 </div>
             </div>
-        </div>
 
-        <div class="col-lg-4 mb-4">
-            <div class="card border-0 shadow-sm h-100" style="border-radius:12px; overflow:hidden;">
-                <div class="card-header py-3" style="background: linear-gradient(135deg,#4e73df,#36b9cc); border:none;">
-                    <h6 class="m-0 font-weight-bold text-white">
-                        <i class="fas fa-cogs mr-2"></i>Fase 2 — Planeación
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <p class="text-muted small mb-3">Diseño y estructuración de las actividades del proyecto formativo.</p>
-                    <ul class="list-unstyled mb-0">
-                        <li class="mb-2"><i class="fas fa-clock text-warning mr-2"></i><span class="small">Plan de trabajo</span></li>
-                        <li class="mb-2"><i class="fas fa-clock text-warning mr-2"></i><span class="small">Recursos y cronograma</span></li>
-                        <li class="mb-2"><i class="fas fa-lock text-secondary mr-2"></i><span class="small">Estrategias de aprendizaje</span></li>
-                    </ul>
-                </div>
-                <div class="card-footer bg-light border-0">
-                    <span class="badge badge-warning px-3 py-1" style="border-radius:20px; color:#333;">Próximamente</span>
-                </div>
+            <!-- Tabs (ocultas hasta que se seleccione AP) -->
+            <ul class="nav nav-tabs mb-0" id="cal-tabs-aprendiz" style="display:none;">
+                <li class="nav-item">
+                    <a class="nav-link active" id="cal-tab-a-1" href="#"
+                        onclick="setCalTabAprendiz(1); return false;">
+                        <i class="fas fa-eye mr-1"></i>Evidencias por actividad
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="cal-tab-a-2" href="#"
+                        onclick="setCalTabAprendiz(2); return false;">
+                        <i class="fas fa-star mr-1"></i>Total de Calificaciones
+                    </a>
+                </li>
+            </ul>
+
+            <div id="cal-content-aprendiz" class="card border-0 shadow-sm"
+                style="display:none; border-top-left-radius:0;">
+                <div id="cal-tab-a-1-content" class="p-3"></div>
+                <div id="cal-tab-a-2-content" class="p-3" style="display:none;"></div>
             </div>
-        </div>
 
-        <div class="col-lg-4 mb-4">
-            <div class="card border-0 shadow-sm h-100" style="border-radius:12px; overflow:hidden;">
-                <div class="card-header py-3" style="background: linear-gradient(135deg,#858796,#5a5c69); border:none;">
-                    <h6 class="m-0 font-weight-bold text-white">
-                        <i class="fas fa-rocket mr-2"></i>Fase 3 — Ejecución
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <p class="text-muted small mb-3">Desarrollo de las actividades y entrega de evidencias de aprendizaje.</p>
-                    <ul class="list-unstyled mb-0">
-                        <li class="mb-2"><i class="fas fa-lock text-secondary mr-2"></i><span class="small">Actividades de proyecto</span></li>
-                        <li class="mb-2"><i class="fas fa-lock text-secondary mr-2"></i><span class="small">Entrega de evidencias</span></li>
-                        <li class="mb-2"><i class="fas fa-lock text-secondary mr-2"></i><span class="small">Evaluación de competencias</span></li>
-                    </ul>
-                </div>
-                <div class="card-footer bg-light border-0">
-                    <span class="badge badge-secondary px-3 py-1" style="border-radius:20px;">Pendiente</span>
-                </div>
+        </div><!-- /panel-calificaciones -->
+
+    </div><!-- /col-md-8 -->
+</div><!-- /row -->
+
+<!-- Modal Entrega de Evidencia -->
+<div class="modal fade" id="modalEntrega" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <form class="modal-content" method="POST" action="/aprendiz/entregar-evidencia"
+            enctype="multipart/form-data">
+            <div class="modal-header border-bottom-sena">
+                <h5 class="modal-title font-weight-bold text-gray-800">
+                    <i class="fas fa-upload text-sena mr-2"></i>Subir Evidencia
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
-        </div>
-
+            <div class="modal-body">
+                <div class="form-group" hidden>
+                    <label class="font-weight-bold small text-muted">Archivo (Opcional)</label>
+                    <input type="file" class="form-control-file" name="archivo">
+                </div>
+                <div class="form-group">
+                    <label class="font-weight-bold small text-muted">Enlace de la Evidencia (URL)</label>
+                    <input type="url" name="url_evidencia" class="form-control"
+                        placeholder="https://mi-proyecto.com/evidencia">
+                    <small class="form-text text-muted">Drive, GitHub, etc.</small>
+                </div>
+                <div class="form-group mb-0">
+                    <label class="font-weight-bold small text-muted">Comentarios (Opcional)</label>
+                    <textarea class="form-control" name="comentario" rows="3"
+                        placeholder="Mensaje adicional para el instructor..."></textarea>
+                </div>
+                <input type="hidden" name="evidencia_id" id="evidencia_id_input">
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-sena">Enviar Respuesta</button>
+            </div>
+        </form>
     </div>
-
-    <!-- Etapa productiva -->
-    <div class="card border-0 shadow-sm mb-4" style="border-radius:12px; overflow:hidden;">
-        <div class="card-header py-3 d-flex align-items-center" style="background: linear-gradient(135deg,#e74a3b,#f6c23e); border:none;">
-            <i class="fas fa-industry mr-2 text-white"></i>
-            <h6 class="m-0 font-weight-bold text-white">Etapa Productiva</h6>
-        </div>
-        <div class="card-body">
-            <p class="text-muted small mb-0">
-                <i class="fas fa-info-circle text-warning mr-1"></i>
-                La etapa productiva se habilita al completar las fases lectivas. Consiste en la aplicación de las competencias en un entorno laboral real.
-            </p>
-        </div>
-    </div>
+</div>
 
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // ── Datos del servidor ────────────────────────────────────────────────────
+    var CAL_ARBOL = {{ cal_arbol | tojson }};
+    var _calTab = 1;
+    var _calApId = null;
+
+    // ── Paneles ───────────────────────────────────────────────────────────────
+    function mostrarPanel(panelId, btn) {
+        ocultarTodo();
+        document.getElementById(panelId).style.display = 'block';
+        document.querySelectorAll('.act-proy-btn').forEach(function (b) { b.classList.remove('active'); });
+        document.getElementById('btn-cal').classList.remove('btn-cal-active');
+        btn.classList.add('active');
+        if (window.innerWidth < 768) {
+            document.getElementById('tree-col').classList.remove('show-mobile');
+            document.getElementById('panel-right').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+
+    function mostrarCalificaciones() {
+        ocultarTodo();
+        document.getElementById('panel-calificaciones').style.display = 'block';
+        document.getElementById('btn-cal').classList.add('btn-cal-active');
+        _buildCalSelector();
+        if (window.innerWidth < 768) {
+            document.getElementById('tree-col').classList.remove('show-mobile');
+            document.getElementById('panel-right').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+
+    function ocultarTodo() {
+        document.getElementById('panel-vacio').style.display = 'none';
+        document.querySelectorAll('.panel-actividad').forEach(function (el) { el.style.display = 'none'; });
+        document.getElementById('panel-calificaciones').style.display = 'none';
+    }
+
+    function toggleTree() {
+        document.getElementById('tree-col').classList.toggle('show-mobile');
+    }
+
+    // ── Calificaciones — selector ─────────────────────────────────────────────
+    function _buildCalSelector() {
+        var sel = document.getElementById('cal-ap-selector');
+        var prev = _calApId;
+        sel.innerHTML = '<option value="">-- Seleccionar --</option>';
+        CAL_ARBOL.forEach(function (fase) {
+            fase.actividades_proyecto.forEach(function (ap) {
+                var opt = document.createElement('option');
+                opt.value = ap.id;
+                opt.textContent = fase.nombre + ' \u203a ' + ap.nombre;
+                sel.appendChild(opt);
+            });
+        });
+        if (prev) { sel.value = prev; }
+    }
+
+    function seleccionarCalAPAprendiz() {
+        var apId = document.getElementById('cal-ap-selector').value;
+        if (!apId) {
+            document.getElementById('cal-tabs-aprendiz').style.display = 'none';
+            document.getElementById('cal-content-aprendiz').style.display = 'none';
+            _calApId = null;
+            return;
+        }
+        _calApId = apId;
+        document.getElementById('cal-tabs-aprendiz').style.display = 'flex';
+        document.getElementById('cal-content-aprendiz').style.display = 'block';
+        setCalTabAprendiz(1);
+    }
+
+    // ── Calificaciones — tabs ─────────────────────────────────────────────────
+    function setCalTabAprendiz(tab) {
+        _calTab = tab;
+        document.getElementById('cal-tab-a-1').classList.toggle('active', tab === 1);
+        document.getElementById('cal-tab-a-2').classList.toggle('active', tab === 2);
+        document.getElementById('cal-tab-a-1-content').style.display = tab === 1 ? 'block' : 'none';
+        document.getElementById('cal-tab-a-2-content').style.display = tab === 2 ? 'block' : 'none';
+
+        var ap = _findAP(_calApId);
+        if (tab === 1) _renderEvidencias(ap);
+        else           _renderCalificaciones(ap);
+    }
+
+    function _findAP(apId) {
+        for (var i = 0; i < CAL_ARBOL.length; i++) {
+            var aps = CAL_ARBOL[i].actividades_proyecto;
+            for (var j = 0; j < aps.length; j++) {
+                if (aps[j].id === apId) return aps[j];
+            }
+        }
+        return null;
+    }
+
+    // ── Tab 1: Evidencias por actividad ──────────────────────────────────────
+    function _renderEvidencias(ap) {
+        var cont = document.getElementById('cal-tab-a-1-content');
+        if (!ap || !ap.actividades_aprendizaje.length) {
+            cont.innerHTML = '<div class="empty-state py-4 text-center text-muted"><i class="fas fa-clipboard fa-2x mb-2 d-block" style="opacity:.3;"></i>No hay actividades de aprendizaje.</div>';
+            return;
+        }
+        var html = '<div class="table-responsive"><table class="table table-bordered table-hover mb-0" style="font-size:.83rem;">'
+            + '<thead class="thead-dark"><tr>'
+            + '<th>Actividad de Aprendizaje</th>'
+            + '<th class="text-center" style="white-space:nowrap;">Estado</th>'
+            + '<th class="text-center" style="white-space:nowrap;">Fecha entrega</th>'
+            + '<th class="text-center">Evidencia</th>'
+            + '</tr></thead><tbody>';
+
+        ap.actividades_aprendizaje.forEach(function (aa) {
+            var estadoHtml, fecha, linkEv;
+            if (!aa.entrega_id) {
+                estadoHtml = '<span class="badge badge-warning">Pendiente</span>';
+            } else if (aa.calificacion !== null && aa.calificacion !== undefined) {
+                estadoHtml = '<span class="badge badge-success">Calificado</span>';
+            } else {
+                estadoHtml = '<span class="badge badge-info">En revisión</span>';
+            }
+            fecha = aa.entregado_en
+                ? new Date(aa.entregado_en).toLocaleDateString('es-CO', { day:'2-digit', month:'2-digit', year:'numeric' })
+                : '—';
+            linkEv = aa.entrega_url
+                ? '<a href="' + _esc(aa.entrega_url) + '" target="_blank" class="btn btn-sm btn-outline-secondary" style="font-size:.75rem;"><i class="fas fa-external-link-alt mr-1"></i>Ver</a>'
+                : '<span class="text-muted">—</span>';
+
+            html += '<tr>'
+                + '<td class="align-middle font-weight-bold">' + _esc(aa.nombre) + (aa.fecha_fin ? '<br><small class="text-muted font-weight-normal"><i class="fas fa-calendar-alt mr-1"></i>Límite: ' + aa.fecha_fin + '</small>' : '') + '</td>'
+                + '<td class="text-center align-middle">' + estadoHtml + '</td>'
+                + '<td class="text-center align-middle small text-muted">' + fecha + '</td>'
+                + '<td class="text-center align-middle">' + linkEv + '</td>'
+                + '</tr>';
+        });
+
+        html += '</tbody></table></div>';
+        cont.innerHTML = html;
+    }
+
+    // ── Tab 2: Total de Calificaciones ────────────────────────────────────────
+    function _renderCalificaciones(ap) {
+        var cont = document.getElementById('cal-tab-a-2-content');
+        if (!ap || !ap.actividades_aprendizaje.length) {
+            cont.innerHTML = '<div class="empty-state py-4 text-center text-muted"><i class="fas fa-chart-bar fa-2x mb-2 d-block" style="opacity:.3;"></i>No hay calificaciones.</div>';
+            return;
+        }
+        var html = '<div class="table-responsive"><table class="table table-bordered mb-0" style="font-size:.83rem;">'
+            + '<thead class="thead-dark"><tr>'
+            + '<th>Actividad de Aprendizaje</th>'
+            + '<th class="text-center">Nota</th>'
+            + '<th class="text-center">Estado</th>'
+            + '<th>Retroalimentación</th>'
+            + '</tr></thead><tbody>';
+
+        var suma = 0, count = 0;
+        ap.actividades_aprendizaje.forEach(function (aa) {
+            var notaHtml, estadoHtml, retro;
+            if (aa.calificacion !== null && aa.calificacion !== undefined) {
+                var aprueba = aa.aprueba === true;
+                var color   = aprueba ? '#1a7a3c' : '#e74a3b';
+                notaHtml    = '<span class="font-weight-bold" style="color:' + color + '; font-size:1rem;">' + aa.calificacion + '</span>';
+                estadoHtml  = aprueba
+                    ? '<span class="badge badge-success px-2 py-1" style="border-radius:12px;">Aprueba</span>'
+                    : '<span class="badge badge-danger px-2 py-1" style="border-radius:12px;">No aprueba</span>';
+                suma += parseFloat(aa.calificacion);
+                count++;
+            } else if (aa.entrega_id) {
+                notaHtml   = '<span class="text-muted">—</span>';
+                estadoHtml = '<span class="badge badge-warning px-2 py-1" style="border-radius:12px;">Pendiente</span>';
+            } else {
+                notaHtml   = '<span class="text-muted">—</span>';
+                estadoHtml = '<span class="badge badge-light border text-muted px-2 py-1" style="border-radius:12px;">Sin entregar</span>';
+            }
+            retro = aa.retroalimentacion || aa.observaciones || '—';
+            html += '<tr>'
+                + '<td class="align-middle font-weight-bold small">' + _esc(aa.nombre) + '</td>'
+                + '<td class="text-center align-middle">' + notaHtml + '</td>'
+                + '<td class="text-center align-middle">' + estadoHtml + '</td>'
+                + '<td class="align-middle small text-muted">' + _esc(retro) + '</td>'
+                + '</tr>';
+        });
+
+        // Fila promedio
+        var prom    = count > 0 ? (suma / count).toFixed(1) : '—';
+        var promCol = count > 0 ? (parseFloat(prom) >= 75 ? '#1a7a3c' : '#e74a3b') : '#858796';
+        html += '<tr class="table-light font-weight-bold">'
+            + '<td class="text-right text-muted">Promedio general</td>'
+            + '<td class="text-center" style="color:' + promCol + '; font-size:1.05rem;">' + prom + '</td>'
+            + '<td colspan="2"></td>'
+            + '</tr>';
+
+        html += '</tbody></table></div>';
+        cont.innerHTML = html;
+    }
+
+    // ── Util: escape HTML ─────────────────────────────────────────────────────
+    function _esc(s) {
+        if (!s) return '';
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── Modal evidencia: inyectar evidencia_id ────────────────────────────────
+    $('#modalEntrega').on('show.bs.modal', function (event) {
+        var evidenciaId = $(event.relatedTarget).data('evidencia-id');
+        $(this).find('#evidencia_id_input').val(evidenciaId);
+    });
+</script>
 {% endblock %}
