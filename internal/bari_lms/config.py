@@ -141,14 +141,19 @@ DASHBOARDS = {
         "menu_heading": "Aprendizaje",
         "menu": [
             {
-                "icon": "fa-project-diagram",
-                "label": "Mi proyecto",
+                "icon": "fa-id-card",
+                "label": "Mis Cursos",
+                "endpoint": "aprendiz_cursos",
+            },
+            {
+                "icon": "fa-star",
+                "label": "Calificaciones",
                 "endpoint": "dashboard",
                 "endpoint_kwargs": {"role_slug": "aprendiz"},
             },
             {
-                "icon": "fa-file-alt",
-                "label": "Evidencias",
+                "icon": "fa-key",
+                "label": "Cambiar contraseña",
                 "endpoint": "dashboard",
                 "endpoint_kwargs": {"role_slug": "aprendiz"},
             },

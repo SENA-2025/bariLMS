@@ -628,6 +628,58 @@ CREATE TABLE IF NOT EXISTS nivel_formacion (
 CREATE INDEX IF NOT EXISTS idx_nivel_formacion_creado_por ON nivel_formacion (creado_por);
 
 -- ============================================================
+-- PROGRAMAS Y COMPETENCIAS
+-- ============================================================
+
+-- Programa de formación: combinación de área y nivel.
+CREATE TABLE IF NOT EXISTS programa_formacion (
+    -- identidad
+    id                  UUID        PRIMARY KEY,
+
+    -- padres
+    area_id             UUID        NOT NULL REFERENCES area(id)            ON DELETE RESTRICT,
+    nivel_formacion_id  UUID        NOT NULL REFERENCES nivel_formacion(id) ON DELETE RESTRICT,
+
+    -- visualización
+    nombre              TEXT        NOT NULL,
+
+    -- auditoría
+    creado_por          UUID        REFERENCES usuario(id) ON DELETE SET NULL,
+
+    -- marcas de tiempo
+    creado_en           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    actualizado_en      TIMESTAMPTZ DEFAULT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_programa_formacion_area_id            ON programa_formacion (area_id);
+CREATE INDEX IF NOT EXISTS idx_programa_formacion_nivel_formacion_id ON programa_formacion (nivel_formacion_id);
+CREATE INDEX IF NOT EXISTS idx_programa_formacion_creado_por         ON programa_formacion (creado_por);
+
+
+-- Competencias asociadas a un programa de formación.
+CREATE TABLE IF NOT EXISTS competencia (
+    -- identidad
+    id                    UUID        PRIMARY KEY,
+
+    -- padre
+    programa_formacion_id UUID        NOT NULL REFERENCES programa_formacion(id) ON DELETE CASCADE,
+
+    -- representación
+    codigo                TEXT        COLLATE "C" NOT NULL UNIQUE,
+    nombre                TEXT        NOT NULL,
+
+    -- auditoría
+    creado_por            UUID        REFERENCES usuario(id) ON DELETE SET NULL,
+
+    -- marcas de tiempo
+    creado_en             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    actualizado_en        TIMESTAMPTZ DEFAULT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_competencia_programa_formacion_id ON competencia (programa_formacion_id);
+CREATE INDEX IF NOT EXISTS idx_competencia_creado_por            ON competencia (creado_por);
+
+-- ============================================================
 -- PERSONAS
 -- ============================================================
 -- Cada tabla lleva persona_id NOT NULL UNIQUE → persona.
@@ -771,6 +823,7 @@ CREATE TABLE IF NOT EXISTS actividad_proyecto (
 
     -- padre
     fase_proyecto_id UUID        NOT NULL REFERENCES fase_proyecto(id) ON DELETE CASCADE,
+    competencia_id   UUID        REFERENCES competencia(id) ON DELETE RESTRICT,
 
     -- visualización
     nombre           TEXT        NOT NULL,
@@ -997,32 +1050,8 @@ CREATE INDEX IF NOT EXISTS idx_guia_actividad_proyecto_actividad_proyecto_id ON 
 CREATE INDEX IF NOT EXISTS idx_guia_actividad_proyecto_creado_por            ON guia_actividad_proyecto (creado_por);
 
 -- ============================================================
--- PROGRAMAS Y FICHAS
+-- FICHAS
 -- ============================================================
-
--- Programa de formación: combinación de área y nivel.
-CREATE TABLE IF NOT EXISTS programa_formacion (
-    -- identidad
-    id                  UUID        PRIMARY KEY,
-
-    -- padres
-    area_id             UUID        NOT NULL REFERENCES area(id)            ON DELETE RESTRICT,
-    nivel_formacion_id  UUID        NOT NULL REFERENCES nivel_formacion(id) ON DELETE RESTRICT,
-
-    -- visualización
-    nombre              TEXT        NOT NULL,
-
-    -- auditoría
-    creado_por          UUID        REFERENCES usuario(id) ON DELETE SET NULL,
-
-    -- marcas de tiempo
-    creado_en           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    actualizado_en      TIMESTAMPTZ DEFAULT NULL
-);
-
-CREATE INDEX IF NOT EXISTS idx_programa_formacion_area_id            ON programa_formacion (area_id);
-CREATE INDEX IF NOT EXISTS idx_programa_formacion_nivel_formacion_id ON programa_formacion (nivel_formacion_id);
-CREATE INDEX IF NOT EXISTS idx_programa_formacion_creado_por         ON programa_formacion (creado_por);
 
 
 -- Ficha de formación: cohorte de aprendices en un programa.
@@ -1062,6 +1091,7 @@ CREATE TABLE IF NOT EXISTS ficha_instructor_competencia (
     -- vínculos
     ficha_id       UUID        NOT NULL REFERENCES ficha_formacion(id) ON DELETE CASCADE,
     instructor_id  UUID        NOT NULL REFERENCES instructor(id)      ON DELETE CASCADE,
+    competencia_id UUID        REFERENCES competencia(id)          ON DELETE CASCADE,
 
     -- auditoría
     creado_por     UUID        REFERENCES usuario(id) ON DELETE SET NULL,
@@ -1070,12 +1100,13 @@ CREATE TABLE IF NOT EXISTS ficha_instructor_competencia (
     creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     actualizado_en TIMESTAMPTZ DEFAULT NULL,
 
-    UNIQUE (ficha_id, instructor_id)
+    UNIQUE (ficha_id, instructor_id, competencia_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_ficha_instructor_competencia_ficha_id      ON ficha_instructor_competencia (ficha_id);
-CREATE INDEX IF NOT EXISTS idx_ficha_instructor_competencia_instructor_id ON ficha_instructor_competencia (instructor_id);
-CREATE INDEX IF NOT EXISTS idx_ficha_instructor_competencia_creado_por    ON ficha_instructor_competencia (creado_por);
+CREATE INDEX IF NOT EXISTS idx_ficha_instructor_competencia_ficha_id       ON ficha_instructor_competencia (ficha_id);
+CREATE INDEX IF NOT EXISTS idx_ficha_instructor_competencia_instructor_id  ON ficha_instructor_competencia (instructor_id);
+CREATE INDEX IF NOT EXISTS idx_ficha_instructor_competencia_competencia_id ON ficha_instructor_competencia (competencia_id);
+CREATE INDEX IF NOT EXISTS idx_ficha_instructor_competencia_creado_por     ON ficha_instructor_competencia (creado_por);
 
 
 -- Asistencia de aprendices por ficha y fecha.
@@ -1109,23 +1140,7 @@ CREATE INDEX IF NOT EXISTS idx_asistencia_aprendiz_creado_por  ON asistencia_apr
 -- EXTRAS DEL APRENDIZ
 -- ============================================================
 
--- Fases del proceso formativo SENA (catálogo independiente).
--- Distinto de fase_proyecto: este es el catálogo general de fases.
-CREATE TABLE IF NOT EXISTS fase (
-    -- identidad
-    id             UUID         PRIMARY KEY,
 
-    -- visualización
-    nombre         VARCHAR(150) NOT NULL UNIQUE,
-    descripcion    TEXT,
-
-    -- orden
-    orden          SMALLINT     NOT NULL DEFAULT 1,
-
-    -- marcas de tiempo
-    creado_en      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ  DEFAULT NULL
-);
 
 
 -- Notificaciones para cualquier usuario del sistema.
@@ -1155,5 +1170,170 @@ CREATE TABLE IF NOT EXISTS notificacion (
 
 CREATE INDEX IF NOT EXISTS idx_notificacion_usuario_id ON notificacion (usuario_id);
 CREATE INDEX IF NOT EXISTS idx_notificacion_creado_por ON notificacion (creado_por);
+
+
+-- ============================================================
+-- EMPRESA
+-- ============================================================
+
+-- Catálogo de empresas o entidades que vinculan aprendices en EP.
+-- El NIT se almacena en minúsculas / sin separadores (COLLATE "C").
+CREATE TABLE IF NOT EXISTS empresa (
+    -- identidad
+    id              UUID        PRIMARY KEY,
+
+    -- datos legales
+    razon_social    TEXT        NOT NULL,
+    nit             TEXT        COLLATE "C" NOT NULL UNIQUE,
+
+    -- clasificación
+    sector          TEXT,
+
+    -- contacto
+    correo          TEXT        COLLATE "C",
+    telefono        TEXT,
+    direccion       TEXT,
+
+    -- estado
+    activo          BOOLEAN     NOT NULL DEFAULT TRUE,
+
+    -- auditoría
+    creado_por      UUID        REFERENCES usuario(id) ON DELETE SET NULL,
+
+    -- marcas de tiempo
+    creado_en       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    actualizado_en  TIMESTAMPTZ DEFAULT NULL,
+
+    CHECK (correo IS NULL OR correo = lower(correo)),
+    CHECK (nit    = lower(nit))
+);
+
+CREATE INDEX IF NOT EXISTS idx_empresa_nit        ON empresa (nit);
+CREATE INDEX IF NOT EXISTS idx_empresa_creado_por ON empresa (creado_por);
+
+
+-- ============================================================
+-- INSCRIPCIÓN APRENDIZ ↔ FICHA  (reemplaza aprendiz.ficha TEXT)
+-- ============================================================
+
+-- Inscripción académica de un aprendiz en una ficha de formación.
+-- Registra ÚNICAMENTE el estado formativo de ambas etapas.
+-- La asignación de empresa vive en contrato_aprendizaje.
+--
+-- Etapa Lectiva:
+--   en_etapa_lectiva         TRUE  mientras el aprendiz cursa la formación presencial.
+--   etapa_lectiva_concluida  TRUE  cuando aprueba todas las competencias de la ficha.
+--                                  Requisito para habilitar la etapa productiva.
+--
+-- Etapa Productiva:
+--   en_etapa_productiva         TRUE  una vez que se habilita al aprendiz para EP.
+--   etapa_productiva_concluida  TRUE  al finalizar formalmente su etapa productiva.
+--
+-- Reglas de negocio (validadas en la capa de aplicación):
+--   • en_etapa_productiva solo puede ser TRUE si etapa_lectiva_concluida = TRUE.
+--   • etapa_productiva_concluida solo puede ser TRUE si en_etapa_productiva = TRUE.
+CREATE TABLE IF NOT EXISTS ficha_aprendiz (
+    -- identidad
+    id                          UUID        PRIMARY KEY,
+
+    -- inscripción
+    ficha_id                    UUID        NOT NULL REFERENCES ficha_formacion(id) ON DELETE RESTRICT,
+    aprendiz_id                 UUID        NOT NULL REFERENCES aprendiz(id)        ON DELETE RESTRICT,
+
+    -- ── Etapa Lectiva ─────────────────────────────────────────
+    en_etapa_lectiva            BOOLEAN     NOT NULL DEFAULT TRUE,
+    etapa_lectiva_concluida     BOOLEAN     NOT NULL DEFAULT FALSE,
+
+    -- ── Etapa Productiva ──────────────────────────────────────
+    en_etapa_productiva         BOOLEAN     NOT NULL DEFAULT FALSE,
+    etapa_productiva_concluida  BOOLEAN     NOT NULL DEFAULT FALSE,
+
+    -- auditoría
+    creado_por                  UUID        REFERENCES usuario(id) ON DELETE SET NULL,
+
+    -- marcas de tiempo
+    creado_en                   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    actualizado_en              TIMESTAMPTZ DEFAULT NULL,
+
+    -- un aprendiz se inscribe una sola vez por ficha
+    UNIQUE (ficha_id, aprendiz_id),
+
+    -- integridad de fases: no puede estar en EP sin haber concluido lectiva
+    CHECK (
+        en_etapa_productiva = FALSE
+        OR etapa_lectiva_concluida = TRUE
+    ),
+    -- no puede concluir EP sin estar en EP
+    CHECK (
+        etapa_productiva_concluida = FALSE
+        OR en_etapa_productiva = TRUE
+    )
+);
+
+CREATE INDEX IF NOT EXISTS idx_ficha_aprendiz_ficha_id    ON ficha_aprendiz (ficha_id);
+CREATE INDEX IF NOT EXISTS idx_ficha_aprendiz_aprendiz_id ON ficha_aprendiz (aprendiz_id);
+CREATE INDEX IF NOT EXISTS idx_ficha_aprendiz_creado_por  ON ficha_aprendiz (creado_por);
+
+-- Índice parcial: búsqueda rápida de aprendices habilitados en EP por ficha.
+CREATE INDEX IF NOT EXISTS idx_ficha_aprendiz_ep_activa
+    ON ficha_aprendiz (ficha_id)
+    WHERE en_etapa_productiva = TRUE;
+
+
+-- ============================================================
+-- CONTRATO DE APRENDIZAJE
+-- ============================================================
+
+-- Vínculo productivo entre un aprendiz (en el contexto de su ficha)
+-- y una empresa. Tiene vida propia: fechas, estado y observaciones.
+--
+-- Se usa ficha_aprendiz_id (no ficha_id + aprendiz_id por separado)
+-- porque la relación siempre ocurre dentro de una inscripción concreta:
+-- el mismo aprendiz en fichas distintas puede tener contratos distintos.
+--
+-- Un aprendiz puede acumular varios registros a lo largo de su EP:
+-- cambio de empresa, cancelación y reasignación, etc.
+-- El contrato vigente es el que tiene estado = 'activo'.
+CREATE TABLE IF NOT EXISTS contrato_aprendizaje (
+    -- identidad
+    id                  UUID        PRIMARY KEY,
+
+    -- contexto educativo
+    ficha_aprendiz_id   UUID        NOT NULL REFERENCES ficha_aprendiz(id) ON DELETE RESTRICT,
+
+    -- empresa vinculante
+    empresa_id          UUID        NOT NULL REFERENCES empresa(id)        ON DELETE RESTRICT,
+
+    -- vigencia
+    fecha_inicio        DATE,
+    fecha_fin           DATE,
+
+    -- estado del contrato
+    estado              TEXT        NOT NULL DEFAULT 'activo'
+                        CHECK (estado IN ('activo', 'terminado', 'cancelado')),
+
+    -- notas adicionales
+    observaciones       TEXT,
+
+    -- auditoría
+    creado_por          UUID        REFERENCES usuario(id) ON DELETE SET NULL,
+
+    -- marcas de tiempo
+    creado_en           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    actualizado_en      TIMESTAMPTZ DEFAULT NULL,
+
+    CHECK (fecha_fin IS NULL OR fecha_inicio IS NULL OR fecha_fin >= fecha_inicio)
+);
+
+CREATE INDEX IF NOT EXISTS idx_contrato_ficha_aprendiz ON contrato_aprendizaje (ficha_aprendiz_id);
+CREATE INDEX IF NOT EXISTS idx_contrato_empresa        ON contrato_aprendizaje (empresa_id);
+CREATE INDEX IF NOT EXISTS idx_contrato_estado         ON contrato_aprendizaje (estado);
+
+-- Índice parcial: contratos activos (consulta más frecuente).
+CREATE INDEX IF NOT EXISTS idx_contrato_activo
+    ON contrato_aprendizaje (ficha_aprendiz_id)
+    WHERE estado = 'activo';
+
+
 
 COMMIT;
