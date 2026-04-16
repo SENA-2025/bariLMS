@@ -7,6 +7,7 @@ from bari_lms.controllers.auth import register_routes as register_auth_routes
 from bari_lms.controllers.dashboard import register_routes as register_dashboard_routes
 from bari_lms.controllers.etapa_productiva import register_routes as register_etapa_productiva_routes
 from bari_lms.controllers.instructor import register_routes as register_instructor_routes
+from bari_lms.controllers.aprendiz import register_routes as register_aprendiz_routes
 from bari_lms.db import close_db, create_pool
 from bari_lms.db.bootstrap import initialize_database
 from bari_lms.middleware.auth import session_context
@@ -39,6 +40,7 @@ def create_app():
     register_admin_routes(app)
     register_instructor_routes(app)
     register_etapa_productiva_routes(app)
+    register_aprendiz_routes(app)
 
     with app.app_context():
         initialize_database()
