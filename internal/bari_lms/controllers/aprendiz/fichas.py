@@ -68,7 +68,7 @@ def register_routes(app):
             flash("No tienes acceso a esta ficha.", "danger")
             return redirect(url_for("aprendiz_fichas"))
 
-        # Construir fases con actividades (a través del proyecto formativo)
+        # Construir fases → actividades_proyecto → actividades_aprendizaje con URLs
         fases = []
         if ficha["proyecto_id"]:
             fases_raw = db.execute(
@@ -82,27 +82,59 @@ def register_routes(app):
             ).fetchall()
 
             for idx, fase in enumerate(fases_raw, start=1):
-                actividades_raw = db.execute(
+                # Actividades de proyecto con su plan de trabajo concertado
+                acts_proyecto = db.execute(
                     """
-                    SELECT aa.id, aa.nombre,
-                           NULL::text AS codigo
-                    FROM actividad_aprendizaje aa
-                    JOIN actividad_proyecto ap ON ap.id = aa.actividad_proyecto_id
+                    SELECT ap.id, ap.nombre,
+                           gap.url AS plan_trabajo_url
+                    FROM actividad_proyecto ap
+                    LEFT JOIN guia_actividad_proyecto gap ON gap.actividad_proyecto_id = ap.id
                     WHERE ap.fase_proyecto_id = ?
-                    ORDER BY ap.id ASC, aa.id ASC
+                    ORDER BY ap.creado_en ASC
                     """,
                     (fase["id"],),
                 ).fetchall()
+
+                actividades_proyecto = []
+                for ap in acts_proyecto:
+                    # Actividades de aprendizaje con guía y entrega del aprendiz
+                    acts_aprendizaje = db.execute(
+                        """
+                        SELECT aa.id, aa.nombre, aa.descripcion,
+                               ga.url AS guia_url,
+                               ee.url AS evidencia_url,
+                               ee.calificacion
+                        FROM actividad_aprendizaje aa
+                        LEFT JOIN guia_aprendizaje ga ON ga.actividad_aprendizaje_id = aa.id
+                        LEFT JOIN evidencia_aprendizaje ea ON ea.actividad_aprendizaje_id = aa.id
+                        LEFT JOIN entrega_evidencia ee ON ee.evidencia_aprendizaje_id = ea.id
+                                                      AND ee.usuario_id = ?
+                        WHERE aa.actividad_proyecto_id = ?
+                        ORDER BY aa.orden ASC, aa.creado_en ASC
+                        """,
+                        (user["id"], ap["id"]),
+                    ).fetchall()
+
+                    actividades_proyecto.append({
+                        "id": ap["id"],
+                        "nombre": ap["nombre"],
+                        "plan_trabajo_url": ap["plan_trabajo_url"],
+                        "actividades_aprendizaje": acts_aprendizaje,
+                    })
 
                 fases.append({
                     "id": fase["id"],
                     "orden": idx,
                     "fase_nombre": fase["fase_nombre"],
-                    "actividades": actividades_raw,
+                    "actividades_proyecto": actividades_proyecto,
                 })
 
-        # Calcular progreso: actividades con entrega calificada >= 75
-        total = sum(len(f["actividades"]) for f in fases)
+        # Calcular progreso: actividades de aprendizaje con entrega calificada >= 75
+        total = sum(
+            len(ap["actividades_aprendizaje"])
+            for f in fases
+            for ap in f["actividades_proyecto"]
+        )
         aprobadas = 0
         if total > 0:
             row = db.execute(
