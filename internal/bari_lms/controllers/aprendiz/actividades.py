@@ -141,9 +141,17 @@ def register_routes(app):
                         "url": g["url"],
                     })
 
+            fases_list = []
             for fase in fase_dict.values():
                 fase["actividades_proyecto"] = list(fase["actividades_proyecto"].values())
-                arbol.append(fase)
+                fases_list.append(fase)
+
+            # El template de Anamaria espera: arbol = [{id, nombre, fases: [...]}]
+            arbol = [{
+                "id": "general",
+                "nombre": ficha["proyecto_nombre"] or "Proyecto Formativo",
+                "fases": fases_list,
+            }]
 
             # ── Calificaciones (mismo proyecto, solo el aprendiz) ─────────────
             cal_rows = db.execute(
